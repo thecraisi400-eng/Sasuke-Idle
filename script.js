@@ -53,3 +53,7 @@ setTimeout(() => {
 }, 1200);
 
 setInterval(tick, 1200);
+
+if (window.BotonHero && typeof window.BotonHero.init === "function") {
+  window.BotonHero.init();
+}
