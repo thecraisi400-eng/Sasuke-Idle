@@ -120,7 +120,7 @@ body {
   height: 470px;
   background: #131a26;
   border: 1px solid #1f2d42;
-  border-radius: 12px;
+  border-radius: 0;
   flex-shrink: 0;
   align-self: center;
   display: flex;
@@ -224,4 +224,170 @@ body {
 @keyframes glow {
   0%, 100% { box-shadow: 0 0 5px #58a6ff44; }
   50% { box-shadow: 0 0 14px #58a6ff99; }
+}
+
+.coming-soon-panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  color: #e8eaf0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.coming-soon-panel h3 {
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+
+.heroe-system {
+  width: 390px;
+  height: 470px;
+  background: #0d1117;
+  color: #e8eaf0;
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heroe-system-header {
+  background: linear-gradient(135deg, #131a26 0%, #1b0b2d 100%);
+  border: 1px solid #6a0dad;
+  box-shadow: 0 0 8px #6a0dad33;
+  display: grid;
+  grid-template-columns: 74px 1fr 58px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+
+.perfil-level { font-size: 18px; font-weight: 700; color: #fff; }
+.perfil-rank { font-size: 14px; font-weight: 700; color: #ff0000; margin-top: 2px; }
+.perfil-name { font-size: 22px; line-height: 1; margin-bottom: 7px; font-weight: 700; color: #f3f5ff; }
+
+.xp-line-track { height: 4px; background: #0d1117; border: 1px solid #4c0d7a; }
+.xp-line-fill { height: 100%; background: #6a0dad; box-shadow: 0 0 8px #6a0dad; }
+.xp-line-text { margin-top: 4px; font-size: 10px; color: #b3b8c6; }
+
+.perfil-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid #ff0000;
+  box-shadow: 0 0 8px #ff000055;
+  justify-self: end;
+}
+
+.heroe-system-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  min-height: 0;
+  flex: 1;
+}
+
+.panel-shinobi,
+.panel-equipo,
+.panel-tecnicas {
+  background: #131a26;
+  border: 1px solid #6a0dad;
+  box-shadow: 0 0 8px #6a0dad22;
+  padding: 7px;
+  min-height: 0;
+}
+
+.panel-title {
+  color: #d6b2ff;
+  font-size: 12px;
+  margin-bottom: 6px;
+  letter-spacing: 0.4px;
+  font-weight: 700;
+}
+
+.shinobi-stats {
+  display: grid;
+  gap: 3px;
+}
+
+.shinobi-stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  background: #0d1117;
+  border: 1px solid #2a3040;
+  padding: 3px 4px;
+}
+
+.shinobi-stat-name,
+.shinobi-stat-value { font-size: 10px; }
+.shinobi-stat-value { color: #ff0000; font-weight: 700; }
+
+.equipo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(3, 1fr);
+  gap: 4px;
+  height: calc(100% - 18px);
+}
+
+.equipo-slot {
+  border: 1px solid #6a0dad;
+  background: #0d1117;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+
+.equipo-slot-name { color: #c9cee0; font-size: 9px; font-weight: 700; }
+.equipo-slot-item { color: #ffffff; font-size: 10px; line-height: 1.1; }
+
+.panel-tecnicas { padding-bottom: 6px; }
+.tecnicas-list { display: flex; flex-direction: column; gap: 4px; }
+
+.tecnica-item {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #6a0dad;
+  background: #0d1117;
+  padding: 4px 5px;
+}
+
+.tecnica-icon { font-size: 12px; }
+.tecnica-name { font-size: 10px; }
+.tecnica-level { font-size: 9px; color: #ff0000; font-weight: 700; }
+
+.heroe-footer {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px;
+}
+
+.btn-mejorar {
+  background: #131a26;
+  color: #fff;
+  border: 1px solid #ff0000;
+  box-shadow: 0 0 7px #ff000044;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.damage-plate {
+  background: #f2f2f2;
+  color: #111;
+  border: 1px solid #d3d3d3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
 }

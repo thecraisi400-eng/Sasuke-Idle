@@ -1,8 +1,27 @@
 const navButtons = document.querySelectorAll('[data-nav]');
+const missionBox = document.querySelector('.mission-box');
+
+const panelByLabel = {
+  HEROE: () => window.BotonHero?.render(missionBox),
+};
 
 function setActive(btn) {
   navButtons.forEach((b) => b.classList.remove('active'));
   btn.classList.add('active');
+
+  const label = btn.querySelector('.n-label')?.textContent?.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  if (label && panelByLabel[label]) {
+    panelByLabel[label]();
+    return;
+  }
+
+  missionBox.innerHTML = `
+    <div class="coming-soon-panel">
+      <h3>${label || 'SECCIÓN'}</h3>
+      <p>Próximamente...</p>
+    </div>
+  `;
 }
 
 navButtons.forEach((btn) => {
@@ -53,3 +72,6 @@ setTimeout(() => {
 }, 1200);
 
 setInterval(tick, 1200);
+
+const initialActive = document.querySelector('.nav-btn.active') || navButtons[0];
+if (initialActive) setActive(initialActive);
