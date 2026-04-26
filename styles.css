@@ -225,3 +225,178 @@ body {
   0%, 100% { box-shadow: 0 0 5px #58a6ff44; }
   50% { box-shadow: 0 0 14px #58a6ff99; }
 }
+
+.placeholder-panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  color: #8a9bb0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.placeholder-panel h3 {
+  color: #6a0dad;
+  letter-spacing: 1px;
+}
+
+.hero-system {
+  width: 390px;
+  height: 470px;
+  background: #0d1117;
+  color: #e8eaf0;
+  font-family: Arial, Helvetica, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+
+.hero-system-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  min-height: 258px;
+}
+
+.hero-system-panel {
+  background: #131a26;
+  border: 1px solid #6a0dad;
+  border-radius: 0;
+  box-shadow: 0 0 10px rgba(106, 13, 173, 0.2);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hero-system-title {
+  color: #ff0000;
+  font-size: 11px;
+  letter-spacing: 0.7px;
+}
+
+.hero-system-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hero-system-stat-row {
+  border: 1px solid rgba(106, 13, 173, 0.45);
+  background: rgba(13, 17, 23, 0.85);
+  padding: 4px;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.hero-system-stat-main { color: #d4dbeb; }
+.hero-system-stat-value { color: #ff0000; font-weight: 700; white-space: nowrap; }
+
+.hero-system-equip-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  flex: 1;
+}
+
+.hero-system-equip-card {
+  border: 1px solid #6a0dad;
+  background: #0d1117;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 0 8px rgba(106, 13, 173, 0.22);
+}
+
+.hero-system-equip-slot {
+  font-size: 9px;
+  color: #ff0000;
+  font-weight: 700;
+}
+
+.hero-system-equip-item {
+  font-size: 9px;
+  color: #e8eaf0;
+  line-height: 1.2;
+}
+
+.hero-system-skills-section {
+  background: #131a26;
+  border: 1px solid #6a0dad;
+  border-radius: 0;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.12);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hero-system-skills-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.hero-system-skill-card {
+  border: 1px solid rgba(255, 0, 0, 0.5);
+  background: #0d1117;
+  padding: 5px;
+  min-height: 54px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.15);
+}
+
+.hero-system-skill-name {
+  font-size: 9px;
+  color: #e8eaf0;
+  line-height: 1.2;
+}
+
+.hero-system-skill-level {
+  font-size: 9px;
+  color: #ff0000;
+  font-weight: 700;
+}
+
+.hero-system-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hero-system-upgrade-btn {
+  width: 104px;
+  height: 36px;
+  border: 1px solid #ff0000;
+  border-radius: 0;
+  background: #131a26;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.22);
+}
+
+.hero-system-damage-plate {
+  flex: 1;
+  min-height: 36px;
+  background: #e7e7e7;
+  border: 1px solid #cfd2d6;
+  color: #000;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
