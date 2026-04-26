@@ -1,8 +1,26 @@
 const navButtons = document.querySelectorAll('[data-nav]');
+const missionBox = document.querySelector('.mission-box');
+
+function showSectionByButton(btn) {
+  const label = btn.querySelector('.n-label')?.textContent?.trim() || '';
+
+  if (label === 'HEROE' && window.BotonHero) {
+    window.BotonHero.render(missionBox);
+    return;
+  }
+
+  missionBox.innerHTML = `
+    <div class="placeholder-panel">
+      <h3>${label}</h3>
+      <p>Esta sección estará disponible próximamente.</p>
+    </div>
+  `;
+}
 
 function setActive(btn) {
   navButtons.forEach((b) => b.classList.remove('active'));
   btn.classList.add('active');
+  showSectionByButton(btn);
 }
 
 navButtons.forEach((btn) => {
@@ -12,7 +30,7 @@ navButtons.forEach((btn) => {
 const stats = {
   hp: { cur: 7200, max: 10000, regen: 15 },
   mp: { cur: 2750, max: 5000, regen: 10 },
-  exp: { cur: 3800, max: 10000, regen: 5 },
+  exp: { cur: 3800, max: 10000, regen: 5 }
 };
 
 const fmt = (n) => Math.round(n).toLocaleString('es');
@@ -53,3 +71,8 @@ setTimeout(() => {
 }, 1200);
 
 setInterval(tick, 1200);
+
+const activeButton = document.querySelector('.nav-btn.active') || navButtons[0];
+if (activeButton) {
+  setActive(activeButton);
+}
