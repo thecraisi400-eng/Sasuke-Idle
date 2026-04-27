@@ -101,7 +101,6 @@ class GameState {
     this.whirlUpgLevel = 0;
     this.furyUpgLevel = 0;
     this.fuerzaCritLevel = 0;
-    this.powerTouchLevel = 0;
     this.rockPenLevel = 0;
     this.gemFindLevel = 0;
     this.doubleHitLevel = 0;
@@ -159,7 +158,7 @@ class GameState {
   }
 
   getClickDmg() {
-    let dmg = (1 + this.clickUpgLevel + this.powerTouchLevel * 2) * this.permDmgMult;
+    let dmg = (1 + this.clickUpgLevel) * this.permDmgMult;
     if (this.frenzyActive && Date.now() < this.frenzyEndTime) dmg *= 2;
     return Math.max(1, Math.floor(dmg));
   }
@@ -178,7 +177,7 @@ class GameState {
   }
 
   getGemChance() {
-    return Math.max(0.02, 0.02 * this.currentBiome.reward * this.permGemMult + this.gemFindLevel * 0.01);
+    return Math.max(0.02, 0.02 * this.currentBiome.reward * this.permGemMult + (0.01 + this.gemFindLevel * 0.0002));
   }
 
   getClickCost() { return Math.floor(10 * Math.pow(1.5, this.clickUpgLevel)); }
@@ -237,7 +236,6 @@ class GameState {
     this.whirlUpgLevel = 0;
     this.furyUpgLevel = 0;
     this.fuerzaCritLevel = 0;
-    this.powerTouchLevel = 0;
     this.rockPenLevel = 0;
     this.gemFindLevel = 0;
     this.doubleHitLevel = 0;
@@ -1026,6 +1024,28 @@ class Game {
     this.startDpsInterval();
 
     this.ui.updateAll();
+    this.setupWakeLock();
+  }
+
+  async setupWakeLock() {
+    if (!('wakeLock' in navigator) || !navigator.wakeLock?.request) return;
+
+    const requestWakeLock = async () => {
+      try {
+        if (document.visibilityState !== 'visible') return;
+        this.wakeLockSentinel = await navigator.wakeLock.request('screen');
+        this.wakeLockSentinel.addEventListener('release', () => {
+          this.wakeLockSentinel = null;
+        });
+      } catch (err) {
+        console.warn('No se pudo activar Screen Wake Lock:', err);
+      }
+    };
+
+    await requestWakeLock();
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && !this.wakeLockSentinel) requestWakeLock();
+    });
   }
 
   bindEvents() {
@@ -1200,10 +1220,10 @@ class Game {
   startDpsInterval() {
     setInterval(() => {
       const s = this.state;
-      const result = this.forceSystem.applyDpsTick();
-      if (!result) return;
+      const results = this.forceSystem.applyDpsTick();
+      if (!results) return;
 
-      if (result.destroyed) this.onRockDestroyed();
+      if (results.some((r) => r.destroyed)) this.onRockDestroyed();
 
       // Update wealth effect
       if (s.wealthActive && Date.now() >= s.wealthEndTime) s.wealthActive = false;
