@@ -100,6 +100,13 @@ class GameState {
     this.autoUpgLevel = 0;
     this.whirlUpgLevel = 0;
     this.furyUpgLevel = 0;
+    this.fuerzaCritLevel = 0;
+    this.powerTouchLevel = 0;
+    this.rockPenLevel = 0;
+    this.gemFindLevel = 0;
+    this.doubleHitLevel = 0;
+    this.ruptureLevel = 0;
+    this.goldImpactLevel = 0;
 
     // Secondary stats
     this.critChance = 5;   // %
@@ -152,13 +159,13 @@ class GameState {
   }
 
   getClickDmg() {
-    let dmg = (1 + this.clickUpgLevel * 1) * this.permDmgMult;
+    let dmg = (1 + this.clickUpgLevel + this.powerTouchLevel * 2) * this.permDmgMult;
     if (this.frenzyActive && Date.now() < this.frenzyEndTime) dmg *= 2;
     return Math.max(1, Math.floor(dmg));
   }
 
   getDPS() {
-    let dps = (this.autoUpgLevel * 2 + this.whirlUpgLevel * 10 + this.furyUpgLevel * 25) * this.permDpsMult;
+    let dps = (this.autoUpgLevel * 2) * this.permDpsMult;
     if (this.frenzyActive && Date.now() < this.frenzyEndTime) dps *= 2;
     return dps;
   }
@@ -171,7 +178,7 @@ class GameState {
   }
 
   getGemChance() {
-    return Math.max(0.02, 0.02 * this.currentBiome.reward * this.permGemMult);
+    return Math.max(0.02, 0.02 * this.currentBiome.reward * this.permGemMult + this.gemFindLevel * 0.01);
   }
 
   getClickCost() { return Math.floor(10 * Math.pow(1.5, this.clickUpgLevel)); }
@@ -229,6 +236,13 @@ class GameState {
     this.autoUpgLevel = 0;
     this.whirlUpgLevel = 0;
     this.furyUpgLevel = 0;
+    this.fuerzaCritLevel = 0;
+    this.powerTouchLevel = 0;
+    this.rockPenLevel = 0;
+    this.gemFindLevel = 0;
+    this.doubleHitLevel = 0;
+    this.ruptureLevel = 0;
+    this.goldImpactLevel = 0;
     this.frenzyPotions = 0;
     this.wealthElixirs = 0;
     this.frenzyActive = false;
@@ -824,28 +838,11 @@ class UI {
   }
 
   updateForceTab() {
-    const s = this.state;
-    document.getElementById('weapon-name').textContent = s.getWeapon().name;
-    document.getElementById('weapon-name').style.color = s.getWeapon().color;
-    document.getElementById('click-dmg-display').textContent = formatNum(s.getClickDmg());
-
-    document.getElementById('click-dmg-effect').textContent = `+${s.clickUpgLevel + 1} daño por clic`;
-    document.getElementById('click-dmg-level').textContent = `Nv. ${s.clickUpgLevel}`;
-    document.getElementById('click-cost').textContent = `🪙 ${formatNum(s.getClickCost())}`;
-
-    document.getElementById('auto-dmg-effect').textContent = `+${(s.autoUpgLevel + 1) * 2} DPS`;
-    document.getElementById('auto-dmg-level').textContent = `Nv. ${s.autoUpgLevel}`;
-    document.getElementById('auto-cost').textContent = `🪙 ${formatNum(s.getAutoCost())}`;
-
-    document.getElementById('whirl-effect').textContent = `+${(s.whirlUpgLevel + 1) * 10} DPS área`;
-    document.getElementById('whirl-level').textContent = `Nv. ${s.whirlUpgLevel}`;
-    document.getElementById('whirl-cost').textContent = `🪙 ${formatNum(s.getWhirlCost())}`;
-
-    document.getElementById('fury-effect').textContent = `+${(s.furyUpgLevel + 1) * 25} DPS fuego`;
-    document.getElementById('fury-level').textContent = `Nv. ${s.furyUpgLevel}`;
-    document.getElementById('fury-cost').textContent = `🪙 ${formatNum(s.getFuryCost())}`;
-
-    document.getElementById('dps-value').textContent = formatNum(s.getDPS());
+    if (window.game && window.game.forceSystem) {
+      window.game.forceSystem.updateUI();
+      return;
+    }
+    document.getElementById('dps-value').textContent = formatNum(this.state.getDPS());
   }
 
   updateAlchemyTab() {
@@ -916,10 +913,12 @@ class Game {
     this.canvas = document.getElementById('game-canvas');
     this.renderer = new Renderer(this.canvas);
     this.ui = new UI(this.state);
+    this.forceSystem = new window.FuerzaSystem(this.state, this.ui, this.renderer);
     this.lastTime = 0;
     this.dpsAccum = 0;
 
     this.bindEvents();
+    this.forceSystem.bindEvents();
     this.startGameLoop();
     this.startDpsInterval();
 
@@ -938,11 +937,12 @@ class Game {
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
-      const result = s.dealDamage(s.getClickDmg());
+      const hitResults = this.forceSystem.applyClickAttack();
       s.totalClicks++;
 
       renderer.triggerAttack();
-      renderer.shakeRock(Math.min(result.dmg / 10 + 1, 6));
+      const totalHitDmg = hitResults.reduce((acc, r) => acc + r.dmg, 0);
+      renderer.shakeRock(Math.min(totalHitDmg / 10 + 1, 6));
       renderer.addParticle(
         canvasContainer.clientWidth * 0.68,
         canvasContainer.clientHeight * 0.45,
@@ -950,48 +950,26 @@ class Game {
       );
 
       // Floating text
-      const dmgColor = result.isCrit ? '#e3b341' : '#58a6ff';
-      const dmgSize = result.isCrit ? 20 : 14;
-      const label = result.isCrit ? `⚡${formatNum(result.dmg)}!` : formatNum(result.dmg);
-      ui.spawnFloatingText(x, y, label, dmgColor, dmgSize);
+      hitResults.forEach((result, idx) => {
+        const dmgColor = result.isCrit ? '#e3b341' : '#58a6ff';
+        const dmgSize = result.isCrit ? 20 : 14;
+        const doublePrefix = idx > 0 ? '⚡' : '';
+        const label = result.isCrit ? `${doublePrefix}⚡${formatNum(result.dmg)}!` : `${doublePrefix}${formatNum(result.dmg)}`;
+        ui.spawnFloatingText(x + idx * 12, y - idx * 8, label, dmgColor, dmgSize);
+      });
 
       // Screen shake
-      if (result.isCrit) {
+      if (hitResults.some(r => r.isCrit)) {
         canvasContainer.classList.add('shake');
         setTimeout(() => canvasContainer.classList.remove('shake'), 150);
       }
 
-      if (result.destroyed) this.onRockDestroyed();
+      if (hitResults.some(r => r.destroyed)) this.onRockDestroyed();
       ui.updateAll();
     });
 
     // Touch feedback
     canvasContainer.addEventListener('touchstart', () => {}, {passive:true});
-
-    // Upgrades - Force
-    document.getElementById('btn-upgrade-click').addEventListener('click', () => {
-      const cost = s.getClickCost();
-      if (s.gold >= cost) { s.gold -= cost; s.clickUpgLevel++; ui.updateAll(); showToast('⚔️ Daño por Clic mejorado!', '#58a6ff'); }
-      else showToast('Oro insuficiente', '#f78166');
-    });
-
-    document.getElementById('btn-upgrade-auto').addEventListener('click', () => {
-      const cost = s.getAutoCost();
-      if (s.gold >= cost) { s.gold -= cost; s.autoUpgLevel++; ui.updateAll(); showToast('⚡ DPS mejorado!', '#3fb950'); }
-      else showToast('Oro insuficiente', '#f78166');
-    });
-
-    document.getElementById('btn-upgrade-whirl').addEventListener('click', () => {
-      const cost = s.getWhirlCost();
-      if (s.gold >= cost) { s.gold -= cost; s.whirlUpgLevel++; ui.updateAll(); showToast('🌪️ Torbellino mejorado!', '#a371f7'); }
-      else showToast('Oro insuficiente', '#f78166');
-    });
-
-    document.getElementById('btn-upgrade-fury').addEventListener('click', () => {
-      const cost = s.getFuryCost();
-      if (s.gold >= cost) { s.gold -= cost; s.furyUpgLevel++; ui.updateAll(); showToast('🔥 Furia mejorada!', '#f78166'); }
-      else showToast('Oro insuficiente', '#f78166');
-    });
 
     // Alchemy
     document.getElementById('btn-craft-frenzy').addEventListener('click', () => {
@@ -1119,16 +1097,14 @@ class Game {
   startDpsInterval() {
     setInterval(() => {
       const s = this.state;
-      const dps = s.getDPS();
-      if (dps <= 0) return;
-
-      const dmgPerTick = dps / 10; // 100ms intervals
-      const result = s.dealDamage(dmgPerTick);
+      const result = this.forceSystem.applyDpsTick();
+      if (!result) return;
 
       if (result.destroyed) this.onRockDestroyed();
       this.ui.updateRockBar();
       this.ui.updateHUD();
       this.ui.updateFrenzyUI();
+      this.ui.updateForceTab();
 
       // Update wealth effect
       if (s.wealthActive && Date.now() >= s.wealthEndTime) s.wealthActive = false;
