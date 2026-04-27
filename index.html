@@ -58,74 +58,19 @@
   <div id="bottom-panel">
     <div id="tabs-content">
 
-      <!-- MÓDULO 1: FUERZA BRUTA -->
+      <!-- MÓDULO 1: FUERZA -->
       <div class="tab-panel active" id="tab-force">
-        <div class="section-title">⚔️ Fuerza Bruta</div>
+        <div class="section-title">⚔️ Fuerza</div>
 
         <div class="card" style="margin-bottom:10px; background:rgba(88,166,255,0.06); border-color:rgba(88,166,255,0.3);">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <div style="font-size:12px; color:var(--text-muted);">Arma actual</div>
-              <div id="weapon-name" style="font-family:'Orbitron',sans-serif; font-size:14px; color:var(--gold); font-weight:700;">👊 Puños Desnudos</div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-size:11px; color:var(--text-muted);">Click DMG</div>
-              <div id="click-dmg-display" style="font-family:'Orbitron',sans-serif; font-size:16px; color:var(--accent3); font-weight:700;">1</div>
-            </div>
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Sistema de Fuerza Activo</div>
+          <div style="display:flex; justify-content:space-between; gap:8px; font-family:'Share Tech Mono',monospace; font-size:12px;">
+            <div>👆 Click DMG: <span id="click-dmg-display" style="color:var(--accent3);">1</span></div>
+            <div>👊 Auto DPS: <span id="auto-dps-display" style="color:var(--accent2);">0</span></div>
           </div>
         </div>
 
-        <div class="upgrade-row">
-          <div class="upgrade-icon">👊</div>
-          <div class="upgrade-info">
-            <div class="upgrade-name">Daño por Clic</div>
-            <div class="upgrade-effect" id="click-dmg-effect">+1 daño por clic</div>
-            <div class="upgrade-level" id="click-dmg-level">Nv. 0</div>
-          </div>
-          <div class="upgrade-btn-wrap">
-            <div class="upgrade-cost" id="click-cost">🪙 10</div>
-            <button class="btn btn-primary btn-sm" id="btn-upgrade-click">MEJORAR</button>
-          </div>
-        </div>
-
-        <div class="upgrade-row">
-          <div class="upgrade-icon">⚡</div>
-          <div class="upgrade-info">
-            <div class="upgrade-name">Daño Automático</div>
-            <div class="upgrade-effect" id="auto-dmg-effect">+2 DPS</div>
-            <div class="upgrade-level" id="auto-dmg-level">Nv. 0</div>
-          </div>
-          <div class="upgrade-btn-wrap">
-            <div class="upgrade-cost" id="auto-cost">🪙 25</div>
-            <button class="btn btn-primary btn-sm" id="btn-upgrade-auto">MEJORAR</button>
-          </div>
-        </div>
-
-        <div class="upgrade-row">
-          <div class="upgrade-icon">🌪️</div>
-          <div class="upgrade-info">
-            <div class="upgrade-name">Torbellino</div>
-            <div class="upgrade-effect" id="whirl-effect">+10 DPS de área</div>
-            <div class="upgrade-level" id="whirl-level">Nv. 0</div>
-          </div>
-          <div class="upgrade-btn-wrap">
-            <div class="upgrade-cost" id="whirl-cost">🪙 100</div>
-            <button class="btn btn-primary btn-sm" id="btn-upgrade-whirl">MEJORAR</button>
-          </div>
-        </div>
-
-        <div class="upgrade-row">
-          <div class="upgrade-icon">🔥</div>
-          <div class="upgrade-info">
-            <div class="upgrade-name">Furia Ardiente</div>
-            <div class="upgrade-effect" id="fury-effect">+25 DPS de fuego</div>
-            <div class="upgrade-level" id="fury-level">Nv. 0</div>
-          </div>
-          <div class="upgrade-btn-wrap">
-            <div class="upgrade-cost" id="fury-cost">🪙 500</div>
-            <button class="btn btn-primary btn-sm" id="btn-upgrade-fury">MEJORAR</button>
-          </div>
-        </div>
+        <div id="force-upgrades-container"></div>
       </div>
 
       <!-- MÓDULO 2: MISIONES -->
@@ -346,6 +291,7 @@
 
 <div id="toast"></div>
 
+<script src="fuerza.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
