@@ -1006,6 +1006,20 @@ class Game {
     this.lastTime = 0;
     this.dpsAccum = 0;
 
+    this.saveSystem = new window.SaveSystem({
+      state: this.state,
+      ui: this.ui,
+      biomes: BIOMES
+    });
+
+    const loadedFromSave = this.saveSystem.load();
+    if (loadedFromSave) {
+      this.ui.buildBiomes();
+      this.ui.buildSkillTree();
+      this.ui.buildMissions();
+      showToast('💾 Progreso cargado correctamente', '#3fb950');
+    }
+
     this.bindEvents();
     this.forceSystem.bindEvents();
     this.startGameLoop();
@@ -1190,13 +1204,12 @@ class Game {
       if (!result) return;
 
       if (result.destroyed) this.onRockDestroyed();
-      this.ui.updateRockBar();
-      this.ui.updateHUD();
-      this.ui.updateFrenzyUI();
-      this.ui.updateForceTab();
 
       // Update wealth effect
       if (s.wealthActive && Date.now() >= s.wealthEndTime) s.wealthActive = false;
+
+      // Sincroniza todos los paneles y sistemas en tiempo real
+      this.ui.updateAll();
     }, 100);
   }
 
