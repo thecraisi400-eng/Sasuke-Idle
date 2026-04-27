@@ -95,11 +95,8 @@ class GameState {
     this.rockHP = 0;
     this.rockMaxHP = 0;
 
-    // Upgrades
-    this.clickUpgLevel = 0;
-    this.autoUpgLevel = 0;
-    this.whirlUpgLevel = 0;
-    this.furyUpgLevel = 0;
+    // Fuerza (módulo externo)
+    FuerzaSystem.initState(this);
 
     // Secondary stats
     this.critChance = 5;   // %
@@ -152,15 +149,11 @@ class GameState {
   }
 
   getClickDmg() {
-    let dmg = (1 + this.clickUpgLevel * 1) * this.permDmgMult;
-    if (this.frenzyActive && Date.now() < this.frenzyEndTime) dmg *= 2;
-    return Math.max(1, Math.floor(dmg));
+    return FuerzaSystem.getClickDamage(this);
   }
 
   getDPS() {
-    let dps = (this.autoUpgLevel * 2 + this.whirlUpgLevel * 10 + this.furyUpgLevel * 25) * this.permDpsMult;
-    if (this.frenzyActive && Date.now() < this.frenzyEndTime) dps *= 2;
-    return dps;
+    return FuerzaSystem.getAutoDps(this);
   }
 
   getGoldPerRock() {
@@ -174,33 +167,32 @@ class GameState {
     return Math.max(0.02, 0.02 * this.currentBiome.reward * this.permGemMult);
   }
 
-  getClickCost() { return Math.floor(10 * Math.pow(1.5, this.clickUpgLevel)); }
-  getAutoCost()  { return Math.floor(25 * Math.pow(1.5, this.autoUpgLevel)); }
-  getWhirlCost() { return Math.floor(100 * Math.pow(1.5, this.whirlUpgLevel)); }
-  getFuryCost()  { return Math.floor(500 * Math.pow(1.5, this.furyUpgLevel)); }
+  getForceUpgradeCost(key) {
+    return FuerzaSystem.getCost(this, key);
+  }
 
   getCritCost()  { return (this.critUpgLevel + 1); }
   getLootCost()  { return (this.lootUpgLevel + 1) * 2; }
   getArmorCost() { return (this.armorUpgLevel + 1) * 3; }
 
-  getWeapon() {
-    let w = WEAPONS[0];
-    for (const wp of WEAPONS) {
-      if (this.clickUpgLevel >= wp.minLvl) w = wp;
-    }
-    return w;
-  }
+  dealDamage(dmg, source = 'click') {
+    const forceHit = FuerzaSystem.applyOnHit(this, dmg, source);
+    let finalDmg = forceHit.damage;
 
-  dealDamage(dmg) {
-    let finalDmg = dmg;
-    const isCrit = Math.random() * 100 < (this.critChance + this.permCritBonus);
-    if (isCrit) finalDmg *= 5;
+    const oldCrit = Math.random() * 100 < (this.critChance + this.permCritBonus);
+    if (oldCrit) finalDmg *= 5;
+
     this.rockHP -= finalDmg;
+    if (forceHit.bonusGold > 0) {
+      this.gold += forceHit.bonusGold;
+      this.totalGoldEarned += forceHit.bonusGold;
+    }
+
     if (this.rockHP <= 0) {
       this.rockHP = 0;
-      return { dmg: finalDmg, isCrit, destroyed: true };
+      return { dmg: finalDmg, isCrit: forceHit.isCrit || oldCrit, isDoubleStrike: forceHit.isDoubleStrike, destroyed: true };
     }
-    return { dmg: finalDmg, isCrit, destroyed: false };
+    return { dmg: finalDmg, isCrit: forceHit.isCrit || oldCrit, isDoubleStrike: forceHit.isDoubleStrike, destroyed: false };
   }
 
   destroyRock() {
@@ -208,7 +200,8 @@ class GameState {
     this.gold += gold;
     this.totalGoldEarned += gold;
     this.fragments += Math.floor(rnd(2, 6) * this.currentBiome.reward);
-    if (Math.random() < this.getGemChance()) {
+    const extraGemChance = FuerzaSystem.getStats(this).gemFindBonus;
+    if (Math.random() < (this.getGemChance() + extraGemChance)) {
       const gems = Math.floor(rnd(1, 3));
       this.gems += gems;
     }
@@ -225,10 +218,7 @@ class GameState {
     this.gems = 0;
     this.fragments = 0;
     this.rockLevel = 1;
-    this.clickUpgLevel = 0;
-    this.autoUpgLevel = 0;
-    this.whirlUpgLevel = 0;
-    this.furyUpgLevel = 0;
+    FuerzaSystem.reset(this);
     this.frenzyPotions = 0;
     this.wealthElixirs = 0;
     this.frenzyActive = false;
@@ -591,6 +581,7 @@ class UI {
     this.state = state;
     this.floatingTexts = document.getElementById('floating-texts');
     this.setupTabs();
+    this.buildForceTab();
     this.buildBiomes();
     this.buildSkillTree();
     this.buildMissions();
@@ -605,6 +596,32 @@ class UI {
         document.getElementById(tabId).classList.add('active');
         btn.classList.add('active');
       });
+    });
+  }
+
+
+  buildForceTab() {
+    const container = document.getElementById('force-upgrades-container');
+    container.innerHTML = '';
+
+    FuerzaSystem.UPGRADES.forEach((upg) => {
+      const level = FuerzaSystem.getLevel(this.state, upg.key);
+      const row = document.createElement('div');
+      row.className = 'upgrade-row';
+      row.innerHTML = `
+        <div class="upgrade-icon">${upg.icon}</div>
+        <div class="upgrade-info">
+          <div class="upgrade-name">${upg.name}</div>
+          <div class="upgrade-effect">${upg.desc}</div>
+          <div class="upgrade-level" id="force-level-${upg.key}">Nv. ${level}</div>
+          <div class="upgrade-effect" id="force-effect-${upg.key}">${upg.effect(level + 1)}</div>
+        </div>
+        <div class="upgrade-btn-wrap">
+          <div class="upgrade-cost" id="force-cost-${upg.key}">🪙 ${formatNum(FuerzaSystem.getCost(this.state, upg.key))}</div>
+          <button class="btn btn-primary btn-sm" data-force-upgrade="${upg.key}">MEJORAR</button>
+        </div>
+      `;
+      container.appendChild(row);
     });
   }
 
@@ -825,25 +842,15 @@ class UI {
 
   updateForceTab() {
     const s = this.state;
-    document.getElementById('weapon-name').textContent = s.getWeapon().name;
-    document.getElementById('weapon-name').style.color = s.getWeapon().color;
     document.getElementById('click-dmg-display').textContent = formatNum(s.getClickDmg());
+    document.getElementById('auto-dps-display').textContent = formatNum(s.getDPS());
 
-    document.getElementById('click-dmg-effect').textContent = `+${s.clickUpgLevel + 1} daño por clic`;
-    document.getElementById('click-dmg-level').textContent = `Nv. ${s.clickUpgLevel}`;
-    document.getElementById('click-cost').textContent = `🪙 ${formatNum(s.getClickCost())}`;
-
-    document.getElementById('auto-dmg-effect').textContent = `+${(s.autoUpgLevel + 1) * 2} DPS`;
-    document.getElementById('auto-dmg-level').textContent = `Nv. ${s.autoUpgLevel}`;
-    document.getElementById('auto-cost').textContent = `🪙 ${formatNum(s.getAutoCost())}`;
-
-    document.getElementById('whirl-effect').textContent = `+${(s.whirlUpgLevel + 1) * 10} DPS área`;
-    document.getElementById('whirl-level').textContent = `Nv. ${s.whirlUpgLevel}`;
-    document.getElementById('whirl-cost').textContent = `🪙 ${formatNum(s.getWhirlCost())}`;
-
-    document.getElementById('fury-effect').textContent = `+${(s.furyUpgLevel + 1) * 25} DPS fuego`;
-    document.getElementById('fury-level').textContent = `Nv. ${s.furyUpgLevel}`;
-    document.getElementById('fury-cost').textContent = `🪙 ${formatNum(s.getFuryCost())}`;
+    FuerzaSystem.UPGRADES.forEach((upg) => {
+      const lvl = FuerzaSystem.getLevel(s, upg.key);
+      document.getElementById(`force-level-${upg.key}`).textContent = `Nv. ${lvl}`;
+      document.getElementById(`force-effect-${upg.key}`).textContent = upg.effect(lvl + 1);
+      document.getElementById(`force-cost-${upg.key}`).textContent = `🪙 ${formatNum(FuerzaSystem.getCost(s, upg.key))}`;
+    });
 
     document.getElementById('dps-value').textContent = formatNum(s.getDPS());
   }
@@ -938,7 +945,7 @@ class Game {
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
-      const result = s.dealDamage(s.getClickDmg());
+      const result = s.dealDamage(s.getClickDmg(), 'click');
       s.totalClicks++;
 
       renderer.triggerAttack();
@@ -952,7 +959,8 @@ class Game {
       // Floating text
       const dmgColor = result.isCrit ? '#e3b341' : '#58a6ff';
       const dmgSize = result.isCrit ? 20 : 14;
-      const label = result.isCrit ? `⚡${formatNum(result.dmg)}!` : formatNum(result.dmg);
+      const baseLabel = result.isCrit ? `⚡${formatNum(result.dmg)}!` : formatNum(result.dmg);
+      const label = result.isDoubleStrike ? `${baseLabel} x2` : baseLabel;
       ui.spawnFloatingText(x, y, label, dmgColor, dmgSize);
 
       // Screen shake
@@ -969,28 +977,18 @@ class Game {
     canvasContainer.addEventListener('touchstart', () => {}, {passive:true});
 
     // Upgrades - Force
-    document.getElementById('btn-upgrade-click').addEventListener('click', () => {
-      const cost = s.getClickCost();
-      if (s.gold >= cost) { s.gold -= cost; s.clickUpgLevel++; ui.updateAll(); showToast('⚔️ Daño por Clic mejorado!', '#58a6ff'); }
-      else showToast('Oro insuficiente', '#f78166');
-    });
-
-    document.getElementById('btn-upgrade-auto').addEventListener('click', () => {
-      const cost = s.getAutoCost();
-      if (s.gold >= cost) { s.gold -= cost; s.autoUpgLevel++; ui.updateAll(); showToast('⚡ DPS mejorado!', '#3fb950'); }
-      else showToast('Oro insuficiente', '#f78166');
-    });
-
-    document.getElementById('btn-upgrade-whirl').addEventListener('click', () => {
-      const cost = s.getWhirlCost();
-      if (s.gold >= cost) { s.gold -= cost; s.whirlUpgLevel++; ui.updateAll(); showToast('🌪️ Torbellino mejorado!', '#a371f7'); }
-      else showToast('Oro insuficiente', '#f78166');
-    });
-
-    document.getElementById('btn-upgrade-fury').addEventListener('click', () => {
-      const cost = s.getFuryCost();
-      if (s.gold >= cost) { s.gold -= cost; s.furyUpgLevel++; ui.updateAll(); showToast('🔥 Furia mejorada!', '#f78166'); }
-      else showToast('Oro insuficiente', '#f78166');
+    document.querySelectorAll('[data-force-upgrade]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.forceUpgrade;
+        const upgradeCfg = FuerzaSystem.UPGRADES.find((u) => u.key === key);
+        const result = FuerzaSystem.tryUpgrade(s, key);
+        if (result.ok) {
+          ui.updateAll();
+          showToast(`${upgradeCfg.icon} ${upgradeCfg.name} mejorado!`, '#58a6ff');
+        } else {
+          showToast('Oro insuficiente', '#f78166');
+        }
+      });
     });
 
     // Alchemy
@@ -1123,7 +1121,7 @@ class Game {
       if (dps <= 0) return;
 
       const dmgPerTick = dps / 10; // 100ms intervals
-      const result = s.dealDamage(dmgPerTick);
+      const result = s.dealDamage(dmgPerTick, 'auto');
 
       if (result.destroyed) this.onRockDestroyed();
       this.ui.updateRockBar();
