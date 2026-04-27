@@ -509,12 +509,12 @@ class Renderer {
     ctx.fillStyle = '#7a4931';
     ctx.fillRect(-3, -41, 6, 1.5);
 
-    // Brazos y pico (mano izquierda)
+    // Brazos y pico (mano derecha)
     const swing = isAttacking ? Math.sin((1 - t.attackTimer / 12) * Math.PI) : 0;
-    const leftHandX = -24 - swing * 12;
-    const leftHandY = -8 - swing * 10;
-    const rightHandX = 20;
-    const rightHandY = -10;
+    const leftHandX = -20;
+    const leftHandY = -10;
+    const rightHandX = 24 + swing * 12;
+    const rightHandY = -8 - swing * 10;
 
     ctx.strokeStyle = '#dcb08c';
     ctx.lineWidth = 7;
@@ -529,10 +529,10 @@ class Renderer {
     ctx.lineTo(rightHandX, rightHandY);
     ctx.stroke();
 
-    // Pico de minería en mano izquierda
-    const pickAngle = -0.7 - swing * 0.95;
+    // Pico de minería en mano derecha
+    const pickAngle = 0.7 + swing * 0.95;
     ctx.save();
-    ctx.translate(leftHandX, leftHandY);
+    ctx.translate(rightHandX, rightHandY);
     ctx.rotate(pickAngle);
     ctx.fillStyle = '#7f6245';
     ctx.fillRect(-2, -24, 4, 32);
