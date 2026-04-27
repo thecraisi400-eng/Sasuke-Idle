@@ -282,7 +282,8 @@ class Renderer {
     this.particles = [];
     this.heroAnim = { frame: 0, timer: 0, state: 'idle', attackTimer: 0 };
     this.rockShake = { x: 0, y: 0, intensity: 0 };
-    this.bgStars = this.genStars(40);
+    this.bgStars = this.genStars(28);
+    this.cachedRockProfile = null;
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
@@ -302,6 +303,48 @@ class Renderer {
       a: Math.random(),
       speed: Math.random() * 0.003 + 0.001
     }));
+  }
+
+  hash01(seed) {
+    const x = Math.sin(seed * 12.9898) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  getRockProfile(state) {
+    const signature = `${state.currentBiome.id}-${state.rockLevel}`;
+    if (this.cachedRockProfile && this.cachedRockProfile.signature === signature) {
+      return this.cachedRockProfile;
+    }
+
+    const lvl = state.rockLevel;
+    const biomeSeed = state.currentBiome.id.split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+    const seed = lvl * 31 + biomeSeed * 17;
+    const phase = Math.floor((lvl - 1) / 8) + 1;
+    const hue = (215 + biomeSeed + phase * 17 + Math.floor(this.hash01(seed + 9) * 20)) % 360;
+    const sat = 18 + Math.floor(this.hash01(seed + 3) * 32);
+    const light = 26 + Math.floor(this.hash01(seed + 5) * 16);
+    const points = 9 + (phase % 4);
+    const radiusBase = 34 + Math.min(phase, 24) * 0.85;
+
+    const vertices = [];
+    for (let i = 0; i < points; i++) {
+      const a = (i / points) * Math.PI * 2;
+      const noise = this.hash01(seed + i * 1.37);
+      const r = radiusBase * (0.78 + noise * 0.38);
+      vertices.push({ x: Math.cos(a) * r, y: Math.sin(a) * r * 0.92 });
+    }
+
+    this.cachedRockProfile = {
+      signature,
+      phase,
+      hue,
+      sat,
+      light,
+      glow: 0.08 + (phase % 6) * 0.02,
+      vertices,
+      phaseName: `FASE ${phase}`,
+    };
+    return this.cachedRockProfile;
   }
 
   addParticle(x, y, color) {
@@ -332,27 +375,60 @@ class Renderer {
   drawBackground(biome) {
     const { ctx, W, H } = this;
     const grad = ctx.createLinearGradient(0, 0, 0, H);
-    const bgColor = biome.color || '#1a1a2e';
-    grad.addColorStop(0, bgColor);
-    grad.addColorStop(1, '#0d1117');
+    grad.addColorStop(0, '#050912');
+    grad.addColorStop(0.55, '#0a1222');
+    grad.addColorStop(1, '#02040a');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
-    // Stars
+    const centerGlow = ctx.createRadialGradient(W * 0.65, H * 0.56, 8, W * 0.65, H * 0.56, Math.max(W, H) * 0.58);
+    centerGlow.addColorStop(0, 'rgba(119,171,255,0.32)');
+    centerGlow.addColorStop(0.45, 'rgba(70,120,200,0.13)');
+    centerGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = centerGlow;
+    ctx.fillRect(0, 0, W, H);
+
+    // Estalactitas
+    ctx.fillStyle = 'rgba(12,20,36,0.92)';
+    const stalactites = 8;
+    for (let i = 0; i <= stalactites; i++) {
+      const x = (i / stalactites) * W;
+      const h = H * (0.12 + (i % 3) * 0.05);
+      ctx.beginPath();
+      ctx.moveTo(x - 26, 0);
+      ctx.lineTo(x + 24, 0);
+      ctx.lineTo(x + (i % 2 === 0 ? 3 : -2), h);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Polvo/brillos de cueva
     this.bgStars.forEach(s => {
       s.a += s.speed;
-      const alpha = (Math.sin(s.a) + 1) / 2 * 0.6 + 0.1;
+      const alpha = (Math.sin(s.a) + 1) / 2 * 0.25 + 0.06;
       ctx.beginPath();
       const starRadius = Math.max(0.1, s.r);
-      ctx.arc(s.x * W, s.y * H * 0.6, starRadius, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.arc(s.x * W, s.y * H * 0.8, starRadius, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(130,170,255,${alpha})`;
       ctx.fill();
     });
+
+    // Rocas decorativas del suelo
+    for (let i = 0; i < 6; i++) {
+      const x = W * (0.08 + i * 0.17);
+      const y = H * (0.76 + (i % 2) * 0.05);
+      const w = 20 + (i % 3) * 8;
+      const h = 10 + (i % 2) * 6;
+      ctx.fillStyle = 'rgba(20,30,48,0.92)';
+      ctx.beginPath();
+      ctx.ellipse(x, y, w, h, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // Ground
     const groundGrad = ctx.createLinearGradient(0, H * 0.7, 0, H);
     groundGrad.addColorStop(0, 'rgba(0,0,0,0)');
-    groundGrad.addColorStop(1, 'rgba(0,0,0,0.5)');
+    groundGrad.addColorStop(1, 'rgba(0,0,0,0.68)');
     ctx.fillStyle = groundGrad;
     ctx.fillRect(0, H * 0.7, W, H * 0.3);
   }
@@ -364,7 +440,8 @@ class Renderer {
 
     const heroX = W * 0.22;
     const heroY = H * 0.7;
-    const s = 1.1;
+    const scaleByWidth = Math.min(1.12, Math.max(0.86, W / 390));
+    const s = scaleByWidth;
 
     ctx.save();
     ctx.translate(heroX, heroY);
@@ -398,68 +475,80 @@ class Renderer {
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.fill();
 
-    // Body
-    ctx.fillStyle = '#2d4a7a';
+    // Piernas
+    ctx.fillStyle = '#1f3558';
+    ctx.fillRect(-12, -3, 9, 25);
+    ctx.fillRect(3, -3, 9, 25);
+    ctx.fillStyle = '#0f1c2f';
+    ctx.fillRect(-14, 20, 12, 6);
+    ctx.fillRect(2, 20, 12, 6);
+
+    // Torso
+    ctx.fillStyle = '#2f4f7f';
     ctx.beginPath();
-    ctx.roundRect(-15, -35, 30, 35, [4]);
+    ctx.roundRect(-14, -33, 28, 33, [6]);
+    ctx.fill();
+    ctx.fillStyle = '#3f659a';
+    ctx.fillRect(-4, -29, 8, 23);
+
+    // Cabeza + cuello
+    ctx.fillStyle = '#dcb08c';
+    ctx.fillRect(-4, -38, 8, 8);
+    ctx.beginPath();
+    ctx.arc(0, -48, 13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#20130e';
+    ctx.beginPath();
+    ctx.arc(0, -54, 10, Math.PI, 0);
     ctx.fill();
 
-    // Head
-    ctx.fillStyle = '#f0c8a0';
-    ctx.beginPath();
-    ctx.arc(0, -45, 14, 0, Math.PI * 2);
-    ctx.fill();
+    // Rasgos
+    ctx.fillStyle = isAttacking ? '#ff5d5d' : '#101828';
+    ctx.fillRect(-7, -48, 4, 2.5);
+    ctx.fillRect(3, -48, 4, 2.5);
+    ctx.fillStyle = '#7a4931';
+    ctx.fillRect(-3, -41, 6, 1.5);
 
-    // Hair
-    ctx.fillStyle = '#1a0f0a';
-    ctx.beginPath();
-    ctx.arc(0, -52, 10, Math.PI, 0);
-    ctx.fill();
+    // Brazos y pico (mano izquierda)
+    const swing = isAttacking ? Math.sin((1 - t.attackTimer / 12) * Math.PI) : 0;
+    const leftHandX = -24 - swing * 12;
+    const leftHandY = -8 - swing * 10;
+    const rightHandX = 20;
+    const rightHandY = -10;
 
-    // Eyes
-    ctx.fillStyle = isAttacking ? '#ff4444' : '#1a1a2a';
-    ctx.beginPath();
-    ctx.arc(-4, -46, 2.5, 0, Math.PI * 2);
-    ctx.arc(4, -46, 2.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Arms
-    const armAngle = isAttacking ? -0.8 : Math.sin(t.timer * 0.08) * 0.15;
-    ctx.strokeStyle = '#2d4a7a';
-    ctx.lineWidth = 8;
+    ctx.strokeStyle = '#dcb08c';
+    ctx.lineWidth = 7;
     ctx.lineCap = 'round';
-
-    // Left arm
     ctx.beginPath();
-    ctx.moveTo(-15, -20);
-    ctx.lineTo(-25 - Math.cos(armAngle) * 5, -5 + Math.sin(armAngle) * 5);
+    ctx.moveTo(-13, -21);
+    ctx.lineTo(leftHandX, leftHandY);
     ctx.stroke();
 
-    // Right arm (punching)
-    const punchX = isAttacking ? 30 : 15;
-    const punchY = isAttacking ? -15 : -5;
     ctx.beginPath();
-    ctx.moveTo(15, -20);
-    ctx.lineTo(punchX, punchY);
+    ctx.moveTo(13, -21);
+    ctx.lineTo(rightHandX, rightHandY);
     ctx.stroke();
 
-    // Weapon/fist indicator
-    ctx.fillStyle = weapon.color;
-    ctx.shadowColor = weapon.color;
-    ctx.shadowBlur = isAttacking ? 15 : 5;
+    // Pico de minería en mano izquierda
+    const pickAngle = -0.7 - swing * 0.95;
+    ctx.save();
+    ctx.translate(leftHandX, leftHandY);
+    ctx.rotate(pickAngle);
+    ctx.fillStyle = '#7f6245';
+    ctx.fillRect(-2, -24, 4, 32);
+    ctx.fillStyle = '#98a6b8';
     ctx.beginPath();
-    ctx.arc(punchX, punchY, 6, 0, Math.PI * 2);
+    ctx.moveTo(-13, -22);
+    ctx.lineTo(14, -16);
+    ctx.lineTo(4, -8);
+    ctx.lineTo(-16, -14);
+    ctx.closePath();
     ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // Legs
-    ctx.fillStyle = '#1a3055';
-    ctx.fillRect(-12, 0, 10, 20);
-    ctx.fillRect(2, 0, 10, 20);
-    // Feet
-    ctx.fillStyle = '#0f1f33';
-    ctx.fillRect(-14, 18, 12, 6);
-    ctx.fillRect(2, 18, 12, 6);
+    ctx.fillStyle = weapon.color;
+    ctx.globalAlpha = 0.35;
+    ctx.fillRect(-2, -24, 4, 10);
+    ctx.globalAlpha = 1;
+    ctx.restore();
 
     // Frenzy aura
     if (state.frenzyActive) {
@@ -476,7 +565,7 @@ class Renderer {
 
   drawRock(state) {
     const { ctx, W, H } = this;
-    const biome = state.currentBiome;
+    const profile = this.getRockProfile(state);
     const pct = state.rockHP / state.rockMaxHP;
     const rockX = W * 0.68;
     const rockY = H * 0.6;
@@ -502,30 +591,20 @@ class Renderer {
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.fill();
 
-    // Rock body — color changes with biome
-    const rockColors = {
-      cave:    ['#6b6b6b','#4a4a4a','#888'],
-      volcano: ['#8b3a3a','#6b2020','#c05050'],
-      glacier: ['#a8d8ea','#78b8d0','#c8e8f5'],
-      void:    ['#3d2055','#2a1040','#6040a0'],
-    };
-    const cols = rockColors[biome.id] || rockColors.cave;
-
     // Deformation: crack based on damage
     const crackLevel = Math.floor((1 - pct) * 4);
 
     ctx.beginPath();
-    ctx.moveTo(-30, 0);
-    ctx.quadraticCurveTo(-35, -35, -5, -45);
-    ctx.quadraticCurveTo(20, -50, 35, -20);
-    ctx.quadraticCurveTo(40, 10, 20, 28);
-    ctx.quadraticCurveTo(-5, 35, -30, 20);
+    profile.vertices.forEach((v, idx) => {
+      if (idx === 0) ctx.moveTo(v.x, v.y);
+      else ctx.lineTo(v.x, v.y);
+    });
     ctx.closePath();
 
-    const rockGrad = ctx.createRadialGradient(-5, -15, 5, 0, 0, 45);
-    rockGrad.addColorStop(0, cols[2]);
-    rockGrad.addColorStop(0.5, cols[0]);
-    rockGrad.addColorStop(1, cols[1]);
+    const rockGrad = ctx.createRadialGradient(-7, -16, 4, 0, 0, 52);
+    rockGrad.addColorStop(0, `hsl(${profile.hue}, ${Math.min(90, profile.sat + 20)}%, ${Math.min(86, profile.light + 24)}%)`);
+    rockGrad.addColorStop(0.52, `hsl(${profile.hue}, ${profile.sat}%, ${profile.light}%)`);
+    rockGrad.addColorStop(1, `hsl(${profile.hue}, ${Math.max(8, profile.sat - 8)}%, ${Math.max(8, profile.light - 18)}%)`);
     ctx.fillStyle = rockGrad;
     ctx.fill();
 
@@ -543,17 +622,27 @@ class Renderer {
       this.drawCrack(ctx, 5, -35, -5, 20, 2);
       ctx.globalAlpha = 0.3 + Math.sin(Date.now() * 0.01) * 0.1;
       ctx.beginPath(); ctx.arc(0,-10,35,0,Math.PI*2);
-      ctx.fillStyle = 'rgba(255,100,0,0.2)'; ctx.fill();
+      ctx.fillStyle = `hsla(${profile.hue + 24}, 80%, 62%, 0.25)`; ctx.fill();
       ctx.globalAlpha = 1;
     }
 
-    // Rock level badge
+    // Aura de progreso por fase
+    ctx.beginPath();
+    ctx.arc(0, -6, 50, 0, Math.PI * 2);
+    ctx.strokeStyle = `hsla(${profile.hue + 12}, 90%, 65%, ${profile.glow})`;
+    ctx.lineWidth = 6;
+    ctx.stroke();
+
+    // Rock level/phase badges
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.beginPath(); ctx.roundRect(-18,-60,36,20,8); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(-22,-66,44,20,8); ctx.fill();
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 11px Orbitron, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`NV.${state.rockLevel}`, 0, -46);
+    ctx.fillText(`NV.${state.rockLevel}`, 0, -52);
+    ctx.font = '700 10px Rajdhani, sans-serif';
+    ctx.fillStyle = `hsl(${profile.hue + 14}, 80%, 75%)`;
+    ctx.fillText(profile.phaseName, 0, -74);
 
     ctx.restore();
   }
