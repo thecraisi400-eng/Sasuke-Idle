@@ -1,13 +1,33 @@
 const navButtons = document.querySelectorAll('[data-nav]');
+const missionBox = document.querySelector('.mission-box');
+const heroSystem = new window.BotonHero(missionBox);
 
 function setActive(btn) {
   navButtons.forEach((b) => b.classList.remove('active'));
   btn.classList.add('active');
+
+  const label = btn.querySelector('.n-label')?.textContent?.trim().toUpperCase() || '';
+  if (label.includes('HÉROE') || label.includes('HEROE')) {
+    heroSystem.render();
+    return;
+  }
+
+  if (missionBox) {
+    missionBox.innerHTML = `
+      <div class="placeholder-panel">
+        <h3>${label}</h3>
+        <p>Próximamente...</p>
+      </div>
+    `;
+  }
 }
 
 navButtons.forEach((btn) => {
   btn.addEventListener('click', () => setActive(btn));
 });
+
+const defaultActive = document.querySelector('.nav-btn.active');
+if (defaultActive) setActive(defaultActive);
 
 const stats = {
   hp: { cur: 7200, max: 10000, regen: 15 },
