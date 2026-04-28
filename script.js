@@ -50,14 +50,14 @@ const dom = {
 };
 
 const heroGearConfig = [
-  { id: 0, name: 'Kusanagi', icon: '⚔️', stat: 'ATQ', base: 7 },
-  { id: 1, name: 'Kunai x12', icon: '🗡️', stat: 'VEL', base: 4 },
-  { id: 2, name: 'Banda Ninja', icon: '🩹', stat: 'RES', base: 3 },
-  { id: 3, name: 'Túnica ANBU', icon: '🥋', stat: 'DEF', base: 6 },
-  { id: 4, name: 'Guantes Filo', icon: '🥊', stat: 'PRE', base: 5 },
-  { id: 5, name: 'Botas Kage', icon: '👟', stat: 'EVA', base: 4 },
-  { id: 6, name: 'Cinturón', icon: '🎽', stat: 'FUE', base: 5 },
-  { id: 7, name: 'Máscara', icon: '😶‍🌫️', stat: 'INT', base: 5 }
+  { id: 0, name: 'Mano Principal 🗡️', icon: '⚔️', stat: 'ATQ', base: 7 },
+  { id: 1, name: 'Cabeza 🪖', icon: '🗡️', stat: 'VEL', base: 4 },
+  { id: 2, name: 'Torso 🛡️', icon: '🩹', stat: 'RES', base: 3 },
+  { id: 3, name: 'Piernas 👖', icon: '🥋', stat: 'DEF', base: 6 },
+  { id: 4, name: 'Pies 🥾', icon: '🥊', stat: 'PRE', base: 5 },
+  { id: 5, name: 'Cuello 📿', icon: '👟', stat: 'EVA', base: 4 },
+  { id: 6, name: 'Anillo 💍', icon: '🎽', stat: 'FUE', base: 5 },
+  { id: 7, name: 'Accesorios ⛓️', icon: '😶‍🌫️', stat: 'INT', base: 5 }
 ];
 
 const sectionData = {
