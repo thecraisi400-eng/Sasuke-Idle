@@ -84,7 +84,7 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
   position: absolute;
   right: 2px;
   bottom: 2px;
-  font: 700 8px Orbitron, sans-serif;
+  font: 700 8px Rajdhani, sans-serif;
   color: var(--accent-gold);
   background: rgba(0, 0, 0, 0.7);
   padding: 1px 3px;
@@ -92,18 +92,18 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
   z-index: 2;
 }
 .identity { flex: 1; min-width: 0; }
-.char-name { font: 900 clamp(12px, 3.4vw, 16px) Orbitron, sans-serif; text-shadow: 0 0 10px rgba(192, 57, 43, 0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rank-badge { display: inline-block; margin-top: 2px; background: linear-gradient(90deg, var(--accent-red), var(--accent-orange)); color: #fff; padding: 1px 6px; border-radius: 2px; font: 700 8px Orbitron, sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+.char-name { font: 900 clamp(12px, 3.4vw, 16px) Rajdhani, sans-serif; text-shadow: 0 0 10px rgba(192, 57, 43, 0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-badge { display: inline-block; margin-top: 2px; background: linear-gradient(90deg, var(--accent-red), var(--accent-orange)); color: #fff; padding: 1px 6px; border-radius: 2px; font: 700 8px Rajdhani, sans-serif; letter-spacing: 1px; text-transform: uppercase; }
 .stats-row { display: flex; gap: 7px; margin-top: 5px; }
 .stat-box { display: flex; flex-direction: column; align-items: center; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: var(--radius-sm); padding: 3px 6px; min-width: 40px; }
-.stat-label { font: 7px Orbitron, sans-serif; color: var(--text-secondary); letter-spacing: 1px; text-transform: uppercase; }
-.stat-value { font: 700 clamp(10px, 2.7vw, 13px) Orbitron, sans-serif; color: var(--accent-gold); }
+.stat-label { font: 7px Rajdhani, sans-serif; color: var(--text-secondary); letter-spacing: 1px; text-transform: uppercase; }
+.stat-value { font: 700 clamp(10px, 2.7vw, 13px) Rajdhani, sans-serif; color: var(--accent-gold); }
 .stat-box.atk .stat-value { color: #e74c3c; }
 .stat-box.def .stat-value { color: #3498db; }
 
 .bars-section { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
 .bar-row { display: flex; align-items: center; gap: 5px; }
-.bar-label { width: 16px; text-align: center; font: 700 7px Orbitron, sans-serif; letter-spacing: 1px; }
+.bar-label { width: 16px; text-align: center; font: 700 7px Rajdhani, sans-serif; letter-spacing: 1px; }
 .bar-label.hp { color: var(--hp-color); }
 .bar-label.mp { color: var(--mp-color); }
 .bar-label.exp { color: var(--exp-color); }
@@ -114,14 +114,14 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 .bar-fill.hp { background: linear-gradient(90deg, #7b241c, var(--hp-color)); }
 .bar-fill.mp { background: linear-gradient(90deg, #1a4a7a, var(--mp-color)); }
 .bar-fill.exp { background: linear-gradient(90deg, #7d6608, var(--exp-color)); }
-.bar-nums, .exp-label-row { font: 7px Orbitron, sans-serif; color: var(--text-secondary); }
+.bar-nums, .exp-label-row { font: 7px Rajdhani, sans-serif; color: var(--text-secondary); }
 .bar-nums { min-width: 56px; text-align: right; }
 .exp-label-row { display: flex; justify-content: space-between; margin-top: 1px; }
 
 #hud-center { height: 520px; overflow: hidden; }
 .center-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; background: rgba(0, 0, 0, 0.35); border-bottom: 1px solid rgba(192, 57, 43, 0.3); }
-.center-title { font: 700 clamp(9px, 2.5vw, 12px) Orbitron, sans-serif; color: var(--accent-red); letter-spacing: 2px; text-transform: uppercase; }
-.center-badge { background: var(--accent-red); color: #fff; font: 8px Orbitron, sans-serif; padding: 1px 6px; border-radius: 2px; animation: pulse-badge 2s infinite; }
+.center-title { font: 700 clamp(9px, 2.5vw, 12px) Rajdhani, sans-serif; color: var(--accent-red); letter-spacing: 2px; text-transform: uppercase; }
+.center-badge { background: var(--accent-red); color: #fff; font: 8px Rajdhani, sans-serif; padding: 1px 6px; border-radius: 2px; animation: pulse-badge 2s infinite; }
 .center-body { padding: 10px 12px; height: calc(100% - 38px); overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .center-body::-webkit-scrollbar { width: 3px; }
 .center-body::-webkit-scrollbar-thumb { background: var(--accent-red); border-radius: 2px; }
@@ -129,13 +129,13 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 .event-card.combat { border-left-color: #e74c3c; }
 .event-card.mission { border-left-color: var(--accent-gold); }
 .event-card.idle { border-left-color: var(--accent-cyan); }
-.event-tag { margin-bottom: 3px; font: 8px Orbitron, sans-serif; text-transform: uppercase; letter-spacing: 1px; }
+.event-tag { margin-bottom: 3px; font: 8px Rajdhani, sans-serif; text-transform: uppercase; letter-spacing: 1px; }
 .event-text { font-size: clamp(10px, 3vw, 13px); line-height: 1.4; }
 .event-sub { font-size: 9px; color: var(--text-secondary); margin-top: 3px; }
 .event-card.combat .event-tag { color: #e74c3c; }
 .event-card.mission .event-tag { color: var(--accent-gold); }
 .event-card.idle .event-tag { color: var(--accent-cyan); }
-.dmg-float { color: #e74c3c; font: 700 clamp(11px, 3.5vw, 15px) Orbitron, sans-serif; animation: floatUp 1.2s ease forwards; display: inline-block; }
+.dmg-float { color: #e74c3c; font: 700 clamp(11px, 3.5vw, 15px) Rajdhani, sans-serif; animation: floatUp 1.2s ease forwards; display: inline-block; }
 .idle-dots::after { content: '...'; animation: dots 1.5s steps(3, end) infinite; }
 
 #hud-bottom { padding: 6px 4px 4px; }
@@ -167,7 +167,7 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 #particle-canvas, #float-layer { position: fixed; inset: 0; pointer-events: none; }
 #particle-canvas { z-index: 999; }
 #float-layer { z-index: 998; overflow: hidden; }
-.stat-float { position: absolute; white-space: nowrap; font: 900 clamp(12px, 3.5vw, 16px) Orbitron, sans-serif; animation: statFloat 1.4s ease forwards; }
+.stat-float { position: absolute; white-space: nowrap; font: 900 clamp(12px, 3.5vw, 16px) Rajdhani, sans-serif; animation: statFloat 1.4s ease forwards; }
 .stat-float.damage { color: #e74c3c; }
 .stat-float.heal { color: #2ecc71; }
 .stat-float.chakra { color: #3498db; }
