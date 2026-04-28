@@ -1,11 +1,39 @@
+const MAX_LEVEL = 100;
+
+function clampLevel(level) {
+  return Math.max(1, Math.min(MAX_LEVEL, level));
+}
+
+function getUchihaProgression(level) {
+  const lv = clampLevel(level);
+  const scale = lv - 1;
+  return {
+    level: lv,
+    xpReq: Math.round(67.5 * (lv ** 2)),
+    str: 15 + (8 * scale),
+    agi: 12 + (3 * scale),
+    int: 10 + (10 * scale),
+    luk: 5 + (0.5 * scale),
+    def: 10 + (5 * scale),
+    resPct: 6 + (0.12 * scale),
+    criPct: Math.min(30, 5 + (0.25 * scale)),
+    cDmgPct: 150 + (2 * scale)
+  };
+}
+
 const state = {
   hp: 7200, hpMax: 10000,
   mp: 550, mpMax: 1000,
-  exp: 3800, expMax: 10000,
+  exp: 3800,
   level: 42,
-  atk: 4820, def: 2310, gold: 98400,
+  atk: 0, def: 0, gold: 98400,
   activeSection: 'hero'
 };
+
+const initialProgression = getUchihaProgression(state.level);
+state.expMax = initialProgression.xpReq;
+state.atk = initialProgression.str;
+state.def = initialProgression.def;
 
 const dom = {
   hpFill: document.getElementById('hp-fill'),
@@ -18,6 +46,8 @@ const dom = {
   statAtk: document.getElementById('stat-atk'),
   statDef: document.getElementById('stat-def'),
   statGold: document.getElementById('stat-gold'),
+  avatarLevel: document.getElementById('avatar-level'),
+  currentLevel: document.getElementById('current-level'),
   centerTitle: document.getElementById('center-title'),
   centerBadge: document.getElementById('center-badge'),
   centerBody: document.getElementById('center-body'),
@@ -78,6 +108,11 @@ function formatGold(n) {
 }
 
 function updateBars() {
+  const progression = getUchihaProgression(state.level);
+  state.expMax = progression.xpReq;
+  state.atk = progression.str;
+  state.def = progression.def;
+
   const hpPct = Math.round((state.hp / state.hpMax) * 100);
   const mpPct = Math.round((state.mp / state.mpMax) * 100);
   const expPct = Math.round((state.exp / state.expMax) * 100);
@@ -93,6 +128,8 @@ function updateBars() {
   dom.statAtk.textContent = nf.format(state.atk);
   dom.statDef.textContent = nf.format(state.def);
   dom.statGold.textContent = formatGold(state.gold);
+  dom.avatarLevel.textContent = `Lv.${state.level}`;
+  dom.currentLevel.textContent = `Nivel actual: ${state.level}`;
 }
 
 const canvas = document.getElementById('particle-canvas');
@@ -239,7 +276,7 @@ function idleLoop() {
   state.exp = Math.min(state.expMax, state.exp + Math.floor(Math.random() * 50 + 20));
   if (state.exp >= state.expMax) {
     state.exp = 0;
-    state.level += 1;
+    state.level = Math.min(MAX_LEVEL, state.level + 1);
   }
 
   state.gold += Math.floor(Math.random() * 80 + 20);

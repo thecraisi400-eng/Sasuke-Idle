@@ -1,4 +1,25 @@
 (() => {
+  const MAX_LEVEL = 100;
+
+  const clampLevel = (level) => Math.max(1, Math.min(MAX_LEVEL, level));
+  const getUchihaStats = (level) => {
+    const lv = clampLevel(level);
+    const scale = lv - 1;
+    return {
+      level: lv,
+      xpReq: Math.round(67.5 * (lv ** 2)),
+      str: 15 + (8 * scale),
+      agi: 12 + (3 * scale),
+      int: 10 + (10 * scale),
+      luk: 5 + (0.5 * scale),
+      def: 10 + (5 * scale),
+      resPct: 6 + (0.12 * scale),
+      criPct: Math.min(30, 5 + (0.25 * scale)),
+      cDmgPct: 150 + (2 * scale)
+    };
+  };
+  const formatPercent = (value, digits = 2) => `${value.toFixed(digits)}%`;
+
   const heroState = {
     gearLevels: [62, 14, 28, 45, 53, 72, 36, 8]
   };
@@ -14,18 +35,7 @@
       { id: 6, name: 'Cinturón', icon: '🎽', stat: 'FUE', base: 114 },
       { id: 7, name: 'Máscara', icon: '😶‍🌫️', stat: 'INT', base: 132 }
     ],
-    combatStats: [
-      { ico: '💪', key: 'STR', val: 342 },
-      { ico: '⚡', key: 'AGI', val: 287 },
-      { ico: '🧠', key: 'INT', val: 215 },
-      { ico: '🍀', key: 'LUK', val: 134 },
-      { ico: '🛡️', key: 'DEF', val: 198 },
-      { ico: '🔮', key: 'RES', val: 176 },
-      { ico: '🎯', key: 'CRI', val: '18%' },
-      { ico: '💥', key: 'C.DMG', val: '210%' },
-      { ico: '👻', key: 'EVA', val: '12%' },
-      { ico: '💚', key: 'HP.R', val: '+85' }
-    ]
+    combatStats: []
   };
 
   const rarityByLevel = (level) => {
@@ -49,7 +59,7 @@
   const upgradeCost = (level) => Math.round(100 * Math.pow(1.18, level)).toLocaleString('es-ES');
   const statAtLevel = (item, level) => Math.round(item.base * (1 + level * 0.12));
 
-  function createHeroLayout() {
+  function createHeroLayout(stats) {
     return `
       <div class="hero-sheet" id="hero-sheet-root">
         <div class="hero-col-left">
@@ -63,7 +73,7 @@
             <div class="hero-clan">Clan Uchiha</div>
             <div class="hero-rank">ANBU</div>
             <div class="hero-level-row">
-              <span>Lv <strong>72</strong></span>
+              <span>Lv <strong>${stats.level}</strong></span>
               <i>|</i>
               <span>Sha <strong>S</strong></span>
             </div>
@@ -89,7 +99,7 @@
                 <div class="hero-bar-track"><div class="hero-bar-fill" style="width:64%"></div></div>
               </div>
               <div class="hero-bar-row exp">
-                <div class="hero-bar-label">EXP <span>72%</span></div>
+                <div class="hero-bar-label">EXP <span>${stats.xpReq.toLocaleString('es-ES')} req.</span></div>
                 <div class="hero-bar-track"><div class="hero-bar-fill" style="width:72%"></div></div>
               </div>
             </div>
@@ -147,8 +157,20 @@
 
   function renderCombat(root) {
     const container = root.querySelector('#hero-combat-grid');
+    const level = Number(document.querySelector('#avatar-level')?.textContent?.replace(/\D/g, '') || 1);
+    const stats = getUchihaStats(level);
+    const combatStats = [
+      { ico: '💪', key: 'STR', val: stats.str },
+      { ico: '⚡', key: 'AGI', val: stats.agi },
+      { ico: '🧠', key: 'INT', val: stats.int },
+      { ico: '🍀', key: 'LUK', val: stats.luk.toFixed(1) },
+      { ico: '🛡️', key: 'DEF', val: stats.def },
+      { ico: '🔮', key: 'RES', val: formatPercent(stats.resPct) },
+      { ico: '🎯', key: 'CRI', val: formatPercent(stats.criPct) },
+      { ico: '💥', key: 'C.DMG', val: `${Math.round(stats.cDmgPct)}%` }
+    ];
     container.innerHTML = '';
-    heroConfig.combatStats.forEach((stat) => {
+    combatStats.forEach((stat) => {
       const item = document.createElement('article');
       item.className = 'hero-stat';
       item.innerHTML = `<span class="hero-stat-ico">${stat.ico}</span><span class="hero-stat-key">${stat.key}</span><span class="hero-stat-val">${stat.val}</span>`;
@@ -173,7 +195,9 @@
       if (centerTitleEl) centerTitleEl.textContent = '';
       if (centerBadgeEl) centerBadgeEl.textContent = '';
 
-      centerBodyEl.innerHTML = createHeroLayout();
+      const level = Number(document.querySelector('#avatar-level')?.textContent?.replace(/\D/g, '') || 1);
+      const stats = getUchihaStats(level);
+      centerBodyEl.innerHTML = createHeroLayout(stats);
       const root = centerBodyEl.querySelector('#hero-sheet-root');
       const overlay = centerBodyEl.querySelector('#hero-modal-overlay');
       const closeBtn = centerBodyEl.querySelector('#hero-modal-close');
