@@ -119,6 +119,9 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 .exp-label-row { display: flex; justify-content: space-between; margin-top: 1px; }
 
 #hud-center { height: 520px; width: min(100%, 464px); align-self: center; overflow: hidden; }
+
+#hud-center.hero-layout .center-header { display: none; }
+#hud-center.hero-layout .center-body { height: 100%; }
 .center-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; background: rgba(0, 0, 0, 0.35); border-bottom: 1px solid rgba(192, 57, 43, 0.3); }
 .center-title { font: 700 clamp(9px, 2.5vw, 12px) Rajdhani, sans-serif; color: var(--accent-red); letter-spacing: 2px; text-transform: uppercase; }
 .center-badge { background: var(--accent-red); color: #fff; font: 8px Rajdhani, sans-serif; padding: 1px 6px; border-radius: 2px; animation: pulse-badge 2s infinite; }

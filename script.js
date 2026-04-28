@@ -23,7 +23,8 @@ const dom = {
   centerBody: document.getElementById('center-body'),
   tooltip: document.getElementById('tooltip'),
   floatLayer: document.getElementById('float-layer'),
-  navGrid: document.getElementById('nav-grid')
+  navGrid: document.getElementById('nav-grid'),
+  hudCenter: document.getElementById('hud-center')
 };
 const heroSystem = new window.BotonHero();
 
@@ -187,6 +188,7 @@ function renderSection(section, btn) {
   dom.centerBadge.textContent = data.badge;
   dom.centerBody.innerHTML = '';
   dom.centerBody.classList.toggle('hero-section-active', section === 'hero');
+  dom.hudCenter.classList.toggle('hero-layout', section === 'hero');
 
   if (section === 'hero') {
     dom.centerTitle.textContent = '🥷 Centro de Héroe';
