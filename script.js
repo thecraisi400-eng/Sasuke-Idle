@@ -27,11 +27,7 @@ const dom = {
 };
 
 const sectionData = {
-  hero: { title: '🥷 Perfil del Héroe', badge: 'HÉROE', cards: [
-    { type: 'idle', tag: '📊 Estadísticas', text: 'Fuerza total combinada: <strong>12,450 CP</strong>', sub: 'Rango de poder: S-Class Shinobi' },
-    { type: 'mission', tag: '🏅 Logros', text: 'Misiones completadas: <strong>347</strong> · Victorias en batalla: <strong>1,203</strong>', sub: 'Título desbloqueado: "Sombra del Konoha"' },
-    { type: 'combat', tag: '⚡ Pasiva activa', text: 'Modo Sabio activo → +15% daño en combate Idle', sub: 'Duración restante: 4h 23min' }
-  ] },
+  hero: { title: '🥷 Perfil del Héroe', badge: 'HÉROE', cards: [] },
   mission: { title: '📜 Misiones', badge: '3 ACTIVAS', cards: [
     { type: 'mission', tag: '🟡 B-Rank · Activa', text: 'Guardianes del Bosque: elimina 5 enemigos', sub: 'Progreso: 3/5 · Recompensa: 5,000 oro + 1,200 EXP' },
     { type: 'mission', tag: '🔴 A-Rank · Pendiente', text: 'Infiltración en la Aldea de la Roca', sub: 'Requerido: Nivel 45 · Recompensa: Pergamino Raro' },
@@ -182,17 +178,23 @@ function renderSection(section, btn) {
   if (!data) return;
 
   state.activeSection = section;
-  dom.centerTitle.textContent = data.title;
-  dom.centerBadge.textContent = data.badge;
-  dom.centerBody.innerHTML = '';
 
-  data.cards.forEach((card, i) => {
-    const el = document.createElement('div');
-    el.className = `event-card ${card.type}`;
-    el.style.animationDelay = `${i * 0.07}s`;
-    el.innerHTML = `<div class="event-tag">${card.tag}</div><div class="event-text">${card.text}</div><div class="event-sub">${card.sub}</div>`;
-    dom.centerBody.appendChild(el);
-  });
+  if (section === 'hero' && window.BotonHero) {
+    window.BotonHero.render(dom.centerBody, dom.centerTitle, dom.centerBadge, document.getElementById('hud-center'));
+  } else {
+    document.getElementById('hud-center').classList.remove('hero-mode');
+    dom.centerTitle.textContent = data.title;
+    dom.centerBadge.textContent = data.badge;
+    dom.centerBody.innerHTML = '';
+
+    data.cards.forEach((card, i) => {
+      const el = document.createElement('div');
+      el.className = `event-card ${card.type}`;
+      el.style.animationDelay = `${i * 0.07}s`;
+      el.innerHTML = `<div class="event-tag">${card.tag}</div><div class="event-text">${card.text}</div><div class="event-sub">${card.sub}</div>`;
+      dom.centerBody.appendChild(el);
+    });
+  }
 
   if (btn) {
     const rect = btn.getBoundingClientRect();
@@ -258,3 +260,5 @@ function idleLoop() {
 
 setInterval(idleLoop, 1200);
 updateBars();
+
+renderSection('hero');
