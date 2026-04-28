@@ -55,7 +55,7 @@ const sectionData = {
     { type: 'idle', tag: '🛡 Jutsu Pasivo', text: '<strong>Armadura de Chakra</strong> · +20% DEF permanente', sub: 'Siempre activo · No consume MP' }
   ] },
   battle: { title: '⚔ Batallas', badge: 'EN COMBATE', cards: [
-    { type: 'combat', tag: '⚔ Combate Activo', text: 'Kazuma vs. Orochimaru Rogue · Ronda 7/10', sub: 'Tu HP: 7,200 · Enemigo HP: 3,800 / 12,000' },
+    { type: 'combat', tag: '⚔ Combate Activo', text: 'Uchiha Sasuke vs. Orochimaru Rogue · Ronda 7/10', sub: 'Tu HP: 7,200 · Enemigo HP: 3,800 / 12,000' },
     { type: 'mission', tag: '🏆 Arena PvP', text: 'Liga de Ninjas · Temporada 4 · Rank: Platino II', sub: 'Racha de victorias: 7 · Tasa de victoria: 68%' },
     { type: 'idle', tag: '🤖 Idle Combat', text: 'Dungeon Automático: Cueva de los Susanoo · Piso 34', sub: 'Oro/min: +420 · EXP/min: +280' }
   ] },
