@@ -3,9 +3,9 @@ class BotonHero {
     this.activeIdx = -1;
     this.levelCap = 80;
     this.heroProfile = {
-      name: 'Kazuma Uzumaki',
+      name: 'Uchiha Sasuke',
       clan: 'Aldea Oculta de la Hoja',
-      rank: 'Jōnin',
+      rank: 'GENIN',
       level: 42,
       title: 'Sombra de Konoha'
     };
@@ -42,6 +42,7 @@ class BotonHero {
         <div class="hero-left-col">
           <div class="hero-sprite-box">
             <div class="hero-sprite-fallback">🥷</div>
+            <div class="hero-sprite-image" role="img" aria-label="Uchiha Sasuke"></div>
             <div class="hero-sprite-glow"></div>
           </div>
           <div class="hero-panel hero-identity">
@@ -54,8 +55,8 @@ class BotonHero {
               <div class="hero-tag">${this.heroProfile.title}</div>
             </div>
             <div class="hero-desc">
-              Ninja versátil con dominio de técnicas de choque y control de chakra.
-              Especializado en combate prolongado y asaltos tácticos.
+              Último superviviente del clan Uchiha y poseedor del Sharingan.
+              Sasuke es un ninja impulsado por la frialdad y el deseo de restaurar el honor de su linaje a cualquier costo.
             </div>
           </div>
         </div>
