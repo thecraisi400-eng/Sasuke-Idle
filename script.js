@@ -1,14 +1,20 @@
 const BASE_PLAYER = {
   level: 1,
   exp: 0,
-  expMax: 100,
+  expMax: 68,
   gold: 0,
-  hpMax: 120,
-  mpMax: 60,
-  hp: 120,
-  mp: 60,
-  atk: 18,
-  def: 10
+  hpMax: 100,
+  mpMax: 50,
+  hp: 100,
+  mp: 50,
+  atk: 15,
+  def: 10,
+  agi: 12,
+  int: 10,
+  luk: 5,
+  res: 6,
+  cri: 5,
+  critDmg: 150
 };
 
 const GAME_STATE = {
@@ -67,24 +73,25 @@ const nf = new Intl.NumberFormat('es-ES');
 const SAVE_KEY = 'sasuke_idle_save_v2';
 
 function getExpRequired(level) {
-  return Math.round(100 * Math.pow(level, 1.25));
+  return Math.round(67.5 * (level ** 2));
 }
 
 function getGoldPerTick(level) {
   return 10 + level * 2;
 }
 
-function getHeroPower() {
-  return GAME_STATE.hero.gearLevels.reduce((sum, lvl, i) => sum + Math.round(heroGearConfig[i].base * (1 + lvl * 0.15)), 0);
-}
-
 function recalcDerivedStats() {
   const level = GAME_STATE.level;
-  const heroPower = getHeroPower();
-  GAME_STATE.hpMax = 120 + level * 25 + Math.round(heroPower * 0.6);
-  GAME_STATE.mpMax = 60 + level * 10 + Math.round(heroPower * 0.3);
-  GAME_STATE.atk = 18 + level * 6 + Math.round(heroPower * 0.8);
-  GAME_STATE.def = 10 + level * 4 + Math.round(heroPower * 0.5);
+  GAME_STATE.hpMax = 100 + (15 * (level - 1));
+  GAME_STATE.mpMax = 50 + (12 * (level - 1));
+  GAME_STATE.atk = 15 + (8 * (level - 1));
+  GAME_STATE.agi = 12 + (3 * (level - 1));
+  GAME_STATE.int = 10 + (10 * (level - 1));
+  GAME_STATE.luk = 5 + (0.5 * (level - 1));
+  GAME_STATE.def = 10 + (5 * (level - 1));
+  GAME_STATE.res = 6 + (0.12 * (level - 1));
+  GAME_STATE.cri = Math.min(30, 5 + (0.25 * (level - 1)));
+  GAME_STATE.critDmg = 150 + (2 * (level - 1));
   GAME_STATE.hp = Math.min(GAME_STATE.hp, GAME_STATE.hpMax);
   GAME_STATE.mp = Math.min(GAME_STATE.mp, GAME_STATE.mpMax);
   GAME_STATE.expMax = getExpRequired(level);

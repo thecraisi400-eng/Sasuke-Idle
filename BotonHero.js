@@ -119,13 +119,12 @@
     const stats = [
       { ico: '💪', key: 'STR', val: state.atk },
       { ico: '🛡️', key: 'DEF', val: state.def },
-      { ico: '🧠', key: 'INT', val: Math.round(state.level * 3.5) },
-      { ico: '⚡', key: 'AGI', val: Math.round(state.level * 3) },
-      { ico: '🍀', key: 'LUK', val: Math.round(state.level * 2) },
-      { ico: '🎯', key: 'CRI', val: `${Math.min(60, 5 + state.level)}%` },
-      { ico: '💥', key: 'C.DMG', val: `${150 + state.level * 2}%` },
-      { ico: '👻', key: 'EVA', val: `${Math.min(45, 3 + Math.round(state.level * 0.6))}%` },
-      { ico: '💚', key: 'HP.R', val: `+${Math.max(3, Math.round(state.hpMax * 0.01))}` }
+      { ico: '🧠', key: 'INT', val: state.int },
+      { ico: '⚡', key: 'AGI', val: state.agi },
+      { ico: '🍀', key: 'LUK', val: state.luk.toFixed(1) },
+      { ico: '🛡️', key: 'RES', val: `${state.res.toFixed(2)}%` },
+      { ico: '🎯', key: 'CRI', val: `${state.cri.toFixed(2)}%` },
+      { ico: '💥', key: 'C.DMG', val: `${state.critDmg.toFixed(0)}%` }
     ];
 
     const container = root.querySelector('#hero-combat-grid');
