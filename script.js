@@ -25,6 +25,7 @@ const dom = {
   floatLayer: document.getElementById('float-layer'),
   navGrid: document.getElementById('nav-grid')
 };
+const heroSystem = new window.BotonHero();
 
 const sectionData = {
   hero: { title: '🥷 Perfil del Héroe', badge: 'HÉROE', cards: [
@@ -185,14 +186,21 @@ function renderSection(section, btn) {
   dom.centerTitle.textContent = data.title;
   dom.centerBadge.textContent = data.badge;
   dom.centerBody.innerHTML = '';
+  dom.centerBody.classList.toggle('hero-section-active', section === 'hero');
 
-  data.cards.forEach((card, i) => {
-    const el = document.createElement('div');
-    el.className = `event-card ${card.type}`;
-    el.style.animationDelay = `${i * 0.07}s`;
-    el.innerHTML = `<div class="event-tag">${card.tag}</div><div class="event-text">${card.text}</div><div class="event-sub">${card.sub}</div>`;
-    dom.centerBody.appendChild(el);
-  });
+  if (section === 'hero') {
+    dom.centerTitle.textContent = '🥷 Centro de Héroe';
+    dom.centerBadge.textContent = 'HÉROE';
+    heroSystem.render(dom.centerBody);
+  } else {
+    data.cards.forEach((card, i) => {
+      const el = document.createElement('div');
+      el.className = `event-card ${card.type}`;
+      el.style.animationDelay = `${i * 0.07}s`;
+      el.innerHTML = `<div class="event-tag">${card.tag}</div><div class="event-text">${card.text}</div><div class="event-sub">${card.sub}</div>`;
+      dom.centerBody.appendChild(el);
+    });
+  }
 
   if (btn) {
     const rect = btn.getBoundingClientRect();
