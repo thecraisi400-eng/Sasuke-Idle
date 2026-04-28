@@ -170,8 +170,8 @@
       if (!centerBodyEl) return;
 
       centerPanelEl?.classList.add('hero-mode');
-      if (centerTitleEl) centerTitleEl.textContent = '🥷 PERFIL UCHIHA';
-      if (centerBadgeEl) centerBadgeEl.textContent = 'HÉROE';
+      if (centerTitleEl) centerTitleEl.textContent = '';
+      if (centerBadgeEl) centerBadgeEl.textContent = '';
 
       centerBodyEl.innerHTML = createHeroLayout();
       const root = centerBodyEl.querySelector('#hero-sheet-root');
