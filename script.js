@@ -39,6 +39,8 @@ const dom = {
   statAtk: document.getElementById('stat-atk'),
   statDef: document.getElementById('stat-def'),
   statGold: document.getElementById('stat-gold'),
+  statLevelBadge: document.getElementById('stat-level-badge'),
+  statLevelCurrent: document.getElementById('stat-level-current'),
   centerTitle: document.getElementById('center-title'),
   centerBadge: document.getElementById('center-badge'),
   centerBody: document.getElementById('center-body'),
@@ -150,6 +152,8 @@ function updateBars() {
   dom.statAtk.textContent = nf.format(GAME_STATE.atk);
   dom.statDef.textContent = nf.format(GAME_STATE.def);
   dom.statGold.textContent = formatGold(GAME_STATE.gold);
+  dom.statLevelBadge.textContent = `Lv.${GAME_STATE.level}`;
+  dom.statLevelCurrent.textContent = `Nivel actual: ${GAME_STATE.level}`;
 }
 
 function getDynamicCards(section) {
