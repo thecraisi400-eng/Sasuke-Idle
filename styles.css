@@ -151,17 +151,20 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 }
 
 .mission-scroll {
-  background: linear-gradient(180deg, rgba(241, 196, 15, 0.12), rgba(0, 0, 0, 0.35));
-  border: 1px solid rgba(241, 196, 15, 0.38);
+  background: #eeddd2;
+  border: 2px solid #000;
   border-radius: 6px;
   padding: 8px;
+  position: relative;
+  overflow: hidden;
 }
-.mission-scroll h3 { font-size: 14px; color: #ffd659; margin-bottom: 4px; }
-.mission-description { font-size: 11px; line-height: 1.35; }
-.mission-goal { margin-top: 5px; font-size: 11px; color: #d9dfeb; }
-.mission-rewards { margin-top: 5px; color: #7bffc5; font-weight: 700; font-size: 11px; }
+.mission-scroll h3 { font-size: 14px; color: #1b1b1b; margin-bottom: 4px; }
+.mission-description { font-size: 11px; line-height: 1.35; color: #2f2f2f; }
+.mission-goal { margin-top: 5px; font-size: 11px; color: #383838; }
+.mission-rewards { margin-top: 5px; color: #1f1f1f; font-weight: 700; font-size: 11px; }
 .mission-actions { margin-top: 8px; display: flex; gap: 6px; }
 .mission-btn {
+  width: 100%;
   border: none;
   border-radius: 4px;
   padding: 5px 8px;
@@ -169,11 +172,29 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
   color: #fff;
   cursor: pointer;
 }
-.mission-btn.success { background: #1e9e53; }
-.mission-btn.fail { background: #b0443a; }
+.mission-btn.start { background: #1d1d1d; border: 1px solid #000; }
 .mission-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-.mission-scroll.state-completada { border-color: rgba(46, 204, 113, 0.45); }
-.mission-scroll.state-fallada { border-color: rgba(231, 76, 60, 0.45); }
+.mission-scroll.state-completada,
+.mission-scroll.state-fallada { background: #6f6f6f; border-color: #000; }
+.mission-scroll.state-completada h3,
+.mission-scroll.state-completada .mission-description,
+.mission-scroll.state-completada .mission-goal,
+.mission-scroll.state-completada .mission-rewards,
+.mission-scroll.state-fallada h3,
+.mission-scroll.state-fallada .mission-description,
+.mission-scroll.state-fallada .mission-goal,
+.mission-scroll.state-fallada .mission-rewards { opacity: 0.12; }
+.mission-status-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font: 700 18px Rajdhani, sans-serif;
+  color: #fff;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
 
 #hud-bottom { padding: 6px 4px 4px; }
 .nav-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
