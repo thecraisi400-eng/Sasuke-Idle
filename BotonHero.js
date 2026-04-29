@@ -18,7 +18,13 @@
   }[rarityByLevel(level)]);
 
   const upgradeCost = (level) => Math.round(100 * Math.pow(1.18, level)).toLocaleString('es-ES');
-  const statAtLevel = (item, level) => Math.round(item.base * (1 + Math.max(0, level) * 0.12));
+  const formatStatValue = (stat, level) => {
+    const value = stat.gain * Math.max(0, level);
+    if (stat.percent) return `${value.toFixed(3).replace(/\.?0+$/, '')}%`;
+    if (!Number.isInteger(value)) return value.toFixed(1);
+    return String(value);
+  };
+
 
   function createHeroLayout(state) {
     const hpPct = ((state.hp / state.hpMax) * 100).toFixed(1);
@@ -88,9 +94,18 @@
           <div class="hero-modal-body">
             <div class="hero-modal-cost">Costo mejora <strong id="hero-m-cost">—</strong></div>
             <div class="hero-modal-compare">
-              <div>Actual</div><div></div><div>Siguiente</div>
-              <div id="hero-m-cur-lvl">Lv 0</div><div>→</div><div id="hero-m-next-lvl">Lv 0</div>
-              <div id="hero-m-cur-stat">—</div><div>→</div><div id="hero-m-next-stat">—</div>
+              <section class="hero-compare-col current">
+                <div class="hero-compare-title">Actual</div>
+                <div id="hero-m-cur-lvl">Lv 0</div>
+                <div id="hero-m-cur-stat-1">—</div>
+                <div id="hero-m-cur-stat-2">—</div>
+              </section>
+              <section class="hero-compare-col next">
+                <div class="hero-compare-title">Siguiente</div>
+                <div id="hero-m-next-lvl">Lv 0</div>
+                <div id="hero-m-next-stat-1">—</div>
+                <div id="hero-m-next-stat-2">—</div>
+              </section>
             </div>
             <button class="hero-modal-upgrade" id="hero-m-upgrade" type="button">⬆ MEJORAR</button>
           </div>
@@ -161,11 +176,13 @@
         centerBodyEl.querySelector('#hero-m-icon').textContent = item.icon;
         centerBodyEl.querySelector('#hero-m-name').textContent = item.name;
         centerBodyEl.querySelector('#hero-m-level').textContent = `Nivel ${level}`;
-        centerBodyEl.querySelector('#hero-m-cost').textContent = `${upgradeCost(level)} 💛`;
+        centerBodyEl.querySelector('#hero-m-cost').textContent = `💰 ${upgradeCost(level)}`;
         centerBodyEl.querySelector('#hero-m-cur-lvl').textContent = `Lv ${level}`;
         centerBodyEl.querySelector('#hero-m-next-lvl').textContent = `Lv ${level + 1}`;
-        centerBodyEl.querySelector('#hero-m-cur-stat').textContent = `${item.stat}: ${statAtLevel(item, level - 1)}`;
-        centerBodyEl.querySelector('#hero-m-next-stat').textContent = `${item.stat}: ${statAtLevel(item, level)}`;
+        centerBodyEl.querySelector('#hero-m-cur-stat-1').textContent = `${item.stats[0].key}: ${formatStatValue(item.stats[0], level)}`;
+        centerBodyEl.querySelector('#hero-m-cur-stat-2').textContent = `${item.stats[1].key}: ${formatStatValue(item.stats[1], level)}`;
+        centerBodyEl.querySelector('#hero-m-next-stat-1').textContent = `${item.stats[0].key}: ${formatStatValue(item.stats[0], Math.min(80, level + 1))}`;
+        centerBodyEl.querySelector('#hero-m-next-stat-2').textContent = `${item.stats[1].key}: ${formatStatValue(item.stats[1], Math.min(80, level + 1))}`;
         overlay.classList.add('open');
       };
 

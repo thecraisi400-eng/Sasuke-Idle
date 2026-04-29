@@ -50,14 +50,14 @@ const dom = {
 };
 
 const heroGearConfig = [
-  { id: 0, name: 'Mano Principal', icon: '🗡️', stat: 'ATQ', base: 7 },
-  { id: 1, name: 'Cabeza', icon: '🪖', stat: 'VEL', base: 4 },
-  { id: 2, name: 'Torso', icon: '🛡️', stat: 'RES', base: 3 },
-  { id: 3, name: 'Piernas', icon: '👖', stat: 'DEF', base: 6 },
-  { id: 4, name: 'Pies', icon: '🥾', stat: 'PRE', base: 5 },
-  { id: 5, name: 'Cuello', icon: '📿', stat: 'EVA', base: 4 },
-  { id: 6, name: 'Anillo', icon: '💍', stat: 'FUE', base: 5 },
-  { id: 7, name: 'Accesorios', icon: '⛓️', stat: 'INT', base: 5 }
+  { id: 0, name: 'Mano Principal', icon: '🗡️', stats: [{ key: 'STR', prop: 'atk', gain: 3, percent: false }, { key: 'C.DMG', prop: 'critDmg', gain: 1.5, percent: true }] },
+  { id: 1, name: 'Cabeza', icon: '🪖', stats: [{ key: 'INT', prop: 'int', gain: 3, percent: false }, { key: 'MP', prop: 'mpMax', gain: 8, percent: false }] },
+  { id: 2, name: 'Torso', icon: '🛡️', stats: [{ key: 'HP', prop: 'hpMax', gain: 25, percent: false }, { key: 'DEF', prop: 'def', gain: 4, percent: false }] },
+  { id: 3, name: 'Piernas', icon: '👖', stats: [{ key: 'AGI', prop: 'agi', gain: 2, percent: false }, { key: 'LUK', prop: 'luk', gain: 0.5, percent: false }] },
+  { id: 4, name: 'Pies', icon: '🥾', stats: [{ key: 'AGI', prop: 'agi', gain: 2, percent: false }, { key: 'HP', prop: 'hpMax', gain: 20, percent: false }] },
+  { id: 5, name: 'Cuello', icon: '📿', stats: [{ key: 'RES', prop: 'res', gain: 0.2, percent: true }, { key: 'MP', prop: 'mpMax', gain: 6, percent: false }] },
+  { id: 6, name: 'Anillo', icon: '💍', stats: [{ key: 'CRI', prop: 'cri', gain: 0.063, percent: true }, { key: 'LUK', prop: 'luk', gain: 0.5, percent: false }] },
+  { id: 7, name: 'Accesorio', icon: '⛓️', stats: [{ key: 'DEF', prop: 'def', gain: 3, percent: false }, { key: 'RES', prop: 'res', gain: 0.15, percent: true }] }
 ];
 
 const sectionData = {
@@ -90,6 +90,15 @@ function recalcDerivedStats() {
   GAME_STATE.res = 6 + (0.12 * (level - 1));
   GAME_STATE.cri = Math.min(30, 5 + (0.25 * (level - 1)));
   GAME_STATE.critDmg = 150 + (2 * (level - 1));
+
+  GAME_STATE.hero.gearLevels.forEach((gearLevel, idx) => {
+    const item = heroGearConfig[idx];
+    if (!item) return;
+    item.stats.forEach((stat) => {
+      GAME_STATE[stat.prop] += stat.gain * gearLevel;
+    });
+  });
+
   GAME_STATE.hp = Math.min(GAME_STATE.hp, GAME_STATE.hpMax);
   GAME_STATE.mp = Math.min(GAME_STATE.mp, GAME_STATE.mpMax);
   GAME_STATE.expMax = getExpRequired(level);
@@ -147,7 +156,7 @@ function updateBars() {
   dom.expNext.textContent = `Siguiente nivel: ${nf.format(GAME_STATE.expMax - GAME_STATE.exp)} EXP`;
   dom.statAtk.textContent = nf.format(GAME_STATE.atk);
   dom.statDef.textContent = nf.format(GAME_STATE.def);
-  dom.statGold.textContent = formatGold(GAME_STATE.gold);
+  dom.statGold.textContent = `💰 ${formatGold(GAME_STATE.gold)}`;
   dom.statLevelBadge.textContent = `Lv.${GAME_STATE.level}`;
   dom.statLevelCurrent.textContent = `Nivel actual: ${GAME_STATE.level}`;
 }
@@ -160,14 +169,14 @@ function getDynamicCards(section) {
 
   const map = {
     mission: [
-      { type: 'mission', tag: '🟡 B-Rank · Activa', text: `Guardianes del Bosque: elimina ${missionGoal} enemigos`, sub: `Progreso: ${missionProgress}/${missionGoal} · Recompensa: ${nf.format(200 + lvl * 90)} oro + ${nf.format(60 + lvl * 25)} EXP` },
+      { type: 'mission', tag: '🟡 B-Rank · Activa', text: `Guardianes del Bosque: elimina ${missionGoal} enemigos`, sub: `Progreso: ${missionProgress}/${missionGoal} · Recompensa: 💰 ${nf.format(200 + lvl * 90)} + ${nf.format(60 + lvl * 25)} EXP` },
       { type: 'mission', tag: '🔴 A-Rank · Pendiente', text: 'Infiltración en la Aldea de la Roca', sub: `Requerido: Nivel ${nextMilestone} · Recompensa: Pergamino Raro` },
       { type: 'idle', tag: '🟢 Exploración', text: 'Patrulla del Bosque de la Muerte', sub: 'No genera recompensas automáticas' }
     ],
     clan: [
       { type: 'mission', tag: '🏯 Clan', text: `Nivel de clan sugerido: ${Math.max(1, Math.floor(lvl / 3))}`, sub: `Bonus grupal: +${Math.min(20, 5 + lvl)}% EXP` },
       { type: 'combat', tag: '⚔ Guerra de Clanes', text: `Contribución actual: ${nf.format(GAME_STATE.gold)} puntos`, sub: `Meta semanal: ${nf.format(2000 + lvl * 400)}` },
-      { type: 'idle', tag: '💰 Tributo', text: `Tributo acumulado: ${formatGold(Math.round(GAME_STATE.gold * 0.25))} oro`, sub: `Aporte por minuto según nivel ${lvl}` }
+      { type: 'idle', tag: '💰 Tributo', text: `Tributo acumulado: 💰 ${formatGold(Math.round(GAME_STATE.gold * 0.25))}`, sub: `Aporte por minuto según nivel ${lvl}` }
     ],
     events: [
       { type: 'combat', tag: '🔥 Evento Especial', text: `Festival del Fuego · Escala con nivel ${lvl}`, sub: `Objetivo: ${nf.format(1000 + lvl * 150)} pts` },
