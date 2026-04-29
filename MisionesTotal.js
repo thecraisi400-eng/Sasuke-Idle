@@ -99,23 +99,20 @@
       missions.forEach((m) => {
         const card = document.createElement('article');
         card.className = `mission-scroll state-${m.estado}`;
+        card.dataset.id = String(m.id);
         card.innerHTML = `
           <h3>${m.nombre}</h3>
           <p class="mission-description">${m.descripcion}</p>
           <p class="mission-goal"><strong>Objetivo:</strong> ${m.objetivo}</p>
-          <div class="mission-rewards">💰 ${m.oro} · ⭐ ${m.xp}</div>
-          <div class="mission-actions">
-            <button class="mission-btn success" data-id="${m.id}" ${m.estado !== 'activa' ? 'disabled' : ''}>Completar</button>
-            <button class="mission-btn fail" data-id="${m.id}" ${m.estado !== 'activa' ? 'disabled' : ''}>Fallar</button>
-          </div>`;
+          <div class="mission-rewards">💰 ${m.oro} · ⭐ ${m.xp}</div>`;
         wrap.appendChild(card);
       });
 
       wrap.addEventListener('click', (event) => {
-        const btn = event.target.closest('.mission-btn');
-        if (!btn || btn.disabled) return;
-        const id = Number(btn.dataset.id);
-        const result = btn.classList.contains('success') ? 'completada' : 'fallada';
+        const card = event.target.closest('.mission-scroll');
+        if (!card || !card.classList.contains('state-activa')) return;
+        const id = Number(card.dataset.id);
+        const result = Math.random() < 0.65 ? 'completada' : 'fallada';
         completeMission(id, result, gameState.level, (mission, status) => {
           if (status === 'completada' && typeof onApplyRewards === 'function') onApplyRewards(mission);
         });

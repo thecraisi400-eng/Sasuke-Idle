@@ -151,15 +151,17 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 }
 
 .mission-scroll {
-  background: linear-gradient(180deg, rgba(241, 196, 15, 0.12), rgba(0, 0, 0, 0.35));
-  border: 1px solid rgba(241, 196, 15, 0.38);
+  background: #d2b597;
+  border: 2px solid #000;
   border-radius: 6px;
   padding: 8px;
+  position: relative;
+  cursor: pointer;
 }
-.mission-scroll h3 { font-size: 14px; color: #ffd659; margin-bottom: 4px; }
+.mission-scroll h3 { font-size: 14px; color: #3d2c1c; margin-bottom: 4px; }
 .mission-description { font-size: 11px; line-height: 1.35; }
-.mission-goal { margin-top: 5px; font-size: 11px; color: #d9dfeb; }
-.mission-rewards { margin-top: 5px; color: #7bffc5; font-weight: 700; font-size: 11px; }
+.mission-goal { margin-top: 5px; font-size: 11px; color: #1f1f1f; }
+.mission-rewards { margin-top: 5px; color: #1f1f1f; font-weight: 700; font-size: 11px; }
 .mission-actions { margin-top: 8px; display: flex; gap: 6px; }
 .mission-btn {
   border: none;
@@ -172,8 +174,39 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 .mission-btn.success { background: #1e9e53; }
 .mission-btn.fail { background: #b0443a; }
 .mission-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-.mission-scroll.state-completada { border-color: rgba(46, 204, 113, 0.45); }
-.mission-scroll.state-fallada { border-color: rgba(231, 76, 60, 0.45); }
+.mission-scroll.state-completada,
+.mission-scroll.state-fallada {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 112px;
+  cursor: not-allowed;
+}
+
+.mission-scroll.state-completada {
+  background: #b9f2b0;
+  border-color: #000;
+}
+
+.mission-scroll.state-fallada {
+  background: #f5b0b0;
+  border-color: #000;
+}
+
+.mission-scroll.state-completada > *,
+.mission-scroll.state-fallada > * {
+  display: none;
+}
+
+.mission-scroll.state-completada::after,
+.mission-scroll.state-fallada::after {
+  font: 700 16px Rajdhani, sans-serif;
+  color: #000;
+  text-align: center;
+}
+
+.mission-scroll.state-completada::after { content: 'MISION COMPLETADA'; }
+.mission-scroll.state-fallada::after { content: 'MISION FALLADA'; }
 
 #hud-bottom { padding: 6px 4px 4px; }
 .nav-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
