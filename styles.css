@@ -157,11 +157,12 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
   padding: 8px;
   position: relative;
   cursor: pointer;
+  color: #000;
 }
-.mission-scroll h3 { font-size: 14px; color: #3d2c1c; margin-bottom: 4px; }
-.mission-description { font-size: 11px; line-height: 1.35; }
-.mission-goal { margin-top: 5px; font-size: 11px; color: #1f1f1f; }
-.mission-rewards { margin-top: 5px; color: #1f1f1f; font-weight: 700; font-size: 11px; }
+.mission-scroll h3 { font-size: 14px; color: #000; margin-bottom: 4px; }
+.mission-description { font-size: 11px; line-height: 1.35; color: #000; }
+.mission-goal { margin-top: 5px; font-size: 11px; color: #000; }
+.mission-rewards { margin-top: 5px; color: #000; font-weight: 700; font-size: 11px; }
 .mission-actions { margin-top: 8px; display: flex; gap: 6px; }
 .mission-btn {
   border: none;
@@ -179,7 +180,9 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 112px;
+  min-height: 84px;
+  width: 75%;
+  margin-inline: auto;
   cursor: not-allowed;
 }
 
