@@ -78,10 +78,6 @@ function getExpRequired(level) {
   return Math.round(67.5 * (level ** 2));
 }
 
-function getGoldPerTick(level) {
-  return 10 + level * 2;
-}
-
 function recalcDerivedStats() {
   const level = GAME_STATE.level;
   GAME_STATE.hpMax = 100 + (15 * (level - 1));
@@ -166,7 +162,7 @@ function getDynamicCards(section) {
     mission: [
       { type: 'mission', tag: '🟡 B-Rank · Activa', text: `Guardianes del Bosque: elimina ${missionGoal} enemigos`, sub: `Progreso: ${missionProgress}/${missionGoal} · Recompensa: ${nf.format(200 + lvl * 90)} oro + ${nf.format(60 + lvl * 25)} EXP` },
       { type: 'mission', tag: '🔴 A-Rank · Pendiente', text: 'Infiltración en la Aldea de la Roca', sub: `Requerido: Nivel ${nextMilestone} · Recompensa: Pergamino Raro` },
-      { type: 'idle', tag: '🟢 Idle · En curso', text: 'Patrulla del Bosque de la Muerte (automática)', sub: `+${getGoldPerTick(lvl)} oro/tick · +${12 + lvl * 2} EXP/tick` }
+      { type: 'idle', tag: '🟢 Exploración', text: 'Patrulla del Bosque de la Muerte', sub: 'No genera recompensas automáticas' }
     ],
     clan: [
       { type: 'mission', tag: '🏯 Clan', text: `Nivel de clan sugerido: ${Math.max(1, Math.floor(lvl / 3))}`, sub: `Bonus grupal: +${Math.min(20, 5 + lvl)}% EXP` },
@@ -186,7 +182,7 @@ function getDynamicCards(section) {
     battle: [
       { type: 'combat', tag: '⚔ Combate Activo', text: `Ronda ${Math.max(1, lvl)} · Enemigo escalado`, sub: `Tu HP: ${nf.format(GAME_STATE.hp)} / ${nf.format(GAME_STATE.hpMax)}` },
       { type: 'mission', tag: '🏆 Arena PvP', text: `Liga de Ninjas · División ${Math.max(1, Math.ceil(lvl / 10))}`, sub: `Poder actual: ${nf.format(GAME_STATE.atk + GAME_STATE.def)}` },
-      { type: 'idle', tag: '🤖 Idle Combat', text: `Dungeon Automático · Piso ${Math.max(1, lvl)}`, sub: `Oro/tick: +${getGoldPerTick(lvl)} · EXP/tick: +${12 + lvl * 2}` }
+      { type: 'idle', tag: '🤖 Simulación', text: `Dungeon · Piso ${Math.max(1, lvl)}`, sub: 'Sin ganancias automáticas por tiempo' }
     ],
     summon: [
       { type: 'mission', tag: '⭐ Invocación', text: `Pergaminos: ${Math.floor(GAME_STATE.gold / 500)}`, sub: 'Tasa SSR: 3.0% · SR: 15%' },
@@ -241,25 +237,6 @@ function spawnParticles(x, y, type = 'smoke') { particles.push({ x, y, vx: Math.
 function animateParticles() { ctx.clearRect(0, 0, canvas.width, canvas.height); particles = particles.filter((p) => p.life > 0); for (const p of particles) { ctx.fillStyle = `${p.color}${p.life})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2); ctx.fill(); p.x += p.vx; p.y += p.vy; p.life -= p.decay; } requestAnimationFrame(animateParticles); }
 animateParticles();
 
-function idleLoop() {
-  GAME_STATE.mp = Math.min(GAME_STATE.mpMax, GAME_STATE.mp + Math.max(1, Math.round(GAME_STATE.level * 0.8)));
-  GAME_STATE.exp += 12 + GAME_STATE.level * 2;
-  GAME_STATE.gold += getGoldPerTick(GAME_STATE.level);
-
-  while (GAME_STATE.exp >= GAME_STATE.expMax) {
-    GAME_STATE.exp -= GAME_STATE.expMax;
-    GAME_STATE.level += 1;
-    recalcDerivedStats();
-  }
-
-  const dmg = Math.max(1, Math.round(Math.random() * (6 + GAME_STATE.level)));
-  GAME_STATE.hp = Math.max(1, Math.min(GAME_STATE.hpMax, GAME_STATE.hp - dmg + Math.round(GAME_STATE.def * 0.2)));
-
-  updateBars();
-  if (GAME_STATE.activeSection !== 'hero') renderSection(GAME_STATE.activeSection);
-  saveGame();
-}
-
 dom.navGrid.addEventListener('click', (event) => {
   const btn = event.target.closest('.nav-btn');
   if (!btn) return;
@@ -289,4 +266,3 @@ if (!loadGame()) newGame();
 recalcDerivedStats();
 updateBars();
 renderSection('hero');
-setInterval(idleLoop, 1200);
