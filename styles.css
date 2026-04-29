@@ -138,6 +138,43 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 .dmg-float { color: #e74c3c; font: 700 clamp(11px, 3.5vw, 15px) Rajdhani, sans-serif; animation: floatUp 1.2s ease forwards; display: inline-block; }
 .idle-dots::after { content: '...'; animation: dots 1.5s steps(3, end) infinite; }
 
+#hud-center.mission-mode .center-body {
+  padding: 0;
+}
+
+.missions-board {
+  height: 100%;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+}
+
+.mission-scroll {
+  background: linear-gradient(180deg, rgba(241, 196, 15, 0.12), rgba(0, 0, 0, 0.35));
+  border: 1px solid rgba(241, 196, 15, 0.38);
+  border-radius: 6px;
+  padding: 8px;
+}
+.mission-scroll h3 { font-size: 14px; color: #ffd659; margin-bottom: 4px; }
+.mission-description { font-size: 11px; line-height: 1.35; }
+.mission-goal { margin-top: 5px; font-size: 11px; color: #d9dfeb; }
+.mission-rewards { margin-top: 5px; color: #7bffc5; font-weight: 700; font-size: 11px; }
+.mission-actions { margin-top: 8px; display: flex; gap: 6px; }
+.mission-btn {
+  border: none;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font: 700 11px Rajdhani, sans-serif;
+  color: #fff;
+  cursor: pointer;
+}
+.mission-btn.success { background: #1e9e53; }
+.mission-btn.fail { background: #b0443a; }
+.mission-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.mission-scroll.state-completada { border-color: rgba(46, 204, 113, 0.45); }
+.mission-scroll.state-fallada { border-color: rgba(231, 76, 60, 0.45); }
+
 #hud-bottom { padding: 6px 4px 4px; }
 .nav-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .nav-btn {
