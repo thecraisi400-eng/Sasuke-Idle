@@ -212,11 +212,27 @@ function renderSection(section, btn) {
   const data = sectionData[section];
   if (!data) return;
   GAME_STATE.activeSection = section;
+  const hudCenter = document.getElementById('hud-center');
+  hudCenter.classList.remove('hero-mode', 'mission-mode');
 
   if (section === 'hero' && window.BotonHero) {
-    window.BotonHero.render(dom.centerBody, dom.centerTitle, dom.centerBadge, document.getElementById('hud-center'), GAME_STATE, heroGearConfig, saveGame, recalcDerivedStats, updateBars);
+    window.BotonHero.render(dom.centerBody, dom.centerTitle, dom.centerBadge, hudCenter, GAME_STATE, heroGearConfig, saveGame, recalcDerivedStats, updateBars);
+  } else if (section === 'mission' && window.MisionesTotal) {
+    hudCenter.classList.add('mission-mode');
+    window.MisionesTotal.render(dom.centerBody, dom.centerTitle, dom.centerBadge, GAME_STATE, (mission) => {
+      GAME_STATE.gold += mission.oro;
+      GAME_STATE.exp += mission.xp;
+      while (GAME_STATE.exp >= GAME_STATE.expMax) {
+        GAME_STATE.exp -= GAME_STATE.expMax;
+        GAME_STATE.level += 1;
+        recalcDerivedStats();
+        GAME_STATE.hp = GAME_STATE.hpMax;
+        GAME_STATE.mp = GAME_STATE.mpMax;
+      }
+      saveGame();
+      updateBars();
+    });
   } else {
-    document.getElementById('hud-center').classList.remove('hero-mode');
     dom.centerTitle.textContent = data.title;
     dom.centerBadge.textContent = data.badge;
     dom.centerBody.innerHTML = '';
