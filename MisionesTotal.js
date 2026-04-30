@@ -85,7 +85,7 @@
           <div class="mission-rank-action">
             ${locked
               ? `<div class="mission-rank-lock">🔒 Nv. ${m.lvl} requerido</div>`
-              : `<button class="mission-rank-fight" data-action="fight" data-rank="${rankKey}" data-name="${m.name}" data-xp="${m.xp}" data-gold="${m.gold}">⚔ LUCHAR</button>`}
+              : `<button class="mission-rank-fight" data-action="fight" data-rank="${rankKey}" data-name="${m.name}" data-xp="${m.xp}" data-gold="${m.gold}" data-hp="${m.hp}" data-atk="${m.atk}" data-def="${m.def}" data-lvl="${m.lvl}">⚔ LUCHAR</button>`}
           </div>
           <div class="mission-rank-enemy">
             <span>❤️ ${m.hp}</span>
@@ -131,7 +131,7 @@
   };
 
   window.MisionesTotal = {
-    render(container, titleEl, badgeEl, gameState, onApplyRewards) {
+    render(container, titleEl, badgeEl, gameState, onMissionAction) {
       titleEl.textContent = '';
       badgeEl.textContent = '';
       container.innerHTML = '';
@@ -150,8 +150,18 @@
         if (action === 'back-ranks') setScreen('ranks');
 
         if (action === 'fight') {
-          if (typeof onApplyRewards === 'function') {
-            onApplyRewards({ oro: Number(target.dataset.gold), xp: Number(target.dataset.xp) });
+          if (typeof onMissionAction === 'function') {
+            onMissionAction({
+              rankKey: target.dataset.rank,
+              rankTitle: rankCatalog[target.dataset.rank]?.title || 'Misión',
+              name: target.dataset.name,
+              xp: Number(target.dataset.xp),
+              gold: Number(target.dataset.gold),
+              hp: Number(target.dataset.hp),
+              atk: Number(target.dataset.atk),
+              def: Number(target.dataset.def),
+              lvl: Number(target.dataset.lvl)
+            });
           }
         }
 
