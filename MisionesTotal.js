@@ -58,6 +58,9 @@
       objetivo: mission.objetivo(playerLevel),
       oro: mission.oro(playerLevel),
       xp: mission.xp(playerLevel),
+      eHP: mission.eHP,
+      eATK: mission.eATK,
+      eDEF: mission.eDEF,
       estado: 'activa'
     }));
   }
@@ -105,7 +108,12 @@
           <h3>${m.nombre}</h3>
           <p class="mission-description">${m.descripcion}</p>
           <p class="mission-goal"><strong>Objetivo:</strong> ${m.objetivo}</p>
-          <div class="mission-rewards">💰 ${m.oro} · ⭐ ${m.xp}</div>`;
+          <div class="mission-rewards">💰 ${m.oro} · ⭐ ${m.xp}</div>
+          <div class="mission-enemy-stats">
+            <span>❤️ ${m.eHP}</span>
+            <span>⚔️ ${m.eATK}</span>
+            <span>🛡️ ${m.eDEF}</span>
+          </div>`;
         wrap.appendChild(card);
       });
 
