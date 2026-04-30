@@ -608,3 +608,21 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 .mission-rank-action { flex: 1; display:flex; justify-content:center; }
 .mission-rank-fight { background:#00695c; border:1px solid #00e5b0; color:#00e5b0; border-radius:5px; font:700 10px Rajdhani,sans-serif; padding:5px 8px; }
 .mission-rank-lock { font-size:9px; color:rgba(200,216,240,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:5px; padding:4px 6px; text-align:center; }
+
+#hud-center.mission-mode .center-body.battle-mission-full {
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.battle-mission-frame-wrap {
+  width: 100%;
+  height: 100%;
+}
+
+.battle-mission-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}

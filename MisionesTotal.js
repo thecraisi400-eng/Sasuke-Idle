@@ -150,11 +150,23 @@
         if (action === 'back-ranks') setScreen('ranks');
 
         if (action === 'fight') {
+          const rankKey = target.dataset.rank;
+          if (rankKey === 'd' && window.BatallaMision?.getHtml) {
+            titleEl.textContent = '⚔ BATALLA DE MISIÓN RANGO D';
+            badgeEl.textContent = 'COMBATE';
+            container.innerHTML = '<div class="battle-mission-frame-wrap"><iframe class="battle-mission-frame" title="BatallaMision"></iframe></div>';
+            container.classList.add('battle-mission-full');
+            const iframe = container.querySelector('iframe');
+            iframe.srcdoc = window.BatallaMision.getHtml();
+            return;
+          }
+
           if (typeof onApplyRewards === 'function') {
             onApplyRewards({ oro: Number(target.dataset.gold), xp: Number(target.dataset.xp) });
           }
         }
 
+        container.classList.remove('battle-mission-full');
         renderView(container, gameState.level);
       };
     }
