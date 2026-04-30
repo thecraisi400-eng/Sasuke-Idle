@@ -150,6 +150,23 @@
         if (action === 'back-ranks') setScreen('ranks');
 
         if (action === 'fight') {
+          const rankKey = target.dataset.rank;
+          if (rankKey === 'd' && window.MissionRankDBattle) {
+            container.classList.add('d-rank-battle-mode');
+            window.MissionRankDBattle.mount(
+              container,
+              { name: target.dataset.name, xp: Number(target.dataset.xp), gold: Number(target.dataset.gold), hp: Number(target.closest('.mission-rank-card')?.querySelector('.mission-rank-enemy span')?.textContent?.replace(/\D/g, '') || 120) },
+              (reward) => {
+                if (typeof onApplyRewards === 'function') onApplyRewards({ oro: reward.oro, xp: reward.xp });
+              },
+              () => {
+                container.classList.remove('d-rank-battle-mode');
+                renderView(container, gameState.level);
+              }
+            );
+            return;
+          }
+
           if (typeof onApplyRewards === 'function') {
             onApplyRewards({ oro: Number(target.dataset.gold), xp: Number(target.dataset.xp) });
           }
