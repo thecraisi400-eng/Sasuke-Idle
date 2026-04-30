@@ -163,6 +163,7 @@
               lvl: Number(target.dataset.lvl)
             });
           }
+          return;
         }
 
         renderView(container, gameState.level);
