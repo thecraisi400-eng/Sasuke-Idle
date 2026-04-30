@@ -232,6 +232,9 @@ function renderSection(section, btn) {
       saveGame();
       updateBars();
     });
+  } else if (section === 'battle' && window.BatallaReal) {
+    hudCenter.classList.add('battle-mode');
+    window.BatallaReal.render(dom.centerBody, dom.centerTitle, dom.centerBadge);
   } else {
     dom.centerTitle.textContent = data.title;
     dom.centerBadge.textContent = data.badge;
