@@ -96,10 +96,8 @@
       </article>`;
   };
 
-  const renderMain = (level) => `
+  const renderMain = () => `
     <section class="mission-rank-screen is-active">
-      <header class="mission-rank-header"><h3>📜 MISIONES RANGO</h3></header>
-      <div class="mission-rank-level">⚔️ NIVEL HÉROE: <strong>${level}</strong></div>
       <div class="mission-rank-content mission-rank-content-center">
         <button class="mission-rank-main-btn" data-action="go-ranks">📜 MISIONES RANGO ⚡</button>
       </div>
@@ -131,7 +129,7 @@
   };
 
   const renderView = (container, playerLevel) => {
-    if (state.screen === 'main') container.innerHTML = renderMain(playerLevel);
+    if (state.screen === 'main') container.innerHTML = renderMain();
     if (state.screen === 'ranks') container.innerHTML = renderRanks();
     if (state.screen === 'rank-detail' && state.rank) container.innerHTML = renderRankDetail(state.rank, playerLevel);
   };

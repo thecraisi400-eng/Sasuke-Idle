@@ -27,10 +27,6 @@
 
 
   function createHeroLayout(state) {
-    const hpPct = ((state.hp / state.hpMax) * 100).toFixed(1);
-    const mpPct = ((state.mp / state.mpMax) * 100).toFixed(1);
-    const expPct = ((state.exp / state.expMax) * 100).toFixed(1);
-
     return `
       <div class="hero-sheet" id="hero-sheet-root">
         <div class="hero-col-left">
@@ -59,23 +55,7 @@
           </section>
 
           <section class="hero-block hero-stats-block">
-            <header class="hero-section-label">◈ VITALES</header>
-            <div class="hero-bars">
-              <div class="hero-bar-row hp">
-                <div class="hero-bar-label">HP <span>${state.hp.toLocaleString('es-ES')} / ${state.hpMax.toLocaleString('es-ES')}</span></div>
-                <div class="hero-bar-track"><div class="hero-bar-fill" style="width:${hpPct}%"></div></div>
-              </div>
-              <div class="hero-bar-row ck">
-                <div class="hero-bar-label">CK <span>${state.mp.toLocaleString('es-ES')} / ${state.mpMax.toLocaleString('es-ES')}</span></div>
-                <div class="hero-bar-track"><div class="hero-bar-fill" style="width:${mpPct}%"></div></div>
-              </div>
-              <div class="hero-bar-row exp">
-                <div class="hero-bar-label">EXP <span>${expPct}%</span></div>
-                <div class="hero-bar-track"><div class="hero-bar-fill" style="width:${expPct}%"></div></div>
-              </div>
-            </div>
-
-            <header class="hero-section-label hero-combat-title">◈ COMBATE</header>
+            <header class="hero-section-label hero-combat-title">◈ ESTADÍSTICAS ACTUALES</header>
             <div class="hero-combat-grid" id="hero-combat-grid"></div>
           </section>
         </div>
