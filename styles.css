@@ -608,3 +608,19 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 .mission-rank-action { flex: 1; display:flex; justify-content:center; }
 .mission-rank-fight { background:#00695c; border:1px solid #00e5b0; color:#00e5b0; border-radius:5px; font:700 10px Rajdhani,sans-serif; padding:5px 8px; }
 .mission-rank-lock { font-size:9px; color:rgba(200,216,240,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:5px; padding:4px 6px; text-align:center; }
+
+
+.d-rank-battle-mode { padding: 0 !important; }
+.d-rank-battle-shell { height: 100%; display: flex; flex-direction: column; background: #050308; }
+.d-rank-battle-topbar { min-height: 40px; display:flex; align-items:center; gap:8px; padding: 6px 8px; border-bottom:1px solid rgba(255,120,0,0.25); }
+.d-rank-battle-back { background: transparent; border:1px solid rgba(255,180,0,0.5); color:#ffd700; border-radius:4px; font:700 10px Rajdhani,sans-serif; padding:4px 8px; }
+.d-rank-battle-title { flex:1; font:700 11px Rajdhani,sans-serif; color:#FFD700; text-align:center; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.d-rank-battle-stage { position: relative; flex: 1; overflow: hidden; }
+#d-rank-canvas, #d-rank-veil, #d-rank-winner-screen { position:absolute; inset:0; }
+#d-rank-veil { pointer-events:none; z-index:8; background: rgba(0,0,0,0); transition: background 0.2s ease; }
+#d-rank-winner-screen { display:none; flex-direction:column; justify-content:center; align-items:center; z-index:20; background: radial-gradient(ellipse at center, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.95) 100%); }
+#d-rank-win-banner { border-top: 1px solid rgba(255,200,0,0.4); border-bottom: 1px solid rgba(255,200,0,0.4); padding: 12px 20px; text-align:center; }
+#d-rank-win-label { font-size: 10px; letter-spacing: 4px; color:#AA8800; margin-bottom:4px; }
+#d-rank-win-name { font-size: 34px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; -webkit-text-stroke: 1px rgba(255,200,0,0.5); }
+#d-rank-win-sub { font-size: 11px; letter-spacing: 2px; color: #888; margin-top: 6px; }
+#d-rank-btn-restart { margin-top:22px; padding:9px 20px; background: transparent; border:1px solid rgba(255,180,0,0.5); color:#FFD700; font-size:10px; letter-spacing:2px; cursor:pointer; text-transform: uppercase; }
