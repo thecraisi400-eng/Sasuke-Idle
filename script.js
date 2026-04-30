@@ -213,7 +213,7 @@ function renderSection(section, btn) {
   if (!data) return;
   GAME_STATE.activeSection = section;
   const hudCenter = document.getElementById('hud-center');
-  hudCenter.classList.remove('hero-mode', 'mission-mode');
+  hudCenter.classList.remove('hero-mode', 'mission-mode', 'battle-mode');
 
   if (section === 'hero' && window.BotonHero) {
     window.BotonHero.render(dom.centerBody, dom.centerTitle, dom.centerBadge, hudCenter, GAME_STATE, heroGearConfig, saveGame, recalcDerivedStats, updateBars);

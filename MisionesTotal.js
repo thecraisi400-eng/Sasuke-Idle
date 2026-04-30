@@ -135,6 +135,7 @@
       titleEl.textContent = '';
       badgeEl.textContent = '';
       container.innerHTML = '';
+      container.classList.remove('battle-shell');
       container.classList.add('missions-shell');
       setScreen('main');
       renderView(container, gameState.level);
@@ -150,9 +151,25 @@
         if (action === 'back-ranks') setScreen('ranks');
 
         if (action === 'fight') {
-          if (typeof onApplyRewards === 'function') {
-            onApplyRewards({ oro: Number(target.dataset.gold), xp: Number(target.dataset.xp) });
+          const missionPayload = {
+            rank: target.dataset.rank,
+            name: target.dataset.name,
+            xp: Number(target.dataset.xp),
+            oro: Number(target.dataset.gold)
+          };
+          container.classList.remove('missions-shell');
+          container.classList.add('battle-shell');
+          if (window.BatallaMision && typeof window.BatallaMision.render === 'function') {
+            window.BatallaMision.render(container, {
+              onExit: () => {
+                container.classList.remove('battle-shell');
+                container.classList.add('missions-shell');
+                renderView(container, gameState.level);
+                if (typeof onApplyRewards === 'function') onApplyRewards(missionPayload);
+              }
+            });
           }
+          return;
         }
 
         renderView(container, gameState.level);
