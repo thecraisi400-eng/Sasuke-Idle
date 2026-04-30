@@ -608,3 +608,62 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 .mission-rank-action { flex: 1; display:flex; justify-content:center; }
 .mission-rank-fight { background:#00695c; border:1px solid #00e5b0; color:#00e5b0; border-radius:5px; font:700 10px Rajdhani,sans-serif; padding:5px 8px; }
 .mission-rank-lock { font-size:9px; color:rgba(200,216,240,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:5px; padding:4px 6px; text-align:center; }
+
+
+#hud-center.mission-mode .center-header {
+  display: none;
+}
+
+#hud-center.mission-mode .center-body {
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.bm-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #050308;
+}
+
+.bm-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.bm-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0));
+}
+
+.bm-title { font: 700 11px Rajdhani, sans-serif; color: #ffd166; }
+.bm-close, .bm-retry, .bm-back {
+  border: 1px solid rgba(255,255,255,.3);
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  font: 700 10px Rajdhani, sans-serif;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.bm-end {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.bm-end-title { color: #ffe082; font-size: 24px; }
+.bm-end-sub { color: #fff; font-size: 12px; }

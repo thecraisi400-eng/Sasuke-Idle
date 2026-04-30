@@ -220,17 +220,26 @@ function renderSection(section, btn) {
   } else if (section === 'mission' && window.MisionesTotal) {
     hudCenter.classList.add('mission-mode');
     window.MisionesTotal.render(dom.centerBody, dom.centerTitle, dom.centerBadge, GAME_STATE, (mission) => {
-      GAME_STATE.gold += mission.oro;
-      GAME_STATE.exp += mission.xp;
-      while (GAME_STATE.exp >= GAME_STATE.expMax) {
-        GAME_STATE.exp -= GAME_STATE.expMax;
-        GAME_STATE.level += 1;
-        recalcDerivedStats();
-        GAME_STATE.hp = GAME_STATE.hpMax;
-        GAME_STATE.mp = GAME_STATE.mpMax;
-      }
-      saveGame();
-      updateBars();
+      if (!window.BatallaMision) return;
+      window.BatallaMision.render(dom.centerBody, mission, GAME_STATE, (result) => {
+        if (!result || result.closed) {
+          renderSection('mission');
+          return;
+        }
+        if (result.won) {
+          GAME_STATE.gold += mission.gold;
+          GAME_STATE.exp += mission.xp;
+          while (GAME_STATE.exp >= GAME_STATE.expMax) {
+            GAME_STATE.exp -= GAME_STATE.expMax;
+            GAME_STATE.level += 1;
+            recalcDerivedStats();
+            GAME_STATE.hp = GAME_STATE.hpMax;
+            GAME_STATE.mp = GAME_STATE.mpMax;
+          }
+          saveGame();
+          updateBars();
+        }
+      });
     });
   } else {
     dom.centerTitle.textContent = data.title;
