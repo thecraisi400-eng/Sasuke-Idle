@@ -624,7 +624,10 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
   position: relative;
   width: 100%;
   height: 100%;
+  margin: 0;
+  padding: 0;
   background: #050308;
+  overflow: hidden;
 }
 
 .bm-canvas {
@@ -667,3 +670,5 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 
 .bm-end-title { color: #ffe082; font-size: 24px; }
 .bm-end-sub { color: #fff; font-size: 12px; }
+
+#bm-veil { position:absolute; inset:0; pointer-events:none; z-index:8; background:rgba(0,0,0,0); transition: background .2s ease; }
