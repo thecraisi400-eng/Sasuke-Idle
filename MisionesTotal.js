@@ -101,11 +101,13 @@
         const card = document.createElement('article');
         card.className = `mission-scroll state-${m.estado}`;
         card.dataset.id = String(m.id);
+        const missionBase = missionPoolE.find((baseMission) => baseMission.id === m.id);
         card.innerHTML = `
           <h3>${m.nombre}</h3>
           <p class="mission-description">${m.descripcion}</p>
           <p class="mission-goal"><strong>Objetivo:</strong> ${m.objetivo}</p>
-          <div class="mission-rewards">💰 ${m.oro} · ⭐ ${m.xp}</div>`;
+          <div class="mission-rewards">💰 ${m.oro} · ⭐ ${m.xp}</div>
+          <div class="mission-enemy-stats">HP: ${missionBase?.eHP ?? '-'} · ATK: ${missionBase?.eATK ?? '-'} · DEF: ${missionBase?.eDEF ?? '-'}</div>`;
         wrap.appendChild(card);
       });
 
