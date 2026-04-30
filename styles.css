@@ -608,3 +608,33 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 .mission-rank-action { flex: 1; display:flex; justify-content:center; }
 .mission-rank-fight { background:#00695c; border:1px solid #00e5b0; color:#00e5b0; border-radius:5px; font:700 10px Rajdhani,sans-serif; padding:5px 8px; }
 .mission-rank-lock { font-size:9px; color:rgba(200,216,240,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:5px; padding:4px 6px; text-align:center; }
+
+
+#hud-center.battle-mode .center-body {
+  padding: 0;
+  overflow: hidden;
+}
+
+.br-shell {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: #050308;
+}
+
+.br-stage-wrap {
+  position: relative;
+  width: min(100%, 460px);
+  height: min(100%, 360px);
+  box-shadow: 0 0 0 1px rgba(255,120,0,0.25), 0 0 30px rgba(255,80,0,0.3), 0 0 80px rgba(120,0,255,0.15);
+  overflow: hidden;
+}
+
+.br-canvas { width: 100%; height: 100%; display: block; }
+.br-veil { position:absolute; inset:0; pointer-events:none; background: rgba(0,0,0,0); transition: background .2s ease; }
+.br-winner { position:absolute; inset:0; display:grid; place-items:center; background: radial-gradient(ellipse at center, rgba(0,0,0,.84), rgba(0,0,0,.95)); }
+.br-winner-box { border-top: 1px solid rgba(255,200,0,.45); border-bottom: 1px solid rgba(255,200,0,.45); padding: 12px 24px; text-align:center; color:#f4d77a; }
+.br-winner-name { display:block; font: 900 32px Rajdhani, sans-serif; letter-spacing: 3px; color: #ffd700; margin: 4px 0 10px; }
+.br-restart { border:1px solid rgba(255,180,0,.5); background: transparent; color:#ffd700; font:700 11px Rajdhani,sans-serif; padding: 8px 14px; cursor:pointer; }
+.br-restart:hover { background: rgba(255,180,0,.14); }
