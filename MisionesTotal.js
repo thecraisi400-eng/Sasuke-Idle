@@ -105,10 +105,6 @@
 
   const renderRanks = () => `
     <section class="mission-rank-screen is-active">
-      <header class="mission-rank-header">
-        <button class="mission-rank-back" data-action="back-main">◀ VOLVER</button>
-        <h3>⚔️ SELECCIONAR RANGO</h3>
-      </header>
       <div class="mission-rank-content mission-rank-rank-list">
         ${rankOrder.map((key) => `<button class="mission-rank-rank-btn rank-${key}" data-action="open-rank" data-rank="${key}">${rankCatalog[key].icon} ${rankCatalog[key].title} ▶</button>`).join('')}
       </div>

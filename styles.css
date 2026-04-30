@@ -561,7 +561,7 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
   padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 .mission-rank-content-center {
   align-items: stretch;
@@ -576,12 +576,18 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
   color: #00e5ff;
   font: 700 14px Rajdhani, sans-serif;
 }
-.mission-rank-rank-list { justify-content: center; gap: 10px; }
+.mission-rank-rank-list {
+  justify-content: flex-start;
+  gap: 14px;
+  padding-top: 12px;
+}
 .mission-rank-rank-btn {
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid;
-  padding: 10px;
-  font: 700 11px Rajdhani, sans-serif;
+  padding: 16px 14px;
+  min-height: 64px;
+  font: 700 16px Rajdhani, sans-serif;
+  letter-spacing: 0.5px;
   text-align: left;
 }
 .rank-d { color:#52c41a; border-color:#52c41a; background:#102007; }
