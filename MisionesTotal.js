@@ -150,6 +150,17 @@
         if (action === 'back-ranks') setScreen('ranks');
 
         if (action === 'fight') {
+          if (target.dataset.rank === 'd' && window.BATALLA_MISION_HTML) {
+            container.innerHTML = `
+              <section class="battle-mission-view">
+                <div class="battle-mission-top">
+                  <button class="mission-rank-back" data-action="back-ranks">◀ VOLVER</button>
+                </div>
+                <iframe class="battle-mission-frame" title="Batalla Misión" srcdoc="${window.BATALLA_MISION_HTML.replace(/"/g, '&quot;')}"></iframe>
+              </section>`;
+            return;
+          }
+
           if (typeof onApplyRewards === 'function') {
             onApplyRewards({ oro: Number(target.dataset.gold), xp: Number(target.dataset.xp) });
           }
