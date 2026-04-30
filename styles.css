@@ -508,3 +508,101 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
   font-weight: 700;
   cursor: pointer;
 }
+
+#hud-center.mission-mode .center-header {
+  display: none;
+}
+
+#hud-center.mission-mode .center-body {
+  padding: 0;
+  height: 100%;
+}
+
+.missions-shell {
+  height: 100%;
+  background: linear-gradient(180deg, #131a26 0%, #0d1117 100%);
+}
+
+.mission-rank-screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mission-rank-header {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.25);
+  background: linear-gradient(90deg, #0d1117, #1c2740, #0d1117);
+}
+.mission-rank-header h3 {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: #00e5ff;
+}
+.mission-rank-back {
+  position: absolute;
+  left: 8px;
+  background: #162035;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  color: #00e5ff;
+  font: 700 10px Rajdhani, sans-serif;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.mission-rank-level {
+  font-size: 11px;
+  padding: 7px 10px;
+  color: #c8d8f0;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+}
+.mission-rank-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mission-rank-content-center {
+  align-items: center;
+  justify-content: center;
+}
+.mission-rank-main-btn {
+  width: 100%;
+  border: 1px solid rgba(0,229,255,0.35);
+  border-radius: 10px;
+  padding: 14px 8px;
+  background: linear-gradient(135deg, #1c2740, #162035);
+  color: #00e5ff;
+  font: 700 14px Rajdhani, sans-serif;
+}
+.mission-rank-rank-list { justify-content: center; gap: 10px; }
+.mission-rank-rank-btn {
+  border-radius: 8px;
+  border: 1px solid;
+  padding: 10px;
+  font: 700 11px Rajdhani, sans-serif;
+  text-align: left;
+}
+.rank-d { color:#52c41a; border-color:#52c41a; background:#102007; }
+.rank-c { color:#1890ff; border-color:#1890ff; background:#081d32; }
+.rank-b { color:#9b59b6; border-color:#9b59b6; background:#190b28; }
+.rank-a { color:#fa8c16; border-color:#fa8c16; background:#2c1808; }
+.rank-s { color:#f5222d; border-color:#f5222d; background:#2a0808; }
+
+.mission-rank-card {
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: linear-gradient(135deg, #1c2740, #162035);
+  padding: 8px;
+}
+.mission-rank-card h3 { font-size: 11px; margin-bottom: 6px; }
+.mission-rank-row { display:flex; gap:6px; align-items:center; }
+.mission-rank-rewards, .mission-rank-enemy { display:flex; flex-direction:column; font-size:10px; min-width:90px; }
+.mission-rank-action { flex: 1; display:flex; justify-content:center; }
+.mission-rank-fight { background:#00695c; border:1px solid #00e5b0; color:#00e5b0; border-radius:5px; font:700 10px Rajdhani,sans-serif; padding:5px 8px; }
+.mission-rank-lock { font-size:9px; color:rgba(200,216,240,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:5px; padding:4px 6px; text-align:center; }
