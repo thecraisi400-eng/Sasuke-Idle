@@ -611,11 +611,11 @@ body::after { background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0
 
 
 .d-rank-battle-mode { padding: 0 !important; }
-.d-rank-battle-shell { height: 100%; display: flex; flex-direction: column; background: #050308; }
+.d-rank-battle-shell { height: 100%; min-height: 0; display: flex; flex-direction: column; background: #050308; }
 .d-rank-battle-topbar { min-height: 40px; display:flex; align-items:center; gap:8px; padding: 6px 8px; border-bottom:1px solid rgba(255,120,0,0.25); }
 .d-rank-battle-back { background: transparent; border:1px solid rgba(255,180,0,0.5); color:#ffd700; border-radius:4px; font:700 10px Rajdhani,sans-serif; padding:4px 8px; }
 .d-rank-battle-title { flex:1; font:700 11px Rajdhani,sans-serif; color:#FFD700; text-align:center; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.d-rank-battle-stage { position: relative; flex: 1; overflow: hidden; }
+.d-rank-wrapper, .d-rank-battle-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
 #d-rank-canvas, #d-rank-veil, #d-rank-winner-screen { position:absolute; inset:0; }
 #d-rank-veil { pointer-events:none; z-index:8; background: rgba(0,0,0,0); transition: background 0.2s ease; }
 #d-rank-winner-screen { display:none; flex-direction:column; justify-content:center; align-items:center; z-index:20; background: radial-gradient(ellipse at center, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.95) 100%); }
