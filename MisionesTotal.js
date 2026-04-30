@@ -1,134 +1,168 @@
 (() => {
-  const RECENT_KEY = 'sasuke_idle_missions_recent';
-  const ACTIVE_KEY = 'sasuke_idle_missions_active';
-  const RECENT_MAX = 5;
-  const ACTIVE_COUNT = 5;
-
-  const missionPoolE = [
-    { id: 1, nombre: 'Entrenamiento con Maniquíes', rango: 'E', nivelMinimo: 1, descripcion: 'Golpea los maniquíes de madera para mejorar tu coordinación básica.', objetivo: (nivel) => `Derrotar ${nivel * 2} maniquíes`, oro: (nivel) => nivel * 4, xp: (nivel) => nivel * 2, eHP: 50, eATK: 5, eDEF: 2 },
-    { id: 2, nombre: 'Invasión de Roedores', rango: 'E', nivelMinimo: 1, descripcion: 'Los almacenes de comida están llenos de ratas gigantes. Deshazte de ellas.', objetivo: (nivel) => `Derrotar ${nivel + 5} ratas de alcantarilla`, oro: (nivel) => nivel * 6, xp: (nivel) => nivel * 3, eHP: 65, eATK: 8, eDEF: 4 },
-    { id: 3, nombre: 'Suministros para el Hospital', rango: 'E', nivelMinimo: 2, descripcion: 'Protege a los recolectores de hierbas de las plantas carnívoras.', objetivo: (nivel) => `Derrotar ${nivel * 2} plantas mutantes`, oro: (nivel) => nivel * 5, xp: (nivel) => nivel * 4, eHP: 80, eATK: 12, eDEF: 6 },
-    { id: 4, nombre: 'Entrega de Pergaminos', rango: 'E', nivelMinimo: 3, descripcion: 'Unos bandidos intentan interceptar el correo. Elimínalos.', objetivo: (nivel) => `Derrotar ${nivel + 2} ladrones de caminos`, oro: (nivel) => nivel * 8, xp: (nivel) => nivel * 5, eHP: 110, eATK: 18, eDEF: 12 },
-    { id: 5, nombre: 'Vigilancia de la Puerta Norte', rango: 'E', nivelMinimo: 4, descripcion: 'Mantén el orden derrotando a los maleantes en la entrada.', objetivo: (nivel) => `Derrotar ${nivel + 3} maleantes`, oro: (nivel) => nivel * 7, xp: (nivel) => nivel * 6, eHP: 130, eATK: 25, eDEF: 15 },
-    { id: 6, nombre: 'Provisión de Carne', rango: 'E', nivelMinimo: 5, descripcion: 'Los jabalíes salvajes están atacando a los pastores.', objetivo: (nivel) => `Derrotar ${nivel + 4} jabalíes salvajes`, oro: (nivel) => nivel * 10, xp: (nivel) => nivel * 8, eHP: 160, eATK: 35, eDEF: 20 },
-    { id: 7, nombre: 'El Amuleto Perdido', rango: 'E', nivelMinimo: 6, descripcion: 'Derrota a los subordinados que robaron las mercancías.', objetivo: (nivel) => `Derrotar ${nivel + 1} subordinados bandidos`, oro: (nivel) => nivel * 12, xp: (nivel) => nivel * 10, eHP: 180, eATK: 45, eDEF: 25 },
-    { id: 8, nombre: 'Rocas en el Sendero', rango: 'E', nivelMinimo: 7, descripcion: 'Golems de piedra están bloqueando el paso comercial.', objetivo: (nivel) => `Derrotar ${nivel * 2} mini golems`, oro: (nivel) => nivel * 9, xp: (nivel) => nivel * 12, eHP: 220, eATK: 40, eDEF: 40 },
-    { id: 9, nombre: 'Protección a los Aldeanos', rango: 'E', nivelMinimo: 8, descripcion: 'Los lobos acechan a los aldeanos que regresan al pueblo.', objetivo: (nivel) => `Derrotar ${nivel + 2} lobos de bosque`, oro: (nivel) => nivel * 15, xp: (nivel) => nivel * 15, eHP: 200, eATK: 60, eDEF: 30 },
-    { id: 10, nombre: 'Sombras en el Tejado', rango: 'E', nivelMinimo: 9, descripcion: 'Se han detectado espías vigilando la mansión principal.', objetivo: (nivel) => `Derrotar ${nivel - 5} espías enemigos`, oro: (nivel) => nivel * 20, xp: (nivel) => nivel * 20, eHP: 180, eATK: 75, eDEF: 35 },
-    { id: 11, nombre: 'Afilado de Kunais', rango: 'E', nivelMinimo: 1, descripcion: 'Prueba el filo de las nuevas armas contra muñecos de paja.', objetivo: (nivel) => `Derrotar ${nivel * 4} muñecos de prueba`, oro: (nivel) => nivel * 3, xp: (nivel) => nivel * 2, eHP: 40, eATK: 4, eDEF: 1 },
-    { id: 12, nombre: 'Esquiva de Proyectiles', rango: 'E', nivelMinimo: 2, descripcion: 'Destruye los drones mecánicos de entrenamiento.', objetivo: (nivel) => `Derrotar ${nivel * 5} drones de práctica`, oro: (nivel) => nivel * 5, xp: (nivel) => nivel * 4, eHP: 70, eATK: 15, eDEF: 10 },
-    { id: 13, nombre: 'Provisiones del Río', rango: 'E', nivelMinimo: 3, descripcion: 'Las pirañas del río están atacando a los pescadores locales.', objetivo: (nivel) => `Derrotar ${nivel + 6} pirañas de río`, oro: (nivel) => nivel * 6, xp: (nivel) => nivel * 3, eHP: 90, eATK: 20, eDEF: 5 },
-    { id: 14, nombre: 'Nidos de Avispas Gigantes', rango: 'E', nivelMinimo: 4, descripcion: 'Elimina a las avispas que custodian los panales.', objetivo: (nivel) => `Derrotar ${nivel + 4} avispas gigantes`, oro: (nivel) => nivel * 8, xp: (nivel) => nivel * 7, eHP: 120, eATK: 30, eDEF: 12 },
-    { id: 15, nombre: 'Extracción en la Mina', rango: 'E', nivelMinimo: 5, descripcion: 'Murciélagos de cueva impiden el trabajo de los mineros.', objetivo: (nivel) => `Derrotar ${nivel + 3} murciélagos de cueva`, oro: (nivel) => nivel * 10, xp: (nivel) => nivel * 5, eHP: 140, eATK: 38, eDEF: 18 },
-    { id: 16, nombre: 'Infiltración en el Mercado', rango: 'E', nivelMinimo: 6, descripcion: 'Elimina a los informantes enemigos ocultos entre la gente.', objetivo: (nivel) => `Derrotar ${nivel - 2} informantes`, oro: (nivel) => nivel * 14, xp: (nivel) => nivel * 12, eHP: 170, eATK: 50, eDEF: 22 },
-    { id: 17, nombre: 'Carrera de Obstáculos', rango: 'E', nivelMinimo: 7, descripcion: 'Derrota a los clones de sombra durante el recorrido.', objetivo: (nivel) => `Derrotar ${nivel + 5} clones de sombra`, oro: (nivel) => nivel * 11, xp: (nivel) => nivel * 18, eHP: 190, eATK: 55, eDEF: 30 },
-    { id: 18, nombre: 'Mascotas Perdidas', rango: 'E', nivelMinimo: 7, descripcion: 'Perros rabiosos han asustado a las mascotas del pueblo.', objetivo: (nivel) => `Derrotar ${nivel + 3} perros callejeros`, oro: (nivel) => nivel * 8, xp: (nivel) => nivel * 9, eHP: 160, eATK: 48, eDEF: 20 },
-    { id: 19, nombre: 'Guardián del Camino Sur', rango: 'E', nivelMinimo: 8, descripcion: 'Bandidos de bajo rango acechan las caravanas.', objetivo: (nivel) => `Derrotar ${nivel + 2} bandidos novatos`, oro: (nivel) => nivel * 18, xp: (nivel) => nivel * 14, eHP: 210, eATK: 65, eDEF: 35 },
-    { id: 20, nombre: 'Frenar el Sabotaje', rango: 'E', nivelMinimo: 9, descripcion: 'Mercenarios intentan sabotear las murallas de la aldea.', objetivo: (nivel) => `Derrotar ${nivel - 6} mercenarios saboteadores`, oro: (nivel) => nivel * 25, xp: (nivel) => nivel * 22, eHP: 240, eATK: 80, eDEF: 45 },
-    { id: 21, nombre: 'Restauración del Santuario', rango: 'E', nivelMinimo: 5, descripcion: 'Espíritus menores han invadido el templo sagrado.', objetivo: (nivel) => `Derrotar ${nivel + 5} espíritus débiles`, oro: (nivel) => nivel * 7, xp: (nivel) => nivel * 9, eHP: 145, eATK: 32, eDEF: 12 },
-    { id: 22, nombre: 'Ayuda Comunitaria', rango: 'E', nivelMinimo: 6, descripcion: 'Protege a los aldeanos de los matones que cobran impuestos ilegales.', objetivo: (nivel) => `Derrotar ${nivel + 3} cobradores corruptos`, oro: (nivel) => nivel * 13, xp: (nivel) => nivel * 11, eHP: 175, eATK: 48, eDEF: 28 },
-    { id: 23, nombre: 'Limpieza de Frontera', rango: 'E', nivelMinimo: 7, descripcion: 'Escorpiones venenosos han migrado a la frontera.', objetivo: (nivel) => `Derrotar ${nivel + 3} escorpiones`, oro: (nivel) => nivel * 11, xp: (nivel) => nivel * 13, eHP: 205, eATK: 58, eDEF: 32 },
-    { id: 24, nombre: 'Combustible para el Invierno', rango: 'E', nivelMinimo: 7, descripcion: 'Entes de madera atacan a los leñadores en el bosque.', objetivo: (nivel) => `Derrotar ${nivel * 2} entes de madera`, oro: (nivel) => nivel * 10, xp: (nivel) => nivel * 10, eHP: 230, eATK: 52, eDEF: 38 },
-    { id: 25, nombre: 'Protección del Agua', rango: 'E', nivelMinimo: 8, descripcion: 'Babosas gigantes están ensuciando el acueducto.', objetivo: (nivel) => `Derrotar ${nivel + 2} babosas gigantes`, oro: (nivel) => nivel * 14, xp: (nivel) => nivel * 14, eHP: 250, eATK: 62, eDEF: 40 },
-    { id: 26, nombre: 'Cifrado de Mensajes', rango: 'E', nivelMinimo: 8, descripcion: 'Derrota a los mensajeros enemigos para interceptar sus códigos.', objetivo: (nivel) => `Derrotar ${nivel - 4} mensajeros enemigos`, oro: (nivel) => nivel * 19, xp: (nivel) => nivel * 16, eHP: 220, eATK: 70, eDEF: 30 },
-    { id: 27, nombre: 'Llamas en el Campo', rango: 'E', nivelMinimo: 9, descripcion: 'Espíritus de fuego están incendiando las cosechas.', objetivo: (nivel) => `Derrotar ${nivel + 1} elementales de fuego`, oro: (nivel) => nivel * 22, xp: (nivel) => nivel * 25, eHP: 260, eATK: 85, eDEF: 25 },
-    { id: 28, nombre: 'Justicia Local', rango: 'E', nivelMinimo: 9, descripcion: 'Criminales prófugos se esconden en los callejones.', objetivo: (nivel) => `Derrotar ${nivel - 3} criminales`, oro: (nivel) => nivel * 28, xp: (nivel) => nivel * 24, eHP: 245, eATK: 90, eDEF: 42 },
-    { id: 29, nombre: 'Prueba de Maestría Básica', rango: 'E', nivelMinimo: 10, descripcion: 'Enfréntate a los cadetes de élite para demostrar tu fuerza.', objetivo: (nivel) => `Derrotar ${nivel * 2} cadetes de élite`, oro: (nivel) => nivel * 35, xp: (nivel) => nivel * 35, eHP: 300, eATK: 110, eDEF: 60 },
-    { id: 30, nombre: 'Ceremonia de Iniciación', rango: 'E', nivelMinimo: 10, descripcion: 'Supera la prueba final derrotando a los guardianes del rango.', objetivo: (nivel) => `Derrotar ${nivel - 7} guardianes de prueba`, oro: (nivel) => nivel * 50, xp: (nivel) => nivel * 60, eHP: 350, eATK: 130, eDEF: 75 }
-  ];
-
-
-  const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
-  const getLevelWindow = (level) => ({ min: Math.max(1, level - 5), max: level + 7 });
-  const getRecent = () => JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
-  const setRecent = (ids) => localStorage.setItem(RECENT_KEY, JSON.stringify(ids.slice(-RECENT_MAX)));
-  const getActive = () => JSON.parse(localStorage.getItem(ACTIVE_KEY) || '[]');
-  const setActive = (missions) => localStorage.setItem(ACTIVE_KEY, JSON.stringify(missions));
-
-  function pickMissions(playerLevel) {
-    const { min, max } = getLevelWindow(playerLevel);
-    const recentIds = new Set(getRecent());
-    const byLevel = missionPoolE.filter((m) => m.nivelMinimo >= min && m.nivelMinimo <= max);
-    const filtered = byLevel.filter((m) => !recentIds.has(m.id));
-    const source = filtered.length >= ACTIVE_COUNT ? filtered : byLevel;
-    return shuffle(source).slice(0, ACTIVE_COUNT).map((mission) => ({
-      id: mission.id,
-      nombre: mission.nombre,
-      descripcion: mission.descripcion,
-      objetivo: mission.objetivo(playerLevel),
-      oro: mission.oro(playerLevel),
-      xp: mission.xp(playerLevel),
-      eHP: mission.eHP,
-      eATK: mission.eATK,
-      eDEF: mission.eDEF,
-      estado: 'activa'
-    }));
-  }
-
-  function ensureActive(playerLevel) {
-    const current = getActive();
-    const pending = current.filter((m) => m.estado === 'activa');
-    if (pending.length) return current;
-    const fresh = pickMissions(playerLevel);
-    setActive(fresh);
-    return fresh;
-  }
-
-  function completeMission(id, result, level, onReward) {
-    const current = getActive();
-    const next = current.map((m) => (m.id === id ? { ...m, estado: result } : m));
-    const selected = next.find((m) => m.id === id);
-    if (selected && onReward) onReward(selected, result);
-    setActive(next);
-    const recent = [...getRecent(), id];
-    setRecent(recent);
-    const remaining = next.filter((m) => m.estado === 'activa');
-    if (!remaining.length) {
-      const fresh = pickMissions(level);
-      setActive(fresh);
-      return fresh;
+  const rankCatalog = {
+    d: {
+      key: 'd',
+      icon: '🐺',
+      title: 'MISIONES RANGO D',
+      color: '#52c41a',
+      missions: [
+        { name: 'Eliminar lobos hambrientos', xp: 2, gold: 4, hp: 138, atk: 25, def: 17, lvl: 1 },
+        { name: 'Recuperar suministros robados por goblins', xp: 4, gold: 8, hp: 174, atk: 43, def: 28, lvl: 3 },
+        { name: 'Proteger la aldea de jabalíes', xp: 6, gold: 12, hp: 210, atk: 61, def: 39, lvl: 5 },
+        { name: 'Investigar ruinas infestadas de ratas gigantes', xp: 8, gold: 16, hp: 246, atk: 78, def: 50, lvl: 7 },
+        { name: 'Escoltar a un mercader (bandido)', xp: 9, gold: 18, hp: 264, atk: 87, def: 55, lvl: 9 },
+        { name: 'Cazar una bestia nocturna', xp: 10, gold: 20, hp: 282, atk: 96, def: 61, lvl: 12 }
+      ]
+    },
+    c: {
+      key: 'c', icon: '🦇', title: 'MISIONES RANGO C', color: '#1890ff',
+      missions: [
+        { name: 'Limpiar una mina de murciélagos vampíricos', xp: 12, gold: 24, hp: 318, atk: 113, def: 72, lvl: 14 },
+        { name: 'Derrotar a un grupo de orcos merodeadores', xp: 14, gold: 28, hp: 354, atk: 131, def: 83, lvl: 16 },
+        { name: 'Rescatar a un rehén de los bandidos', xp: 16, gold: 32, hp: 390, atk: 149, def: 94, lvl: 18 },
+        { name: 'Eliminar una amenaza de lobos de las nieves', xp: 18, gold: 36, hp: 426, atk: 166, def: 105, lvl: 20 },
+        { name: 'Recuperar un artefacto custodiado por esqueletos', xp: 19, gold: 38, hp: 444, atk: 175, def: 110, lvl: 22 },
+        { name: 'Acabar con un troll de las colinas', xp: 20, gold: 40, hp: 462, atk: 184, def: 116, lvl: 24 }
+      ]
+    },
+    b: {
+      key: 'b', icon: '🕷️', title: 'MISIONES RANGO B', color: '#9b59b6',
+      missions: [
+        { name: 'Exterminar una colonia de arácnidos gigantes', xp: 22, gold: 44, hp: 498, atk: 201, def: 127, lvl: 28 },
+        { name: 'Detener a un invocador de demonios menores', xp: 24, gold: 48, hp: 534, atk: 219, def: 138, lvl: 32 },
+        { name: 'Proteger una ciudad del ataque de grifos salvajes', xp: 26, gold: 52, hp: 570, atk: 237, def: 149, lvl: 36 },
+        { name: 'Investigar desapariciones en un bosque encantado', xp: 28, gold: 56, hp: 606, atk: 254, def: 160, lvl: 40 },
+        { name: 'Derrotar a un caballero oscuro errante', xp: 29, gold: 58, hp: 624, atk: 263, def: 165, lvl: 45 },
+        { name: 'Asaltar una fortaleza de ogros', xp: 30, gold: 60, hp: 642, atk: 272, def: 171, lvl: 50 }
+      ]
+    },
+    a: {
+      key: 'a', icon: '🐉', title: 'MISIONES RANGO A', color: '#fa8c16',
+      missions: [
+        { name: 'Eliminar a un dragón joven', xp: 32, gold: 64, hp: 678, atk: 289, def: 182, lvl: 55 },
+        { name: 'Infiltrarse en una base de asesinos', xp: 34, gold: 68, hp: 714, atk: 307, def: 193, lvl: 56 },
+        { name: 'Proteger una ciudad de una invasión', xp: 36, gold: 72, hp: 750, atk: 325, def: 204, lvl: 58 },
+        { name: 'Recuperar un tesoro de una tumba maldita', xp: 38, gold: 76, hp: 786, atk: 342, def: 215, lvl: 60 },
+        { name: 'Derrotar a un guerrero legendario', xp: 39, gold: 78, hp: 804, atk: 351, def: 220, lvl: 65 },
+        { name: 'Acabar con un demonio de las sombras', xp: 40, gold: 80, hp: 822, atk: 360, def: 226, lvl: 70 }
+      ]
+    },
+    s: {
+      key: 's', icon: '💀', title: 'MISIONES RANGO S', color: '#f5222d',
+      missions: [
+        { name: 'Enfrentar a un dragón adulto', xp: 50, gold: 100, hp: 1002, atk: 448, def: 281, lvl: 75 },
+        { name: 'Derrotar a un señor demonio menor', xp: 60, gold: 120, hp: 1182, atk: 536, def: 336, lvl: 80 },
+        { name: 'Salvar el reino de un lich', xp: 70, gold: 140, hp: 1362, atk: 624, def: 391, lvl: 85 },
+        { name: 'Enfrentar a un titán antiguo', xp: 80, gold: 160, hp: 1542, atk: 712, def: 446, lvl: 90 },
+        { name: 'Combatir a un dios olvidado', xp: 90, gold: 180, hp: 1722, atk: 800, def: 501, lvl: 95 },
+        { name: 'Derrotar al dragón anciano', xp: 100, gold: 200, hp: 1902, atk: 808, def: 556, lvl: 100 }
+      ]
     }
-    return next;
-  }
+  };
+
+  const rankOrder = ['d', 'c', 'b', 'a', 's'];
+
+  const state = {
+    screen: 'main',
+    rank: null
+  };
+
+  const setScreen = (screen, rank = null) => {
+    state.screen = screen;
+    state.rank = rank;
+  };
+
+  const missionCard = (m, rankKey, playerLevel) => {
+    const locked = playerLevel < m.lvl;
+    return `
+      <article class="mission-rank-card rank-${rankKey}">
+        <h3>${m.name}</h3>
+        <div class="mission-rank-row">
+          <div class="mission-rank-rewards">
+            <span>✨ XP: ${m.xp}</span>
+            <span>💰 Oro: ${m.gold}</span>
+          </div>
+          <div class="mission-rank-action">
+            ${locked
+              ? `<div class="mission-rank-lock">🔒 Nv. ${m.lvl} requerido</div>`
+              : `<button class="mission-rank-fight" data-action="fight" data-rank="${rankKey}" data-name="${m.name}" data-xp="${m.xp}" data-gold="${m.gold}">⚔ LUCHAR</button>`}
+          </div>
+          <div class="mission-rank-enemy">
+            <span>❤️ ${m.hp}</span>
+            <span>⚔️ ${m.atk}</span>
+            <span>🛡️ ${m.def}</span>
+          </div>
+        </div>
+      </article>`;
+  };
+
+  const renderMain = (level) => `
+    <section class="mission-rank-screen is-active">
+      <header class="mission-rank-header"><h3>📜 MISIONES RANGO</h3></header>
+      <div class="mission-rank-level">⚔️ NIVEL HÉROE: <strong>${level}</strong></div>
+      <div class="mission-rank-content mission-rank-content-center">
+        <button class="mission-rank-main-btn" data-action="go-ranks">📜 MISIONES RANGO ⚡</button>
+      </div>
+    </section>`;
+
+  const renderRanks = () => `
+    <section class="mission-rank-screen is-active">
+      <header class="mission-rank-header">
+        <button class="mission-rank-back" data-action="back-main">◀ VOLVER</button>
+        <h3>⚔️ SELECCIONAR RANGO</h3>
+      </header>
+      <div class="mission-rank-content mission-rank-rank-list">
+        ${rankOrder.map((key) => `<button class="mission-rank-rank-btn rank-${key}" data-action="open-rank" data-rank="${key}">${rankCatalog[key].icon} ${rankCatalog[key].title} ▶</button>`).join('')}
+      </div>
+    </section>`;
+
+  const renderRankDetail = (rankKey, playerLevel) => {
+    const rank = rankCatalog[rankKey];
+    return `
+      <section class="mission-rank-screen is-active">
+        <header class="mission-rank-header">
+          <button class="mission-rank-back" data-action="back-ranks">◀ VOLVER</button>
+          <h3 style="color:${rank.color}">${rank.icon} ${rank.title}</h3>
+        </header>
+        <div class="mission-rank-content">
+          ${rank.missions.map((m) => missionCard(m, rankKey, playerLevel)).join('')}
+        </div>
+      </section>`;
+  };
+
+  const renderView = (container, playerLevel) => {
+    if (state.screen === 'main') container.innerHTML = renderMain(playerLevel);
+    if (state.screen === 'ranks') container.innerHTML = renderRanks();
+    if (state.screen === 'rank-detail' && state.rank) container.innerHTML = renderRankDetail(state.rank, playerLevel);
+  };
 
   window.MisionesTotal = {
     render(container, titleEl, badgeEl, gameState, onApplyRewards) {
-      titleEl.textContent = '📜 Misiones';
-      badgeEl.textContent = 'RANGO E';
+      titleEl.textContent = '';
+      badgeEl.textContent = '';
       container.innerHTML = '';
-      const missions = ensureActive(gameState.level);
+      container.classList.add('missions-shell');
+      setScreen('main');
+      renderView(container, gameState.level);
 
-      const wrap = document.createElement('div');
-      wrap.className = 'missions-board';
-      missions.forEach((m) => {
-        const card = document.createElement('article');
-        card.className = `mission-scroll state-${m.estado}`;
-        card.dataset.id = String(m.id);
-        card.innerHTML = `
-          <h3>${m.nombre}</h3>
-          <p class="mission-description">${m.descripcion}</p>
-          <p class="mission-goal"><strong>Objetivo:</strong> ${m.objetivo}</p>
-          <div class="mission-rewards">💰 ${m.oro} · ⭐ ${m.xp}</div>
-          <div class="mission-enemy-stats">
-            <span>❤️ ${m.eHP}</span>
-            <span>⚔️ ${m.eATK}</span>
-            <span>🛡️ ${m.eDEF}</span>
-          </div>`;
-        wrap.appendChild(card);
-      });
+      container.onclick = (event) => {
+        const target = event.target.closest('[data-action]');
+        if (!target) return;
+        const action = target.dataset.action;
 
-      wrap.addEventListener('click', (event) => {
-        const card = event.target.closest('.mission-scroll');
-        if (!card || !card.classList.contains('state-activa')) return;
-        const id = Number(card.dataset.id);
-        const result = Math.random() < 0.65 ? 'completada' : 'fallada';
-        completeMission(id, result, gameState.level, (mission, status) => {
-          if (status === 'completada' && typeof onApplyRewards === 'function') onApplyRewards(mission);
-        });
-        this.render(container, titleEl, badgeEl, gameState, onApplyRewards);
-      });
+        if (action === 'go-ranks') setScreen('ranks');
+        if (action === 'back-main') setScreen('main');
+        if (action === 'open-rank') setScreen('rank-detail', target.dataset.rank);
+        if (action === 'back-ranks') setScreen('ranks');
 
-      container.appendChild(wrap);
+        if (action === 'fight') {
+          if (typeof onApplyRewards === 'function') {
+            onApplyRewards({ oro: Number(target.dataset.gold), xp: Number(target.dataset.xp) });
+          }
+        }
+
+        renderView(container, gameState.level);
+      };
     }
   };
 })();
