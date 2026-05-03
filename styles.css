@@ -237,10 +237,17 @@ html, body {
 .debris {
   position:absolute; border-radius:50%; pointer-events:none;
   animation:debrisFly var(--dur) ease-out forwards;
+  box-shadow:0 0 4px rgba(255,255,255,0.15);
+}
+.debris.dust {
+  border-radius:45%;
+  filter:blur(0.6px);
+  opacity:0.75;
 }
 @keyframes debrisFly {
   0%   { opacity:1; transform:translate(0,0) rotate(0deg) scale(1); }
-  100% { opacity:0; transform:translate(var(--dx),var(--dy)) rotate(360deg) scale(0); }
+  70%  { opacity:0.8; }
+  100% { opacity:0; transform:translate(var(--dx),var(--dy)) rotate(var(--rot,360deg)) scale(0); }
 }
 
 /* ─── SECTION PANEL ─── */
