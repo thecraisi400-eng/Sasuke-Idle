@@ -289,6 +289,12 @@ html, body {
   font-family:'Fredoka One',cursive;
   cursor: pointer;
 }
+.picks-btn.can-upgrade { background: linear-gradient(180deg,#FFD740,#FFA000); color:#2a1a00; }
+.picks-btn.no-upgrade { background: linear-gradient(180deg,#9E9E9E,#616161); color:#ececec; }
+.picks-feedback { min-height: 18px; font-size: clamp(10px,2.4vw,13px); font-weight: 800; opacity:0; transition: opacity .2s ease; }
+.picks-feedback.visible { opacity: 1; }
+.picks-feedback.warn { color: #ffcdd2; text-shadow: 0 0 6px rgba(244,67,54,.5); }
+.picks-feedback.ok { color: #c8e6c9; text-shadow: 0 0 6px rgba(76,175,80,.5); }
 .picks-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .picks-wrapper {
   width: 100%;

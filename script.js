@@ -264,33 +264,14 @@ const sectionColors = {
 let activeKey = null;
 let activeBtn = null;
 let lastPicksMarkup = "";
+let picksController = null;
 
-function upgradePick() {
-  const cost = Math.floor(22 * Math.pow(1.35, state.clickDmg - 1));
-  if (state.gold < cost) return;
-  state.gold -= cost;
-  state.clickDmg += 1;
-  state.dps += 1;
-  updateUI();
+function ensurePicksController() {
+  if (!picksController && window.initPickButtons) {
+    picksController = window.initPickButtons(state, { fmt, getHitRate, getCritChance, updateUI });
+  }
 }
 
-function upgradePickSpeed() {
-  if (state.pickSpeedLevel >= 1000) return;
-  const cost = Math.floor(130 * Math.pow(1.12, state.pickSpeedLevel));
-  if (state.gold < cost) return;
-  state.gold -= cost;
-  state.pickSpeedLevel += 1;
-  updateUI();
-}
-
-function upgradePickCrit() {
-  if (state.pickCritLevel >= 1000) return;
-  const cost = Math.floor(170 * Math.pow(1.13, state.pickCritLevel));
-  if (state.gold < cost) return;
-  state.gold -= cost;
-  state.pickCritLevel += 1;
-  updateUI();
-}
 
 function renderSectionContent() {
   const content = document.getElementById('section-content');
@@ -298,37 +279,10 @@ function renderSectionContent() {
   if (!content || !coming) return;
 
   if (activeKey === 'picks') {
-    const sharpCost = Math.floor(22 * Math.pow(1.35, state.clickDmg - 1));
-    const speedCost = Math.floor(130 * Math.pow(1.12, state.pickSpeedLevel));
-    const critCost = Math.floor(170 * Math.pow(1.13, state.pickCritLevel));
-    const critPct = (getCritChance() * 100).toFixed(3);
+    ensurePicksController();
     content.classList.add('visible');
     coming.style.display = 'none';
-    const nextMarkup = `
-      <div class="picks-card picks-wrapper">
-        <div class="pick-scroll">
-          <div class="scroll-title">PICO AFILADO</div>
-          <div class="scroll-row">Nivel: <b>${state.clickDmg}</b></div>
-          <div class="scroll-row">Daño actual (DPS): <b>${fmt(state.dps)}</b></div>
-          <div class="scroll-row">Costo mejora: <b>${fmt(sharpCost)} 💰</b></div>
-          <button class="picks-btn" onclick="upgradePick()">Mejorar pico</button>
-        </div>
-        <div class="pick-scroll">
-          <div class="scroll-title">VELOCIDAD PICO</div>
-          <div class="scroll-row">Nivel: <b>${state.pickSpeedLevel}/1000</b></div>
-          <div class="scroll-row">Golpes/s: <b>${getHitRate().toFixed(2)}</b></div>
-          <div class="scroll-row">Costo mejora: <b>${fmt(speedCost)} 💰</b></div>
-          <button class="picks-btn" onclick="upgradePickSpeed()" ${state.pickSpeedLevel >= 1000 ? 'disabled' : ''}>Mejorar velocidad</button>
-        </div>
-        <div class="pick-scroll">
-          <div class="scroll-title">CRITICO PICO</div>
-          <div class="scroll-row">Nivel: <b>${state.pickCritLevel}/1000</b></div>
-          <div class="scroll-row">Crítico: <b>${critPct}%</b></div>
-          <div class="scroll-row">Costo mejora: <b>${fmt(critCost)} 💰</b></div>
-          <button class="picks-btn" onclick="upgradePickCrit()" ${state.pickCritLevel >= 1000 ? 'disabled' : ''}>Mejorar crítico</button>
-        </div>
-      </div>
-    `;
+    const nextMarkup = picksController ? picksController.renderPicksContent() : '';
     if (nextMarkup !== lastPicksMarkup) {
       const prevScrollTop = content.scrollTop;
       content.innerHTML = nextMarkup;
@@ -383,4 +337,5 @@ function toggleSection(btn, title, sub, key) {
 //  BOOT
 // ══════════════════════════════════════
 initRock();
+ensurePicksController();
 updateUI();
