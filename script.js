@@ -8,6 +8,8 @@ const state = {
   xp         : 0,        // 0–100; fills completely each kill → level up
   dps        : 1,        // FIXED at 1; only upgradeable via Picos
   clickDmg   : 1,        // FIXED at 1; upgradeable via Picos
+  pickSpeedLevel: 0,
+  pickCritLevel : 0,
 
   rockLevel  : 1,        // current rock difficulty
   rockHpMax  : 0,
@@ -16,6 +18,18 @@ const state = {
   isShaking  : false,
   sectionOpen: false,
 };
+
+const baseHitRate = 1;
+const baseCritChance = 0.0002; // 0.02%
+const speedPerLevel = 0.02;
+const critPerLevel = 0.00015; // 0.015%
+
+function getHitRate() {
+  return baseHitRate + state.pickSpeedLevel * speedPerLevel;
+}
+function getCritChance() {
+  return baseCritChance + state.pickCritLevel * critPerLevel;
+}
 
 // ── Rock HP formula (hard difficulty)
 // Level 1 → 30 HP, each subsequent rock ×3 harder
@@ -177,7 +191,7 @@ function clickRock(e) {
 
   // Damage: clickDmg ±10%, 8% chance crit ×2.5
   const base   = state.clickDmg * (0.9 + Math.random()*0.2);
-  const isCrit = Math.random() < 0.08;
+  const isCrit = Math.random() < getCritChance();
   const dmg    = isCrit ? base * 2.5 : base;
 
   state.rockHpCur = Math.max(0, state.rockHpCur - dmg);
@@ -218,7 +232,8 @@ function idleTick() {
   lastTick  = now;
 
   if (!state.sectionOpen) {
-    const dmg = state.dps * dt;
+    const isCrit = Math.random() < getCritChance();
+    const dmg = state.dps * getHitRate() * dt * (isCrit ? 2.2 : 1);
     state.rockHpCur = Math.max(0, state.rockHpCur - dmg);
     if (state.rockHpCur <= 0) respawnRock();
 
@@ -229,7 +244,7 @@ function idleTick() {
         const rect = cave.getBoundingClientRect();
         const rx   = rect.left + rect.width  * (0.3 + Math.random()*0.3);
         const ry   = rect.top  + rect.height * (0.35 + Math.random()*0.2);
-        spawnDmg(rx, ry, state.dps, 'dmg-cyan', false);
+        spawnDmg(rx, ry, dmg, 'dmg-cyan', isCrit);
       }
     }
   }
@@ -250,11 +265,29 @@ let activeKey = null;
 let activeBtn = null;
 
 function upgradePick() {
-  const cost = Math.floor(20 * Math.pow(1.8, state.clickDmg - 1));
+  const cost = Math.floor(22 * Math.pow(1.35, state.clickDmg - 1));
   if (state.gold < cost) return;
   state.gold -= cost;
   state.clickDmg += 1;
   state.dps += 1;
+  updateUI();
+}
+
+function upgradePickSpeed() {
+  if (state.pickSpeedLevel >= 1000) return;
+  const cost = Math.floor(130 * Math.pow(1.12, state.pickSpeedLevel));
+  if (state.gold < cost) return;
+  state.gold -= cost;
+  state.pickSpeedLevel += 1;
+  updateUI();
+}
+
+function upgradePickCrit() {
+  if (state.pickCritLevel >= 1000) return;
+  const cost = Math.floor(170 * Math.pow(1.13, state.pickCritLevel));
+  if (state.gold < cost) return;
+  state.gold -= cost;
+  state.pickCritLevel += 1;
   updateUI();
 }
 
@@ -264,15 +297,35 @@ function renderSectionContent() {
   if (!content || !coming) return;
 
   if (activeKey === 'picks') {
-    const cost = Math.floor(20 * Math.pow(1.8, state.clickDmg - 1));
+    const sharpCost = Math.floor(22 * Math.pow(1.35, state.clickDmg - 1));
+    const speedCost = Math.floor(130 * Math.pow(1.12, state.pickSpeedLevel));
+    const critCost = Math.floor(170 * Math.pow(1.13, state.pickCritLevel));
+    const critPct = (getCritChance() * 100).toFixed(3);
     content.classList.add('visible');
     coming.style.display = 'none';
     content.innerHTML = `
-      <div class="picks-card">
-        <div>⛏️ Pico actual: Nv. ${state.clickDmg}</div>
-        <div>Daño/Seg global: ${state.dps}</div>
-        <div>Mejora: ${fmt(cost)} 💰</div>
-        <button class="picks-btn" onclick="upgradePick()">Mejorar pico</button>
+      <div class="picks-card picks-wrapper">
+        <div class="pick-scroll">
+          <div class="scroll-title">PICO AFILADO</div>
+          <div class="scroll-row">Nivel: <b>${state.clickDmg}</b></div>
+          <div class="scroll-row">Daño actual (DPS): <b>${fmt(state.dps)}</b></div>
+          <div class="scroll-row">Costo mejora: <b>${fmt(sharpCost)} 💰</b></div>
+          <button class="picks-btn" onclick="upgradePick()">Mejorar pico</button>
+        </div>
+        <div class="pick-scroll">
+          <div class="scroll-title">VELOCIDAD PICO</div>
+          <div class="scroll-row">Nivel: <b>${state.pickSpeedLevel}/1000</b></div>
+          <div class="scroll-row">Golpes/s: <b>${getHitRate().toFixed(2)}</b></div>
+          <div class="scroll-row">Costo mejora: <b>${fmt(speedCost)} 💰</b></div>
+          <button class="picks-btn" onclick="upgradePickSpeed()" ${state.pickSpeedLevel >= 1000 ? 'disabled' : ''}>Mejorar velocidad</button>
+        </div>
+        <div class="pick-scroll">
+          <div class="scroll-title">CRITICO PICO</div>
+          <div class="scroll-row">Nivel: <b>${state.pickCritLevel}/1000</b></div>
+          <div class="scroll-row">Crítico: <b>${critPct}%</b></div>
+          <div class="scroll-row">Costo mejora: <b>${fmt(critCost)} 💰</b></div>
+          <button class="picks-btn" onclick="upgradePickCrit()" ${state.pickCritLevel >= 1000 ? 'disabled' : ''}>Mejorar crítico</button>
+        </div>
       </div>
     `;
   } else {
