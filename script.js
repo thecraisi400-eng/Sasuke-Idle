@@ -311,21 +311,21 @@ function renderSectionContent() {
           <div class="scroll-row">Nivel: <b>${state.clickDmg}</b></div>
           <div class="scroll-row">Daño actual (DPS): <b>${fmt(state.dps)}</b></div>
           <div class="scroll-row">Costo mejora: <b>${fmt(sharpCost)} 💰</b></div>
-          <button class="picks-btn" onclick="upgradePick()">Mejorar pico</button>
+          <button class="picks-btn" data-upgrade="pick">Mejorar pico</button>
         </div>
         <div class="pick-scroll">
           <div class="scroll-title">VELOCIDAD PICO</div>
           <div class="scroll-row">Nivel: <b>${state.pickSpeedLevel}/1000</b></div>
           <div class="scroll-row">Golpes/s: <b>${getHitRate().toFixed(2)}</b></div>
           <div class="scroll-row">Costo mejora: <b>${fmt(speedCost)} 💰</b></div>
-          <button class="picks-btn" onclick="upgradePickSpeed()" ${state.pickSpeedLevel >= 1000 ? 'disabled' : ''}>Mejorar velocidad</button>
+          <button class="picks-btn" data-upgrade="speed" ${state.pickSpeedLevel >= 1000 ? 'disabled' : ''}>Mejorar velocidad</button>
         </div>
         <div class="pick-scroll">
           <div class="scroll-title">CRITICO PICO</div>
           <div class="scroll-row">Nivel: <b>${state.pickCritLevel}/1000</b></div>
           <div class="scroll-row">Crítico: <b>${critPct}%</b></div>
           <div class="scroll-row">Costo mejora: <b>${fmt(critCost)} 💰</b></div>
-          <button class="picks-btn" onclick="upgradePickCrit()" ${state.pickCritLevel >= 1000 ? 'disabled' : ''}>Mejorar crítico</button>
+          <button class="picks-btn" data-upgrade="crit" ${state.pickCritLevel >= 1000 ? 'disabled' : ''}>Mejorar crítico</button>
         </div>
       </div>
     `;
@@ -341,6 +341,17 @@ function renderSectionContent() {
     lastPicksMarkup = '';
     coming.style.display = '';
   }
+}
+
+
+function handlePicksUpgradeClick(e) {
+  const btn = e.target.closest('.picks-btn[data-upgrade]');
+  if (!btn) return;
+
+  const type = btn.dataset.upgrade;
+  if (type === 'pick') upgradePick();
+  if (type === 'speed') upgradePickSpeed();
+  if (type === 'crit') upgradePickCrit();
 }
 
 function toggleSection(btn, title, sub, key) {
@@ -384,3 +395,5 @@ function toggleSection(btn, title, sub, key) {
 // ══════════════════════════════════════
 initRock();
 updateUI();
+
+document.getElementById('section-content')?.addEventListener('click', handlePicksUpgradeClick);
