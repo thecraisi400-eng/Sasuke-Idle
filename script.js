@@ -89,8 +89,22 @@ function updateUI() {
 // ══════════════════════════════════════
 //  DAMAGE NUMBERS + DEBRIS
 // ══════════════════════════════════════
-const dmgColors = ['dmg-yellow','dmg-red','dmg-cyan','dmg-white'];
 const critPfx   = ['','','💥 ','⚡ ','🔥 '];
+
+const rockCrackStages = [
+  { hpPct: 100, cracks: 0 },
+  { hpPct: 90,  cracks: 1 },
+  { hpPct: 80,  cracks: 3 },
+  { hpPct: 70,  cracks: 4 },
+  { hpPct: 60,  cracks: 6 },
+  { hpPct: 50,  cracks: 1 },
+  { hpPct: 40,  cracks: 7 },
+  { hpPct: 30,  cracks: 8 },
+  { hpPct: 15,  cracks: 9 },
+  { hpPct: 5,   cracks: 10 },
+];
+
+let currentCrackStage = -1;
 
 function spawnDmg(x, y, value, colorClass, isCrit) {
   const cave = document.getElementById('cave');
@@ -112,16 +126,67 @@ function spawnDebris(x, y) {
   const cave  = document.getElementById('cave');
   if (!cave) return;
   const rect  = cave.getBoundingClientRect();
-  const cols  = ['#6b6b7e','#4a4a5a','#90a4ae','#78909c','#FFD740','#00E5FF'];
-  for (let i = 0; i < 5; i++) {
+  const cols  = ['#8d8d99','#6b6b7e','#4a4a5a','#b0bec5','#7d6e63','#5d4037'];
+  for (let i = 0; i < 15; i++) {
     const d  = document.createElement('div');
-    d.className = 'debris';
-    const sz = 2 + Math.random()*4;
+    d.className = Math.random() < 0.3 ? 'debris dust' : 'debris';
+    const sz = d.classList.contains('dust') ? 1 + Math.random()*2 : 2 + Math.random()*6;
+    const dur = d.classList.contains('dust') ? 0.6 + Math.random()*0.5 : 0.35 + Math.random()*0.45;
     d.style.cssText = `width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};
       left:${x-rect.left}px;top:${y-rect.top}px;
-      --dx:${(Math.random()-0.5)*65}px;--dy:${-(12+Math.random()*45)}px;--dur:${0.3+Math.random()*0.3}s;`;
+      --dx:${(Math.random()-0.5)*95}px;--dy:${-(8+Math.random()*70)}px;--dur:${dur}s;--rot:${Math.random()*720-360}deg;`;
     document.getElementById('particle-layer').appendChild(d);
     d.addEventListener('animationend', () => d.remove());
+  }
+}
+
+function getCrackCountForHpPct(hpPct) {
+  for (const stage of rockCrackStages) {
+    if (hpPct >= stage.hpPct) return stage.cracks;
+  }
+  return rockCrackStages[rockCrackStages.length - 1].cracks;
+}
+
+function updateRockCracks() {
+  const rock = document.getElementById('rock');
+  if (!rock) return;
+  const pct = Math.max(0, (state.rockHpCur / state.rockHpMax) * 100);
+  const crackCount = getCrackCountForHpPct(pct);
+  if (crackCount === currentCrackStage) return;
+  currentCrackStage = crackCount;
+
+  let cracksLayer = document.getElementById('rock-cracks-layer');
+  if (!cracksLayer) {
+    cracksLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    cracksLayer.setAttribute('id', 'rock-cracks-layer');
+    rock.appendChild(cracksLayer);
+  }
+  cracksLayer.innerHTML = '';
+
+  for (let i = 0; i < crackCount; i++) {
+    const startX = 22 + Math.random() * 76;
+    const startY = 16 + Math.random() * 64;
+    const seg1X = startX + (Math.random() - 0.5) * 26;
+    const seg1Y = startY + (Math.random() - 0.5) * 24;
+    const seg2X = seg1X + (Math.random() - 0.5) * 22;
+    const seg2Y = seg1Y + (Math.random() - 0.5) * 20;
+    const w = 1.1 + Math.random() * 1.8;
+
+    const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    shadow.setAttribute('d', `M${startX},${startY} L${seg1X},${seg1Y} L${seg2X},${seg2Y}`);
+    shadow.setAttribute('stroke', 'rgba(0,0,0,0.8)');
+    shadow.setAttribute('stroke-width', String(w));
+    shadow.setAttribute('fill', 'none');
+    shadow.setAttribute('stroke-linecap', 'round');
+    cracksLayer.appendChild(shadow);
+
+    const shine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    shine.setAttribute('d', `M${startX + 0.8},${startY + 0.5} L${seg1X + 0.4},${seg1Y + 0.4}`);
+    shine.setAttribute('stroke', 'rgba(255,255,255,0.17)');
+    shine.setAttribute('stroke-width', String(Math.max(0.7, w - 0.8)));
+    shine.setAttribute('fill', 'none');
+    shine.setAttribute('stroke-linecap', 'round');
+    cracksLayer.appendChild(shine);
   }
 }
 
@@ -154,6 +219,8 @@ function respawnRock() {
   // Advance rock level and recalculate HP
   state.rockLevel++;
   initRock();
+  currentCrackStage = -1;
+  updateRockCracks();
 
   // Flash
   const rock = document.getElementById('rock');
@@ -189,23 +256,16 @@ function clickRock(e) {
     }, { once: true });
   }
 
-  // Damage: clickDmg ±10%, 8% chance crit ×2.5
+  // Damage: clickDmg ±10%, crit ×2
   const base   = state.clickDmg * (0.9 + Math.random()*0.2);
   const isCrit = Math.random() < getCritChance();
-  const dmg    = isCrit ? base * 2.5 : base;
+  const dmg    = isCrit ? base * 2 : base;
 
   state.rockHpCur = Math.max(0, state.rockHpCur - dmg);
 
   const cx = e ? e.clientX : window.innerWidth/2;
   const cy = e ? e.clientY : window.innerHeight/2;
-  spawnDmg(cx, cy, dmg, isCrit ? 'dmg-red' : dmgColors[Math.floor(Math.random()*dmgColors.length)], isCrit);
-
-  if (Math.random() < 0.32) {
-    setTimeout(() => {
-      spawnDmg(cx+(Math.random()-0.5)*44, cy+(Math.random()-0.5)*32,
-        dmg*(0.22+Math.random()*0.32), dmgColors[Math.floor(Math.random()*dmgColors.length)], false);
-    }, 65);
-  }
+  spawnDmg(cx, cy, dmg, isCrit ? 'dmg-red' : 'dmg-yellow', isCrit);
 
   spawnDebris(cx, cy);
   if (state.rockHpCur <= 0) respawnRock();
@@ -233,7 +293,7 @@ function idleTick() {
 
   if (!state.sectionOpen) {
     const isCrit = Math.random() < getCritChance();
-    const dmg = state.dps * getHitRate() * dt * (isCrit ? 2.2 : 1);
+    const dmg = state.dps * getHitRate() * dt * (isCrit ? 2 : 1);
     state.rockHpCur = Math.max(0, state.rockHpCur - dmg);
     if (state.rockHpCur <= 0) respawnRock();
 
@@ -244,10 +304,11 @@ function idleTick() {
         const rect = cave.getBoundingClientRect();
         const rx   = rect.left + rect.width  * (0.3 + Math.random()*0.3);
         const ry   = rect.top  + rect.height * (0.35 + Math.random()*0.2);
-        spawnDmg(rx, ry, dmg, 'dmg-cyan', isCrit);
+        spawnDmg(rx, ry, dmg, isCrit ? 'dmg-red' : 'dmg-white', isCrit);
       }
     }
   }
+  updateRockCracks();
   updateUI();
 }
 setInterval(idleTick, 100);
