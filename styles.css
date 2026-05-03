@@ -2,7 +2,7 @@
 
 :root {
   --gold: #FFD700;
-  --ui-bg: #0d1b2a;
+  --ui-bg: #17314a;
   --ui-border: #1e3a5f;
 }
 
@@ -10,7 +10,7 @@
 
 html, body {
   width: 100%; height: 100%;
-  background: #05080d;
+  background: #0c1522;
   display: flex; justify-content: center; align-items: center;
   font-family: 'Nunito', sans-serif;
   overflow: hidden;
@@ -66,7 +66,7 @@ html, body {
   font-size: clamp(13px,3.5vw,20px); color: var(--gold);
   text-shadow: 0 0 8px rgba(255,215,0,0.4), 1px 1px 0 #7B3F00;
 }
-.currency-val.special { color: #40C4FF; text-shadow: 0 0 8px rgba(64,196,255,0.4), 1px 1px 0 #003366; }
+.currency-val.special { color: #57d86a; text-shadow: 0 0 8px rgba(87,216,106,0.45), 1px 1px 0 #11461b; }
 
 .status-dps { flex: 0 0 auto; text-align: right; min-width: clamp(44px,12vw,62px); }
 .dps-label {
@@ -267,10 +267,10 @@ html, body {
 }
 .section-content.visible {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   width: 92%;
-  max-height: 62%;
+  max-height: 58%;
 }
 .picks-card {
   background: rgba(0, 0, 0, 0.25);
@@ -297,14 +297,16 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 10px;
+  padding: 6px 8px 10px;
 }
 .pick-scroll {
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
   border-radius: 12px;
-  padding: 10px;
+  padding: 6px 8px;
   text-align: left;
+  width: 100%;
+  transform: translateY(-2px);
 }
 .scroll-title {
   font-family:'Fredoka One',cursive;

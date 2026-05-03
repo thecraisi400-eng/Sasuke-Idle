@@ -263,6 +263,7 @@ const sectionColors = {
 
 let activeKey = null;
 let activeBtn = null;
+let lastPicksMarkup = "";
 
 function upgradePick() {
   const cost = Math.floor(22 * Math.pow(1.35, state.clickDmg - 1));
@@ -303,7 +304,7 @@ function renderSectionContent() {
     const critPct = (getCritChance() * 100).toFixed(3);
     content.classList.add('visible');
     coming.style.display = 'none';
-    content.innerHTML = `
+    const nextMarkup = `
       <div class="picks-card picks-wrapper">
         <div class="pick-scroll">
           <div class="scroll-title">PICO AFILADO</div>
@@ -328,9 +329,16 @@ function renderSectionContent() {
         </div>
       </div>
     `;
+    if (nextMarkup !== lastPicksMarkup) {
+      const prevScrollTop = content.scrollTop;
+      content.innerHTML = nextMarkup;
+      content.scrollTop = prevScrollTop;
+      lastPicksMarkup = nextMarkup;
+    }
   } else {
     content.classList.remove('visible');
     content.innerHTML = '';
+    lastPicksMarkup = '';
     coming.style.display = '';
   }
 }
