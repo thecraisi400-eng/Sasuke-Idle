@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mine Clicker</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="game-wrapper">
+
+  <!-- STATUS BAR -->
+  <div id="status-bar">
+    <div class="level-box">
+      <span class="level-label">⛰️ Roca <span id="level-num">1</span></span>
+      <div class="xp-bar-outer"><div id="xp-bar-inner"></div></div>
+    </div>
+    <div class="coin-box">
+      <div class="coin-display">
+        <div class="coin-icon"></div>
+        <span id="coin-counter">0</span>
+      </div>
+    </div>
+    <div class="dps-box">
+      <span class="dps-label">DPS</span>
+      <span class="dps-value" id="dps-display">1</span>
+    </div>
+  </div>
+
+  <!-- CAVE AREA -->
+  <div id="cave-area">
+    <div class="cave-bg"></div>
+    <div class="stalactites" id="stalactites"></div>
+    <div class="ground"></div>
+
+    <div class="torch torch-left">
+      <div class="torch-flame"><div class="flame-layer flame-outer"></div><div class="flame-layer flame-mid"></div><div class="flame-layer flame-inner"></div></div>
+      <div class="torch-body"></div><div class="torch-glow"></div>
+    </div>
+    <div class="torch torch-right">
+      <div class="torch-flame"><div class="flame-layer flame-outer"></div><div class="flame-layer flame-mid"></div><div class="flame-layer flame-inner"></div></div>
+      <div class="torch-body"></div><div class="torch-glow"></div>
+    </div>
+
+    <!-- Miner (moved right/closer) -->
+    <div id="miner">
+      <svg viewBox="0 0 70 95" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="35" cy="68" rx="18" ry="22" fill="#3d7abf"/>
+        <rect x="18" y="78" width="34" height="6" rx="3" fill="#1a3a6a"/>
+        <rect x="29" y="48" width="4" height="24" rx="2" fill="#2a5a9a"/>
+        <rect x="37" y="48" width="4" height="24" rx="2" fill="#2a5a9a"/>
+        <rect x="22" y="86" width="11" height="8" rx="3" fill="#2a4a8a"/>
+        <rect x="37" y="86" width="11" height="8" rx="3" fill="#2a4a8a"/>
+        <ellipse cx="27" cy="93" rx="8" ry="4" fill="#1a1a1a"/>
+        <ellipse cx="43" cy="93" rx="8" ry="4" fill="#1a1a1a"/>
+        <ellipse cx="35" cy="36" rx="16" ry="17" fill="#f5c89a"/>
+        <ellipse cx="35" cy="26" rx="17" ry="12" fill="#e0a020"/>
+        <rect x="18" y="26" width="34" height="7" fill="#c88800"/>
+        <ellipse cx="35" cy="20" rx="5" ry="4" fill="#fff8dc"/>
+        <ellipse cx="35" cy="20" rx="3" ry="2.5" fill="#ffe066"/>
+        <ellipse cx="28" cy="38" rx="4" ry="4.5" fill="#fff"/>
+        <ellipse cx="42" cy="38" rx="4" ry="4.5" fill="#fff"/>
+        <circle cx="29" cy="38" r="2.5" fill="#2a1a0a"/>
+        <circle cx="43" cy="38" r="2.5" fill="#2a1a0a"/>
+        <circle cx="29.8" cy="36.8" r="1" fill="#fff"/>
+        <circle cx="43.8" cy="36.8" r="1" fill="#fff"/>
+        <path d="M28 44 Q35 49 42 44" stroke="#c07850" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <path d="M27 42 Q31 44.5 35 42 Q39 44.5 43 42" stroke="#8B4513" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <rect x="50" y="52" width="9" height="24" rx="4" fill="#f5c89a" transform="rotate(-30 54 64)"/>
+        <rect x="55" y="30" width="5" height="38" rx="2.5" fill="#8B5A2B" transform="rotate(35 58 50)"/>
+        <path d="M62 22 L78 28 L74 38 L68 34 Z" fill="#8a8a9a"/>
+        <path d="M62 22 L56 32 L60 36 L68 28 Z" fill="#6a6a7a"/>
+        <path d="M62 22 L68 28 L64 32 L60 26 Z" fill="#aaaabc"/>
+        <rect x="11" y="52" width="9" height="22" rx="4" fill="#f5c89a" transform="rotate(15 15 63)"/>
+      </svg>
+    </div>
+
+    <!-- Rock + HP -->
+    <div id="rock-container" onclick="clickRock(event)">
+      <div class="hp-bar-wrapper">
+        <span class="hp-bar-label" id="rock-name-label">Roca 1</span>
+        <div class="hp-bar-outer">
+          <div id="hp-bar-fill"></div>
+          <div id="hp-bar-text">100 / 100</div>
+        </div>
+      </div>
+      <div id="rock">
+        <svg id="rock-svg" viewBox="0 0 130 120" xmlns="http://www.w3.org/2000/svg" width="130" height="120">
+          <defs>
+            <radialGradient id="rockGrad" cx="40%" cy="35%">
+              <stop offset="0%"   stop-color="#8a8a9e"/>
+              <stop offset="50%"  stop-color="#5a5a6e"/>
+              <stop offset="100%" stop-color="#3a3a4e"/>
+            </radialGradient>
+            <radialGradient id="rockShad" cx="60%" cy="70%">
+              <stop offset="0%"   stop-color="rgba(0,0,0,0)"/>
+              <stop offset="100%" stop-color="rgba(0,0,0,0.45)"/>
+            </radialGradient>
+          </defs>
+          <path d="M20 95 Q10 75 15 52 Q20 28 42 18 Q62 8 82 15 Q102 22 112 44 Q122 66 118 86 Q114 104 94 108 Q70 115 48 110 Q28 106 20 95 Z"
+                fill="url(#rockGrad)" stroke="#2a2a3e" stroke-width="2"/>
+          <path d="M20 95 Q10 75 15 52 Q20 28 42 18 Q62 8 82 15 Q102 22 112 44 Q122 66 118 86 Q114 104 94 108 Q70 115 48 110 Q28 106 20 95 Z"
+                fill="url(#rockShad)"/>
+          <path d="M38 22 Q58 14 80 20 Q70 18 50 24 Z" fill="rgba(255,255,255,0.18)"/>
+          <path d="M55 40 L48 58 L60 68 L52 85" stroke="#222233" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path d="M70 30 L65 46 L75 55"        stroke="#222233" stroke-width="2"   fill="none" stroke-linecap="round"/>
+          <path d="M85 55 L80 70 L90 78 L86 92" stroke="#222233" stroke-width="2"   fill="none" stroke-linecap="round"/>
+          <path d="M45 65 L35 72"               stroke="#222233" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <path d="M60 68 L68 75 L64 82"        stroke="#1a1a2e" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <path id="gem1" d="M62 48 L72 52 L68 62 L58 58 Z" fill="#4488ff" opacity="0.6"/>
+          <path id="gem2" d="M38 72 L44 68 L48 76 L42 80 Z" fill="#ff4488" opacity="0.55"/>
+          <path id="gem3" d="M88 62 L94 66 L90 74 L84 70 Z" fill="#44ffaa" opacity="0.5"/>
+          <circle cx="55" cy="35" r="2"   fill="#ffffcc" opacity="0.7"/>
+          <circle cx="92" cy="48" r="1.5" fill="#ffffcc" opacity="0.6"/>
+          <circle cx="40" cy="80" r="1.5" fill="#ffffcc" opacity="0.5"/>
+        </svg>
+      </div>
+    </div>
+
+    <div id="levelup-banner">🎉 ¡Roca <span id="banner-level">2</span> desbloqueada!</div>
+
+    <!-- Overlays -->
+    <div class="section-overlay" id="overlay-picks">
+      <div class="section-card">
+        <h2>⛏️ Mejoras de Pico</h2>
+        <div class="upgrade-list" id="upgrade-list"></div>
+        <button class="section-close" onclick="closeSection()">Cerrar</button>
+      </div>
+    </div>
+    <div class="section-overlay" id="overlay-clans">
+      <div class="section-card"><h2>🛡️ Clanes</h2><p>Únete a un clan y minea con amigos.</p><button class="section-close" onclick="closeSection()">Cerrar</button></div>
+    </div>
+    <div class="section-overlay" id="overlay-battle">
+      <div class="section-card"><h2>⚔️ Batalla</h2><p>Enfrenta enemigos en combate épico.</p><button class="section-close" onclick="closeSection()">Cerrar</button></div>
+    </div>
+    <div class="section-overlay" id="overlay-attrs">
+      <div class="section-card"><h2>📊 Atributos</h2><p>Distribuye tus puntos de habilidad.</p><button class="section-close" onclick="closeSection()">Cerrar</button></div>
+    </div>
+    <div class="section-overlay" id="overlay-arena">
+      <div class="section-card"><h2>🏟️ Arena PvP</h2><p>Compite contra otros jugadores en tiempo real.</p><button class="section-close" onclick="closeSection()">Cerrar</button></div>
+    </div>
+    <div class="section-overlay" id="overlay-events">
+      <div class="section-card"><h2>🎪 Eventos</h2><p>Participa en eventos especiales de temporada.</p><button class="section-close" onclick="closeSection()">Cerrar</button></div>
+    </div>
+    <div class="section-overlay" id="overlay-prestige">
+      <div class="section-card"><h2>✨ Prestigio</h2><p>Reinicia con bonificaciones permanentes.</p><button class="section-close" onclick="closeSection()">Cerrar</button></div>
+    </div>
+    <div class="section-overlay" id="overlay-pets">
+      <div class="section-card"><h2>🐾 Mascotas</h2><p>Colecciona mascotas que potencian tu minería.</p><button class="section-close" onclick="closeSection()">Cerrar</button></div>
+    </div>
+    <div class="section-overlay" id="overlay-settings">
+      <div class="section-card"><h2>⚙️ Ajustes</h2><p>Configura el audio, gráficos y cuenta.</p><button class="section-close" onclick="closeSection()">Cerrar</button></div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div id="nav-menu">
+    <div class="nav-grid">
+      <button class="nav-btn btn-picks"    onclick="openSection('picks')">   <span class="nav-index">1</span><span class="nav-icon">⛏️</span><span class="nav-label">Picos</span></button>
+      <button class="nav-btn btn-clans"    onclick="openSection('clans')">   <span class="nav-index">2</span><span class="nav-icon">🛡️</span><span class="nav-label">Clanes</span></button>
+      <button class="nav-btn btn-battle"   onclick="openSection('battle')">  <span class="nav-index">3</span><span class="nav-icon">⚔️</span><span class="nav-label">Batalla</span></button>
+      <button class="nav-btn btn-attrs"    onclick="openSection('attrs')">   <span class="nav-index">4</span><span class="nav-icon">📊</span><span class="nav-label">Atributos</span></button>
+      <button class="nav-btn btn-arena"    onclick="openSection('arena')">   <span class="nav-index">5</span><span class="nav-icon">🏟️</span><span class="nav-label">Arena PvP</span></button>
+      <button class="nav-btn btn-events"   onclick="openSection('events')">  <span class="nav-index">6</span><span class="nav-icon">🎪</span><span class="nav-label">Eventos</span></button>
+      <button class="nav-btn btn-prestige" onclick="openSection('prestige')"><span class="nav-index">7</span><span class="nav-icon">✨</span><span class="nav-label">Prestigio</span></button>
+      <button class="nav-btn btn-pets"     onclick="openSection('pets')">    <span class="nav-index">8</span><span class="nav-icon">🐾</span><span class="nav-label">Mascotas</span></button>
+      <button class="nav-btn btn-settings" onclick="openSection('settings')"><span class="nav-index">9</span><span class="nav-icon">⚙️</span><span class="nav-label">Ajustes</span></button>
+    </div>
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
