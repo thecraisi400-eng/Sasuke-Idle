@@ -20,13 +20,13 @@ const state = {
 // ── Rock HP formula (hard difficulty)
 // Level 1 → 30 HP, each subsequent rock ×3 harder
 function calcRockHp(rl) {
-  return Math.floor(30 * Math.pow(3.0, rl - 1));
+  return Math.floor(35 * Math.pow(2.4, rl - 1));
 }
 
 // ── Gold reward per kill (scales with player level)
 // Level 1 → 5 gold; each level multiplies reward by 2
 function calcGoldReward(lvl) {
-  return Math.floor(5 * Math.pow(2, lvl - 1));
+  return Math.floor(8 * Math.pow(1.7, lvl - 1));
 }
 
 // ── Init rock
@@ -69,6 +69,7 @@ function updateUI() {
   document.getElementById('hp-red').style.width  = pct + '%';
   document.getElementById('hp-text').textContent =
     fmtHp(state.rockHpCur) + ' / ' + fmtHp(state.rockHpMax);
+  renderSectionContent();
 }
 
 // ══════════════════════════════════════
@@ -248,6 +249,39 @@ const sectionColors = {
 let activeKey = null;
 let activeBtn = null;
 
+function upgradePick() {
+  const cost = Math.floor(20 * Math.pow(1.8, state.clickDmg - 1));
+  if (state.gold < cost) return;
+  state.gold -= cost;
+  state.clickDmg += 1;
+  state.dps += 1;
+  updateUI();
+}
+
+function renderSectionContent() {
+  const content = document.getElementById('section-content');
+  const coming = document.querySelector('.section-coming');
+  if (!content || !coming) return;
+
+  if (activeKey === 'picks') {
+    const cost = Math.floor(20 * Math.pow(1.8, state.clickDmg - 1));
+    content.classList.add('visible');
+    coming.style.display = 'none';
+    content.innerHTML = `
+      <div class="picks-card">
+        <div>⛏️ Pico actual: Nv. ${state.clickDmg}</div>
+        <div>Daño/Seg global: ${state.dps}</div>
+        <div>Mejora: ${fmt(cost)} 💰</div>
+        <button class="picks-btn" onclick="upgradePick()">Mejorar pico</button>
+      </div>
+    `;
+  } else {
+    content.classList.remove('visible');
+    content.innerHTML = '';
+    coming.style.display = '';
+  }
+}
+
 function toggleSection(btn, title, sub, key) {
   const cave  = document.getElementById('cave');
   const sbar  = document.getElementById('status-bar');
@@ -259,6 +293,7 @@ function toggleSection(btn, title, sub, key) {
     cave.style.display = ''; sbar.style.display = '';
     state.sectionOpen = false;
     activeKey = null; activeBtn = null;
+    renderSectionContent();
     return;
   }
 
@@ -280,6 +315,7 @@ function toggleSection(btn, title, sub, key) {
 
   btn.classList.add('active');
   activeKey = key; activeBtn = btn;
+  renderSectionContent();
 }
 
 // ══════════════════════════════════════
