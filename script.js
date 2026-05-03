@@ -20,15 +20,15 @@ const state = {
 };
 
 const baseHitRate = 1;
-const baseCritChance = 0.0002; // 0.02%
+const baseCritChance = 0.0001; // 0.01%
 const speedPerLevel = 0.02;
-const critPerLevel = 0.00015; // 0.015%
+const critPerLevel = 0.0009999; // +0.09999% por nivel (nivel 1000 = 100%)
 
 function getHitRate() {
   return baseHitRate + state.pickSpeedLevel * speedPerLevel;
 }
 function getCritChance() {
-  return baseCritChance + state.pickCritLevel * critPerLevel;
+  return Math.min(1, baseCritChance + state.pickCritLevel * critPerLevel);
 }
 
 // ── Rock HP formula (hard difficulty)
@@ -226,25 +226,44 @@ function handleCaveClick(e) {
 //  IDLE TICK  — DPS is FIXED at 1
 // ══════════════════════════════════════
 let lastTick = Date.now();
+let autoAttackElapsed = 0;
+let autoCritElapsed = 0;
+let autoCritActive = false;
+
 function idleTick() {
   const now = Date.now();
   const dt  = (now - lastTick) / 1000;
   lastTick  = now;
 
   if (!state.sectionOpen) {
-    const isCrit = Math.random() < getCritChance();
-    const dmg = state.dps * getHitRate() * dt * (isCrit ? 2.2 : 1);
-    state.rockHpCur = Math.max(0, state.rockHpCur - dmg);
-    if (state.rockHpCur <= 0) respawnRock();
+    autoAttackElapsed += dt;
+    autoCritElapsed += dt;
 
-    // Very subtle idle damage number (dps=1 so it's tiny)
-    if (Math.random() < 0.04) {
-      const cave = document.getElementById('cave');
-      if (cave) {
-        const rect = cave.getBoundingClientRect();
-        const rx   = rect.left + rect.width  * (0.3 + Math.random()*0.3);
-        const ry   = rect.top  + rect.height * (0.35 + Math.random()*0.2);
-        spawnDmg(rx, ry, dmg, 'dmg-cyan', isCrit);
+    // Cada 1 segundo se evalúa automáticamente si el siguiente ciclo de golpes será crítico
+    while (autoCritElapsed >= 1) {
+      autoCritElapsed -= 1;
+      autoCritActive = Math.random() < getCritChance();
+    }
+
+    const attackInterval = 1 / getHitRate();
+    while (autoAttackElapsed >= attackInterval) {
+      autoAttackElapsed -= attackInterval;
+      const dmg = state.dps * (autoCritActive ? 2.2 : 1);
+      state.rockHpCur = Math.max(0, state.rockHpCur - dmg);
+
+      if (Math.random() < 0.12) {
+        const cave = document.getElementById('cave');
+        if (cave) {
+          const rect = cave.getBoundingClientRect();
+          const rx   = rect.left + rect.width  * (0.3 + Math.random()*0.3);
+          const ry   = rect.top  + rect.height * (0.35 + Math.random()*0.2);
+          spawnDmg(rx, ry, dmg, 'dmg-cyan', autoCritActive);
+        }
+      }
+
+      if (state.rockHpCur <= 0) {
+        respawnRock();
+        break;
       }
     }
   }
