@@ -18,6 +18,8 @@ const state = {
   isShaking  : false,
   sectionOpen: false,
   crackPool  : [],
+  lowFx      : false,
+  perfBudget : 1,
 };
 
 const baseHitRate = 1;
@@ -118,18 +120,56 @@ function fmtHp(n) {
 // ══════════════════════════════════════
 //  UI UPDATE
 // ══════════════════════════════════════
-function updateUI() {
-  document.getElementById('gold-display').textContent    = fmt(state.gold);
-  document.getElementById('special-display').textContent = fmt(state.special);
-  document.getElementById('dps-display').textContent     = fmt(state.dps) + ' DPS';
-  document.getElementById('level-label').textContent     = '⭐ NIV ' + state.level;
-  document.getElementById('xp-bar').style.width          = Math.min(100, state.xp) + '%';
+const ui = {};
+const dirty = { all:true, currency:true, dps:true, level:true, xp:true, hp:true, section:true };
 
-  const pct = Math.max(0, state.rockHpCur / state.rockHpMax * 100);
-  document.getElementById('hp-red').style.width  = pct + '%';
-  document.getElementById('hp-text').textContent =
-    fmtHp(state.rockHpCur) + ' / ' + fmtHp(state.rockHpMax);
-  renderSectionContent();
+function cacheDom() {
+  ui.gold = document.getElementById('gold-display');
+  ui.special = document.getElementById('special-display');
+  ui.dps = document.getElementById('dps-display');
+  ui.level = document.getElementById('level-label');
+  ui.xp = document.getElementById('xp-bar');
+  ui.hpRed = document.getElementById('hp-red');
+  ui.hpText = document.getElementById('hp-text');
+  ui.cave = document.getElementById('cave');
+  ui.particleLayer = document.getElementById('particle-layer');
+  ui.rock = document.getElementById('rock');
+  ui.rockCracks = document.getElementById('rock-cracks');
+  ui.content = document.getElementById('section-content');
+  ui.coming = document.querySelector('.section-coming');
+}
+
+function markDirty(...keys){ keys.forEach(k => dirty[k] = true); }
+
+function updateUI() {
+  if (dirty.all || dirty.currency) {
+    if (ui.gold) ui.gold.textContent = fmt(state.gold);
+    if (ui.special) ui.special.textContent = fmt(state.special);
+    dirty.currency = false;
+  }
+  if (dirty.all || dirty.dps) {
+    if (ui.dps) ui.dps.textContent = fmt(state.dps) + ' DPS';
+    dirty.dps = false;
+  }
+  if (dirty.all || dirty.level) {
+    if (ui.level) ui.level.textContent = '⭐ NIV ' + state.level;
+    dirty.level = false;
+  }
+  if (dirty.all || dirty.xp) {
+    if (ui.xp) ui.xp.style.width = Math.min(100, state.xp) + '%';
+    dirty.xp = false;
+  }
+  if (dirty.all || dirty.hp) {
+    const pct = Math.max(0, state.rockHpCur / state.rockHpMax * 100);
+    if (ui.hpRed) ui.hpRed.style.width = pct + '%';
+    if (ui.hpText) ui.hpText.textContent = fmtHp(state.rockHpCur) + ' / ' + fmtHp(state.rockHpMax);
+    dirty.hp = false;
+  }
+  if (dirty.all || dirty.section) {
+    renderSectionContent();
+    dirty.section = false;
+  }
+  dirty.all = false;
 }
 
 // ══════════════════════════════════════
@@ -143,7 +183,7 @@ const DAMAGE_COLORS = {
 const critPfx   = ['','','💥 ','⚡ ','🔥 '];
 
 function spawnDmg(x, y, value, colorClass, isCrit) {
-  const cave = document.getElementById('cave');
+  const cave = ui.cave;
   if (!cave) return;
   const el   = document.createElement('div');
   el.className = 'damage-number ' + colorClass;
@@ -154,16 +194,17 @@ function spawnDmg(x, y, value, colorClass, isCrit) {
   el.style.left = (x - rect.left - 16) + 'px';
   el.style.top  = (y - rect.top  - 16) + 'px';
   el.style.setProperty('--dx', ((Math.random()-0.5)*48) + 'px');
-  document.getElementById('particle-layer').appendChild(el);
+  if (ui.particleLayer) ui.particleLayer.appendChild(el);
   el.addEventListener('animationend', () => el.remove());
 }
 
 function spawnDebris(x, y, intensity = 1) {
-  const cave  = document.getElementById('cave');
+  const cave  = ui.cave;
   if (!cave) return;
   const rect  = cave.getBoundingClientRect();
   const cols  = ['#6b6b7e','#4a4a5a','#8d8d9a','#9ea7b3','#a1887f','#cfd8dc'];
-  const amount = Math.max(5, Math.floor(10 * intensity));
+  const fxScale = state.lowFx ? 0.45 : 1;
+  const amount = Math.max(3, Math.floor(10 * intensity * fxScale));
   for (let i = 0; i < amount; i++) {
     const d  = document.createElement('div');
     d.className = 'debris';
@@ -171,23 +212,24 @@ function spawnDebris(x, y, intensity = 1) {
     d.style.cssText = `width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};
       left:${x-rect.left}px;top:${y-rect.top}px;
       --dx:${(Math.random()-0.5)*(90*intensity)}px;--dy:${-(20+Math.random()*70*intensity)}px;--dur:${0.35+Math.random()*0.45}s;`; 
-    document.getElementById('particle-layer').appendChild(d);
+    if (ui.particleLayer) ui.particleLayer.appendChild(d);
     d.addEventListener('animationend', () => d.remove());
   }
 }
 
 
 function spawnImpactBurst(intensity = 1) {
-  const cave = document.getElementById('cave');
-  const layer = document.getElementById('particle-layer');
-  const rock = document.getElementById('rock');
+  const cave = ui.cave;
+  const layer = ui.particleLayer;
+  const rock = ui.rock;
   if (!cave || !layer || !rock) return;
   const caveRect = cave.getBoundingClientRect();
   const rockRect = rock.getBoundingClientRect();
   const cx = rockRect.left + rockRect.width / 2 - caveRect.left;
   const cy = rockRect.top + rockRect.height / 2 - caveRect.top;
   const maxR = Math.min(rockRect.width, rockRect.height) * 0.5;
-  const count = Math.max(14, Math.floor(20 * intensity));
+  const fxScale = state.lowFx ? 0.45 : 1;
+  const count = Math.max(7, Math.floor(20 * intensity * fxScale));
 
   for (let i = 0; i < count; i++) {
     const p = document.createElement('div');
@@ -202,7 +244,7 @@ function spawnImpactBurst(intensity = 1) {
 }
 
 function generateRockCracks() {
-  const layer = document.getElementById('rock-cracks');
+  const layer = ui.rockCracks;
   if (!layer) return;
 
   const hpPct = (state.rockHpCur / state.rockHpMax) * 100;
@@ -214,17 +256,21 @@ function generateRockCracks() {
   let crackCount = 0;
   for (const t of targets) if (hpPct <= t.hp) crackCount = t.cracks;
 
-  layer.innerHTML = '';
-  const visible = state.crackPool.slice(0, crackCount);
-  for (const crack of visible) {
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', crack.d);
-    path.setAttribute('stroke', `rgba(22,12,12,${crack.opacity ?? '0.82'})`);
-    path.setAttribute('stroke-width', crack.w);
-    path.setAttribute('stroke-linecap', 'round');
-    path.setAttribute('fill', 'none');
-    layer.appendChild(path);
+  if (!layer.__crackPaths) {
+    layer.__crackPaths = state.crackPool.map((crack) => {
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', crack.d);
+      path.setAttribute('stroke', `rgba(22,12,12,${crack.opacity ?? '0.82'})`);
+      path.setAttribute('stroke-width', crack.w);
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('fill', 'none');
+      layer.appendChild(path);
+      return path;
+    });
   }
+  layer.__crackPaths.forEach((path, idx) => {
+    path.style.display = idx < crackCount ? '' : 'none';
+  });
 }
 // ══════════════════════════════════════
 //  LEVEL UP
@@ -265,12 +311,13 @@ generateRockCracks();
   }
 
   // Gold popup near rock container
-  const cave = document.getElementById('cave');
+  const cave = ui.cave;
   if (cave) {
     const rect = cave.getBoundingClientRect();
     spawnDmg(rect.left + rect.width*0.40, rect.top + rect.height*0.48, reward, 'dmg-yellow', true);
   }
 
+  markDirty('currency','level','hp','section','dps','xp');
   updateUI();
 }
 
@@ -313,6 +360,7 @@ function clickRock(e) {
   spawnImpactBurst(1.15);
   generateRockCracks();
   if (state.rockHpCur <= 0) respawnRock();
+  markDirty('hp');
   updateUI();
 }
 
@@ -329,11 +377,13 @@ function handleCaveClick(e) {
 // ══════════════════════════════════════
 //  IDLE TICK  — DPS is FIXED at 1
 // ══════════════════════════════════════
-let lastTick = Date.now();
-function idleTick() {
-  const now = Date.now();
-  const dt  = (now - lastTick) / 1000;
-  lastTick  = now;
+let lastTick = performance.now();
+let lastUiUpdate = performance.now();
+let frameAcc = 0;
+const LOGIC_STEP = 100;
+const UI_STEP = 150;
+
+function idleStep(dt) {
 
   if (!state.sectionOpen) {
     const isCrit = Math.random() < getCritChance();
@@ -342,9 +392,23 @@ function idleTick() {
     generateRockCracks();
     if (state.rockHpCur <= 0) respawnRock();
   }
-  updateUI();
+  markDirty('hp');
 }
-setInterval(idleTick, 100);
+
+function gameLoop(now) {
+  const elapsed = now - lastTick;
+  lastTick = now;
+  frameAcc += elapsed;
+  while (frameAcc >= LOGIC_STEP) {
+    idleStep(LOGIC_STEP / 1000);
+    frameAcc -= LOGIC_STEP;
+  }
+  if (now - lastUiUpdate >= UI_STEP) {
+    updateUI();
+    lastUiUpdate = now;
+  }
+  requestAnimationFrame(gameLoop);
+}
 
 // ══════════════════════════════════════
 //  SECTION NAVIGATION
@@ -368,8 +432,8 @@ function ensurePicksController() {
 
 
 function renderSectionContent() {
-  const content = document.getElementById('section-content');
-  const coming = document.querySelector('.section-coming');
+  const content = ui.content;
+  const coming = ui.coming;
   if (!content || !coming) return;
 
   if (activeKey === 'picks') {
@@ -392,7 +456,7 @@ function renderSectionContent() {
 }
 
 function toggleSection(btn, title, sub, key) {
-  const cave  = document.getElementById('cave');
+  const cave  = ui.cave;
   const sbar  = document.getElementById('status-bar');
   const panel = document.getElementById('section-panel');
 
@@ -402,6 +466,7 @@ function toggleSection(btn, title, sub, key) {
     cave.style.display = ''; sbar.style.display = '';
     state.sectionOpen = false;
     activeKey = null; activeBtn = null;
+    markDirty('section');
     renderSectionContent();
     return;
   }
@@ -424,13 +489,19 @@ function toggleSection(btn, title, sub, key) {
 
   btn.classList.add('active');
   activeKey = key; activeBtn = btn;
+  markDirty('section');
   renderSectionContent();
 }
 
 // ══════════════════════════════════════
 //  BOOT
 // ══════════════════════════════════════
+cacheDom();
+state.lowFx = /Android|Mobi/i.test(navigator.userAgent) && (navigator.hardwareConcurrency || 4) <= 4;
+if (state.lowFx) document.body.classList.add('low-fx');
 initRock();
 generateRockCracks();
 ensurePicksController();
+markDirty('all','currency','dps','level','xp','hp','section');
 updateUI();
+requestAnimationFrame(gameLoop);
