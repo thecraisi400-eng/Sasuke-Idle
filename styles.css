@@ -243,6 +243,19 @@ html, body {
   100% { opacity:0; transform:translate(var(--dx),var(--dy)) rotate(360deg) scale(0); }
 }
 
+
+.impact-particle {
+  position:absolute;
+  border-radius:35% 65% 45% 55%;
+  background: radial-gradient(circle at 30% 30%, #d6d6de 0%, #8c8c97 55%, #44424d 100%);
+  box-shadow: 0 0 6px rgba(220,220,240,0.35);
+  pointer-events:none;
+  animation:impactBurst var(--dur) cubic-bezier(.16,.75,.24,1) forwards;
+}
+@keyframes impactBurst {
+  0% { opacity:0.98; transform:translate(0,0) scale(1); }
+  100% { opacity:0; transform:translate(var(--dx), var(--dy)) scale(0.4); }
+}
 /* ─── SECTION PANEL ─── */
 #section-panel {
   display:none; flex-direction:column; align-items:center; justify-content:center;
