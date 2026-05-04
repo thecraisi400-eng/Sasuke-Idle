@@ -17,6 +17,7 @@ const state = {
 
   isShaking  : false,
   sectionOpen: false,
+  crackPool  : [],
 };
 
 const baseHitRate = 1;
@@ -47,6 +48,33 @@ function calcGoldReward(lvl) {
 function initRock() {
   state.rockHpMax = calcRockHp(state.rockLevel);
   state.rockHpCur = state.rockHpMax;
+  state.crackPool = buildCrackPool(25);
+}
+
+
+function buildCrackPool(total = 25) {
+  const pts = [];
+  const minDist = 14;
+  let guard = 0;
+  while (pts.length < total && guard < 1200) {
+    guard++;
+    const x = 20 + Math.random() * 80;
+    const y = 14 + Math.random() * 72;
+    if (pts.every(([px, py]) => Math.hypot(x - px, y - py) >= minDist)) pts.push([x, y]);
+  }
+
+  return pts.map(([x, y]) => {
+    const len = 5 + Math.random() * 8;
+    const a = Math.random() * Math.PI * 2;
+    const x2 = x + Math.cos(a) * len;
+    const y2 = y + Math.sin(a) * len;
+    const midx = (x + x2) / 2 + (Math.random() - 0.5) * 3;
+    const midy = (y + y2) / 2 + (Math.random() - 0.5) * 3;
+    return {
+      d: `M ${x.toFixed(1)} ${y.toFixed(1)} Q ${midx.toFixed(1)} ${midy.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`,
+      w: (1.15 + Math.random() * 1.1).toFixed(2),
+    };
+  });
 }
 
 // ══════════════════════════════════════
@@ -156,9 +184,8 @@ function spawnImpactBurst(intensity = 1) {
 }
 
 function generateRockCracks() {
-  const rock = document.getElementById('rock');
   const layer = document.getElementById('rock-cracks');
-  if (!rock || !layer) return;
+  if (!layer) return;
 
   const hpPct = (state.rockHpCur / state.rockHpMax) * 100;
   const targets = [
@@ -169,28 +196,13 @@ function generateRockCracks() {
   let crackCount = 0;
   for (const t of targets) if (hpPct <= t.hp) crackCount = t.cracks;
 
-  const pts = [];
-  const minDist = 14;
-  let guard = 0;
-  while (pts.length < crackCount && guard < 900) {
-    guard++;
-    const x = 20 + Math.random() * 80;
-    const y = 14 + Math.random() * 72;
-    if (pts.every(([px, py]) => Math.hypot(x - px, y - py) >= minDist)) pts.push([x, y]);
-  }
-
   layer.innerHTML = '';
-  for (const [x, y] of pts) {
-    const len = 5 + Math.random() * 8;
-    const a = Math.random() * Math.PI * 2;
-    const x2 = x + Math.cos(a) * len;
-    const y2 = y + Math.sin(a) * len;
-    const midx = (x + x2) / 2 + (Math.random() - 0.5) * 3;
-    const midy = (y + y2) / 2 + (Math.random() - 0.5) * 3;
+  const visible = state.crackPool.slice(0, crackCount);
+  for (const crack of visible) {
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${x.toFixed(1)} ${y.toFixed(1)} Q ${midx.toFixed(1)} ${midy.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`);
+    path.setAttribute('d', crack.d);
     path.setAttribute('stroke', 'rgba(22,12,12,0.82)');
-    path.setAttribute('stroke-width', (1.15 + Math.random() * 1.1).toFixed(2));
+    path.setAttribute('stroke-width', crack.w);
     path.setAttribute('stroke-linecap', 'round');
     path.setAttribute('fill', 'none');
     layer.appendChild(path);
@@ -312,17 +324,14 @@ function idleTick() {
     generateRockCracks();
     if (state.rockHpCur <= 0) respawnRock();
 
-    // Very subtle idle damage number (dps=1 so it's tiny)
-    if (Math.random() < 0.04) {
-      const cave = document.getElementById('cave');
-      if (cave) {
-        const rect = cave.getBoundingClientRect();
-        const rx   = rect.left + rect.width  * (0.3 + Math.random()*0.3);
-        const ry   = rect.top  + rect.height * (0.35 + Math.random()*0.2);
-        spawnDmg(rx, ry, dmg, isCrit ? DAMAGE_COLORS.crit : DAMAGE_COLORS.auto, isCrit);
-        spawnImpactBurst(isCrit ? 1.1 : 0.9);
-        spawnDebris(rx, ry, 0.9);
-      }
+    const cave = document.getElementById('cave');
+    if (cave && dmg > 0) {
+      const rect = cave.getBoundingClientRect();
+      const rx   = rect.left + rect.width  * (0.45 + Math.random()*0.10);
+      const ry   = rect.top  + rect.height * (0.40 + Math.random()*0.12);
+      spawnDmg(rx, ry, dmg, isCrit ? DAMAGE_COLORS.crit : DAMAGE_COLORS.auto, isCrit);
+      spawnImpactBurst(isCrit ? 1.1 : 0.9);
+      spawnDebris(rx, ry, 0.9);
     }
   }
   updateUI();
