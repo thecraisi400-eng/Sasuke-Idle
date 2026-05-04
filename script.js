@@ -89,9 +89,22 @@ function updateUI() {
 // ══════════════════════════════════════
 //  DAMAGE NUMBERS + DEBRIS
 // ══════════════════════════════════════
-const dmgColors = ['dmg-yellow','dmg-red','dmg-cyan','dmg-white'];
 const critPfx   = ['','','💥 ','⚡ ','🔥 '];
 
+
+
+const crackStages = [
+  { threshold: 90, totalCracks: 1 },
+  { threshold: 80, totalCracks: 3 },
+  { threshold: 70, totalCracks: 4 },
+  { threshold: 60, totalCracks: 6 },
+  { threshold: 50, totalCracks: 7 },
+  { threshold: 40, totalCracks: 8 },
+  { threshold: 30, totalCracks: 9 },
+  { threshold: 15, totalCracks: 10 },
+  { threshold: 5, totalCracks: 12 },
+];
+let rockCracks = [];
 function spawnDmg(x, y, value, colorClass, isCrit) {
   const cave = document.getElementById('cave');
   if (!cave) return;
@@ -99,7 +112,7 @@ function spawnDmg(x, y, value, colorClass, isCrit) {
   el.className = 'damage-number ' + colorClass;
   const pfx  = isCrit ? critPfx[Math.floor(Math.random()*critPfx.length)] : '';
   el.textContent = pfx + fmtHp(value);
-  if (isCrit) { el.style.fontSize='clamp(15px,4.2vw,22px)'; el.style.color='#FF4081'; }
+  if (isCrit) { el.style.fontSize='clamp(15px,4.2vw,22px)'; }
   const rect = cave.getBoundingClientRect();
   el.style.left = (x - rect.left - 16) + 'px';
   el.style.top  = (y - rect.top  - 16) + 'px';
@@ -112,17 +125,51 @@ function spawnDebris(x, y) {
   const cave  = document.getElementById('cave');
   if (!cave) return;
   const rect  = cave.getBoundingClientRect();
-  const cols  = ['#6b6b7e','#4a4a5a','#90a4ae','#78909c','#FFD740','#00E5FF'];
-  for (let i = 0; i < 5; i++) {
+  const cols  = ['#757989','#5b5e6e','#3e404c','#9ba1b1','#b4bac7'];
+  for (let i = 0; i < 14; i++) {
     const d  = document.createElement('div');
     d.className = 'debris';
-    const sz = 2 + Math.random()*4;
+    const sz = 1.5 + Math.random()*5.5;
     d.style.cssText = `width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};
       left:${x-rect.left}px;top:${y-rect.top}px;
-      --dx:${(Math.random()-0.5)*65}px;--dy:${-(12+Math.random()*45)}px;--dur:${0.3+Math.random()*0.3}s;`;
+      --dx:${(Math.random()-0.5)*92}px;--dy:${-(14+Math.random()*58)}px;--dur:${0.35+Math.random()*0.55}s;`;
     document.getElementById('particle-layer').appendChild(d);
     d.addEventListener('animationend', () => d.remove());
   }
+}
+
+
+function randomCrackPath() {
+  const x = 16 + Math.random() * 88;
+  const y = 12 + Math.random() * 74;
+  const segments = 3 + Math.floor(Math.random() * 3);
+  let d = `M${x.toFixed(1)},${y.toFixed(1)}`;
+  let cx = x;
+  let cy = y;
+  for (let i = 0; i < segments; i++) {
+    cx = Math.max(8, Math.min(112, cx + (Math.random() - 0.5) * 20));
+    cy = Math.max(8, Math.min(92, cy + (Math.random() - 0.5) * 18));
+    d += ` L${cx.toFixed(1)},${cy.toFixed(1)}`;
+  }
+  return d;
+}
+
+function updateRockCracks() {
+  const crackLayer = document.getElementById('crack-layer');
+  if (!crackLayer || !state.rockHpMax) return;
+  const hpPct = (state.rockHpCur / state.rockHpMax) * 100;
+  let targetCracks = 0;
+  for (const stage of crackStages) {
+    if (hpPct <= stage.threshold) targetCracks = stage.totalCracks;
+  }
+
+  while (rockCracks.length < targetCracks) {
+    rockCracks.push(randomCrackPath());
+  }
+
+  crackLayer.innerHTML = rockCracks.map((d) =>
+    `<path d="${d}" stroke="rgba(18,18,22,0.78)" stroke-width="${1.1 + Math.random() * 1.6}" fill="none" stroke-linecap="round"/>`
+  ).join('');
 }
 
 // ══════════════════════════════════════
@@ -154,6 +201,8 @@ function respawnRock() {
   // Advance rock level and recalculate HP
   state.rockLevel++;
   initRock();
+  rockCracks = [];
+  updateRockCracks();
 
   // Flash
   const rock = document.getElementById('rock');
@@ -189,25 +238,26 @@ function clickRock(e) {
     }, { once: true });
   }
 
-  // Damage: clickDmg ±10%, 8% chance crit ×2.5
+  // Damage: clickDmg ±10%, crit = x2
   const base   = state.clickDmg * (0.9 + Math.random()*0.2);
   const isCrit = Math.random() < getCritChance();
-  const dmg    = isCrit ? base * 2.5 : base;
+  const dmg    = isCrit ? base * 2 : base;
 
   state.rockHpCur = Math.max(0, state.rockHpCur - dmg);
 
   const cx = e ? e.clientX : window.innerWidth/2;
   const cy = e ? e.clientY : window.innerHeight/2;
-  spawnDmg(cx, cy, dmg, isCrit ? 'dmg-red' : dmgColors[Math.floor(Math.random()*dmgColors.length)], isCrit);
+  spawnDmg(cx, cy, dmg, isCrit ? 'dmg-red' : 'dmg-yellow', isCrit);
 
   if (Math.random() < 0.32) {
     setTimeout(() => {
       spawnDmg(cx+(Math.random()-0.5)*44, cy+(Math.random()-0.5)*32,
-        dmg*(0.22+Math.random()*0.32), dmgColors[Math.floor(Math.random()*dmgColors.length)], false);
+        dmg*(0.22+Math.random()*0.32), 'dmg-yellow', false);
     }, 65);
   }
 
   spawnDebris(cx, cy);
+  updateRockCracks();
   if (state.rockHpCur <= 0) respawnRock();
   updateUI();
 }
@@ -233,8 +283,9 @@ function idleTick() {
 
   if (!state.sectionOpen) {
     const isCrit = Math.random() < getCritChance();
-    const dmg = state.dps * getHitRate() * dt * (isCrit ? 2.2 : 1);
+    const dmg = state.dps * getHitRate() * dt * (isCrit ? 2 : 1);
     state.rockHpCur = Math.max(0, state.rockHpCur - dmg);
+    updateRockCracks();
     if (state.rockHpCur <= 0) respawnRock();
 
     // Very subtle idle damage number (dps=1 so it's tiny)
@@ -244,7 +295,7 @@ function idleTick() {
         const rect = cave.getBoundingClientRect();
         const rx   = rect.left + rect.width  * (0.3 + Math.random()*0.3);
         const ry   = rect.top  + rect.height * (0.35 + Math.random()*0.2);
-        spawnDmg(rx, ry, dmg, 'dmg-cyan', isCrit);
+        spawnDmg(rx, ry, dmg, isCrit ? 'dmg-red' : 'dmg-white', isCrit);
       }
     }
   }
@@ -337,5 +388,6 @@ function toggleSection(btn, title, sub, key) {
 //  BOOT
 // ══════════════════════════════════════
 initRock();
+updateRockCracks();
 ensurePicksController();
 updateUI();
