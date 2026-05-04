@@ -122,6 +122,9 @@ function fmtHp(n) {
 // ══════════════════════════════════════
 const ui = {};
 const dirty = { all:true, currency:true, dps:true, level:true, xp:true, hp:true, section:true };
+const uiRects = { cave:null, rock:null };
+const pools = { dmg:[], debris:[], impact:[] };
+let poolInit = false;
 
 function cacheDom() {
   ui.gold = document.getElementById('gold-display');
@@ -140,6 +143,32 @@ function cacheDom() {
 }
 
 function markDirty(...keys){ keys.forEach(k => dirty[k] = true); }
+
+function refreshRects() {
+  if (ui.cave) uiRects.cave = ui.cave.getBoundingClientRect();
+  if (ui.rock) uiRects.rock = ui.rock.getBoundingClientRect();
+}
+
+function initPools() {
+  if (poolInit || !ui.particleLayer) return;
+  const make = (klass) => {
+    const el = document.createElement('div');
+    el.className = klass;
+    el.style.display = 'none';
+    el.dataset.busy = '0';
+    ui.particleLayer.appendChild(el);
+    return el;
+  };
+  for (let i=0;i<40;i++) pools.dmg.push(make('damage-number dmg-white'));
+  for (let i=0;i<120;i++) pools.debris.push(make('debris'));
+  for (let i=0;i<80;i++) pools.impact.push(make('impact-particle'));
+  poolInit = true;
+}
+
+function getFromPool(list) {
+  for (const el of list) if (el.dataset.busy === '0') return el;
+  return null;
+}
 
 function updateUI() {
   if (dirty.all || dirty.currency) {
@@ -185,35 +214,38 @@ const critPfx   = ['','','💥 ','⚡ ','🔥 '];
 function spawnDmg(x, y, value, colorClass, isCrit) {
   const cave = ui.cave;
   if (!cave) return;
-  const el   = document.createElement('div');
+  const el = getFromPool(pools.dmg);
+  if (!el) return;
+  el.dataset.busy = '1';
+  el.style.display = '';
   el.className = 'damage-number ' + colorClass;
   const pfx  = isCrit ? critPfx[Math.floor(Math.random()*critPfx.length)] : '';
   el.textContent = pfx + fmtHp(value);
   if (isCrit) { el.style.fontSize='clamp(15px,4.2vw,22px)'; el.style.color='#FF4081'; }
-  const rect = cave.getBoundingClientRect();
+  const rect = uiRects.cave || cave.getBoundingClientRect();
   el.style.left = (x - rect.left - 16) + 'px';
   el.style.top  = (y - rect.top  - 16) + 'px';
   el.style.setProperty('--dx', ((Math.random()-0.5)*48) + 'px');
-  if (ui.particleLayer) ui.particleLayer.appendChild(el);
-  el.addEventListener('animationend', () => el.remove());
+  el.onanimationend = () => { el.style.display='none'; el.dataset.busy='0'; };
 }
 
 function spawnDebris(x, y, intensity = 1) {
   const cave  = ui.cave;
   if (!cave) return;
-  const rect  = cave.getBoundingClientRect();
+  const rect  = uiRects.cave || cave.getBoundingClientRect();
   const cols  = ['#6b6b7e','#4a4a5a','#8d8d9a','#9ea7b3','#a1887f','#cfd8dc'];
   const fxScale = state.lowFx ? 0.45 : 1;
   const amount = Math.max(3, Math.floor(10 * intensity * fxScale));
   for (let i = 0; i < amount; i++) {
-    const d  = document.createElement('div');
-    d.className = 'debris';
+    const d = getFromPool(pools.debris);
+    if (!d) continue;
+    d.dataset.busy = '1';
+    d.style.display = '';
     const sz = 3 + Math.random()*6;
     d.style.cssText = `width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};
       left:${x-rect.left}px;top:${y-rect.top}px;
       --dx:${(Math.random()-0.5)*(90*intensity)}px;--dy:${-(20+Math.random()*70*intensity)}px;--dur:${0.35+Math.random()*0.45}s;`; 
-    if (ui.particleLayer) ui.particleLayer.appendChild(d);
-    d.addEventListener('animationend', () => d.remove());
+    d.onanimationend = () => { d.style.display='none'; d.dataset.busy='0'; };
   }
 }
 
@@ -223,8 +255,8 @@ function spawnImpactBurst(intensity = 1) {
   const layer = ui.particleLayer;
   const rock = ui.rock;
   if (!cave || !layer || !rock) return;
-  const caveRect = cave.getBoundingClientRect();
-  const rockRect = rock.getBoundingClientRect();
+  const caveRect = uiRects.cave || cave.getBoundingClientRect();
+  const rockRect = uiRects.rock || rock.getBoundingClientRect();
   const cx = rockRect.left + rockRect.width / 2 - caveRect.left;
   const cy = rockRect.top + rockRect.height / 2 - caveRect.top;
   const maxR = Math.min(rockRect.width, rockRect.height) * 0.5;
@@ -232,14 +264,15 @@ function spawnImpactBurst(intensity = 1) {
   const count = Math.max(7, Math.floor(20 * intensity * fxScale));
 
   for (let i = 0; i < count; i++) {
-    const p = document.createElement('div');
-    p.className = 'impact-particle';
+    const p = getFromPool(pools.impact);
+    if (!p) continue;
+    p.dataset.busy = '1';
+    p.style.display = '';
     const angle = Math.random() * Math.PI * 2;
     const dist = (0.2 + Math.random() * 0.8) * maxR;
     const size = 3 + Math.random() * 7;
     p.style.cssText = `left:${cx}px;top:${cy}px;width:${size}px;height:${size}px;--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;--dur:${0.28+Math.random()*0.28}s;`;
-    layer.appendChild(p);
-    p.addEventListener('animationend', () => p.remove());
+    p.onanimationend = () => { p.style.display='none'; p.dataset.busy='0'; };
   }
 }
 
@@ -499,6 +532,10 @@ function toggleSection(btn, title, sub, key) {
 cacheDom();
 state.lowFx = /Android|Mobi/i.test(navigator.userAgent) && (navigator.hardwareConcurrency || 4) <= 4;
 if (state.lowFx) document.body.classList.add('low-fx');
+initPools();
+refreshRects();
+window.addEventListener('resize', refreshRects, { passive: true });
+window.addEventListener('orientationchange', refreshRects, { passive: true });
 initRock();
 generateRockCracks();
 ensurePicksController();

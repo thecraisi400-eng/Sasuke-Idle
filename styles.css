@@ -252,6 +252,26 @@ html, body {
   pointer-events:none;
   animation:impactBurst var(--dur) cubic-bezier(.16,.75,.24,1) forwards;
 }
+
+body.low-fx .flame-outer,
+body.low-fx .flame-inner,
+body.low-fx .torch-glow,
+body.low-fx #miner,
+body.low-fx #rock.shake,
+body.low-fx .damage-number,
+body.low-fx .debris,
+body.low-fx .impact-particle {
+  animation: none !important;
+}
+
+body.low-fx .currency-icon,
+body.low-fx #rock,
+body.low-fx .level-up-banner,
+body.low-fx .torch-glow {
+  filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
 @keyframes impactBurst {
   0% { opacity:0.98; transform:translate(0,0) scale(1); }
   100% { opacity:0; transform:translate(var(--dx), var(--dy)) scale(0.4); }
