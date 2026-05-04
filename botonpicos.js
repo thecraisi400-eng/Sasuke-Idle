@@ -64,42 +64,54 @@
     window.upgradePickSpeed = upgradePickSpeed;
     window.upgradePickCrit = upgradePickCrit;
 
-    function renderPicksContent() {
+    function getSnapshot() {
       const { sharp, speed, crit } = getCosts();
-      const canSharp = state.gold >= sharp;
-      const canSpeed = state.gold >= speed && state.pickSpeedLevel < MAX_LEVEL;
-      const canCrit = state.gold >= crit && state.pickCritLevel < MAX_LEVEL;
-      const critPct = (getCritChance() * 100).toFixed(3);
+      return {
+        sharp, speed, crit,
+        gold: state.gold,
+        clickDmg: state.clickDmg,
+        dps: state.dps,
+        pickSpeedLevel: state.pickSpeedLevel,
+        pickCritLevel: state.pickCritLevel,
+        critPct: (getCritChance() * 100).toFixed(3),
+      };
+    }
+
+    function renderPicksContent() {
+      const snap = getSnapshot();
+      const canSharp = snap.gold >= snap.sharp;
+      const canSpeed = snap.gold >= snap.speed && snap.pickSpeedLevel < MAX_LEVEL;
+      const canCrit = snap.gold >= snap.crit && snap.pickCritLevel < MAX_LEVEL;
 
       return `
         <div class="picks-card picks-wrapper">
           <div id="picks-feedback" class="picks-feedback"></div>
           <div class="pick-scroll">
             <div class="scroll-title">PICO AFILADO</div>
-            <div class="scroll-row">Nivel: <b>${state.clickDmg}</b></div>
-            <div class="scroll-row">Daño actual (DPS): <b>${fmt(state.dps)}</b></div>
-            <div class="scroll-row">Costo mejora: <b>${fmt(sharp)} 💰</b></div>
+            <div class="scroll-row">Nivel: <b>${snap.clickDmg}</b></div>
+            <div class="scroll-row">Daño actual (DPS): <b>${fmt(snap.dps)}</b></div>
+            <div class="scroll-row">Costo mejora: <b>${fmt(snap.sharp)} 💰</b></div>
             <button class="picks-btn ${canSharp ? 'can-upgrade' : 'no-upgrade'}" onclick="upgradePick()">MEJORAR PICO</button>
           </div>
           <div class="pick-scroll">
             <div class="scroll-title">VELOCIDAD PICO</div>
-            <div class="scroll-row">Nivel: <b>${state.pickSpeedLevel}/${MAX_LEVEL}</b></div>
+            <div class="scroll-row">Nivel: <b>${snap.pickSpeedLevel}/${MAX_LEVEL}</b></div>
             <div class="scroll-row">Golpes/s: <b>${getHitRate().toFixed(2)}</b></div>
-            <div class="scroll-row">Costo mejora: <b>${fmt(speed)} 💰</b></div>
-            <button class="picks-btn ${canSpeed ? 'can-upgrade' : 'no-upgrade'}" onclick="upgradePickSpeed()" ${state.pickSpeedLevel >= MAX_LEVEL ? 'disabled' : ''}>MEJORAR VELOCIDAD</button>
+            <div class="scroll-row">Costo mejora: <b>${fmt(snap.speed)} 💰</b></div>
+            <button class="picks-btn ${canSpeed ? 'can-upgrade' : 'no-upgrade'}" onclick="upgradePickSpeed()" ${snap.pickSpeedLevel >= MAX_LEVEL ? 'disabled' : ''}>MEJORAR VELOCIDAD</button>
           </div>
           <div class="pick-scroll">
             <div class="scroll-title">CRITICO PICO</div>
-            <div class="scroll-row">Nivel: <b>${state.pickCritLevel}/${MAX_LEVEL}</b></div>
-            <div class="scroll-row">Crítico: <b>${critPct}%</b></div>
-            <div class="scroll-row">Costo mejora: <b>${fmt(crit)} 💰</b></div>
-            <button class="picks-btn ${canCrit ? 'can-upgrade' : 'no-upgrade'}" onclick="upgradePickCrit()" ${state.pickCritLevel >= MAX_LEVEL ? 'disabled' : ''}>MEJORAR CRITICO</button>
+            <div class="scroll-row">Nivel: <b>${snap.pickCritLevel}/${MAX_LEVEL}</b></div>
+            <div class="scroll-row">Crítico: <b>${snap.critPct}%</b></div>
+            <div class="scroll-row">Costo mejora: <b>${fmt(snap.crit)} 💰</b></div>
+            <button class="picks-btn ${canCrit ? 'can-upgrade' : 'no-upgrade'}" onclick="upgradePickCrit()" ${snap.pickCritLevel >= MAX_LEVEL ? 'disabled' : ''}>MEJORAR CRITICO</button>
           </div>
         </div>
       `;
     }
 
-    return { renderPicksContent };
+    return { renderPicksContent, getSnapshot };
   }
 
   window.initPickButtons = initPickButtons;
