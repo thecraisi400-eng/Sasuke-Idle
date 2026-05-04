@@ -242,9 +242,14 @@ function spawnDebris(x, y, intensity = 1) {
     d.dataset.busy = '1';
     d.style.display = '';
     const sz = 3 + Math.random()*6;
-    d.style.cssText = `width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};
-      left:${x-rect.left}px;top:${y-rect.top}px;
-      --dx:${(Math.random()-0.5)*(90*intensity)}px;--dy:${-(20+Math.random()*70*intensity)}px;--dur:${0.35+Math.random()*0.45}s;`; 
+    d.style.width = sz + 'px';
+    d.style.height = sz + 'px';
+    d.style.background = cols[Math.floor(Math.random()*cols.length)];
+    d.style.left = (x - rect.left) + 'px';
+    d.style.top = (y - rect.top) + 'px';
+    d.style.setProperty('--dx', ((Math.random()-0.5)*(90*intensity)) + 'px');
+    d.style.setProperty('--dy', (-(20+Math.random()*70*intensity)) + 'px');
+    d.style.setProperty('--dur', (0.35+Math.random()*0.45) + 's');
     d.onanimationend = () => { d.style.display='none'; d.dataset.busy='0'; };
   }
 }
@@ -271,7 +276,13 @@ function spawnImpactBurst(intensity = 1) {
     const angle = Math.random() * Math.PI * 2;
     const dist = (0.2 + Math.random() * 0.8) * maxR;
     const size = 3 + Math.random() * 7;
-    p.style.cssText = `left:${cx}px;top:${cy}px;width:${size}px;height:${size}px;--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;--dur:${0.28+Math.random()*0.28}s;`;
+    p.style.left = cx + 'px';
+    p.style.top = cy + 'px';
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.setProperty('--dx', (Math.cos(angle)*dist) + 'px');
+    p.style.setProperty('--dy', (Math.sin(angle)*dist) + 'px');
+    p.style.setProperty('--dur', (0.28+Math.random()*0.28) + 's');
     p.onanimationend = () => { p.style.display='none'; p.dataset.busy='0'; };
   }
 }
@@ -288,6 +299,8 @@ function generateRockCracks() {
   ];
   let crackCount = 0;
   for (const t of targets) if (hpPct <= t.hp) crackCount = t.cracks;
+  if (crackCount === lastCrackCount && layer.__crackPaths) return;
+  lastCrackCount = crackCount;
 
   if (!layer.__crackPaths) {
     layer.__crackPaths = state.crackPool.map((crack) => {
@@ -334,7 +347,8 @@ function respawnRock() {
   // Advance rock level and recalculate HP
   state.rockLevel++;
   initRock();
-generateRockCracks();
+  lastCrackCount = -1;
+  generateRockCracks();
 
   // Flash
   const rock = document.getElementById('rock');
@@ -455,6 +469,8 @@ const sectionColors = {
 let activeKey = null;
 let activeBtn = null;
 let lastPicksMarkup = "";
+let lastPicksSnapshot = "";
+let lastCrackCount = -1;
 let picksController = null;
 
 function ensurePicksController() {
@@ -473,17 +489,22 @@ function renderSectionContent() {
     ensurePicksController();
     content.classList.add('visible');
     coming.style.display = 'none';
-    const nextMarkup = picksController ? picksController.renderPicksContent() : '';
-    if (nextMarkup !== lastPicksMarkup) {
+    const nextSnapshot = picksController && picksController.getSnapshot
+      ? JSON.stringify(picksController.getSnapshot())
+      : '';
+    if (nextSnapshot !== lastPicksSnapshot) {
+      const nextMarkup = picksController ? picksController.renderPicksContent() : '';
       const prevScrollTop = content.scrollTop;
       content.innerHTML = nextMarkup;
       content.scrollTop = prevScrollTop;
       lastPicksMarkup = nextMarkup;
+      lastPicksSnapshot = nextSnapshot;
     }
   } else {
     content.classList.remove('visible');
     content.innerHTML = '';
     lastPicksMarkup = '';
+    lastPicksSnapshot = '';
     coming.style.display = '';
   }
 }
