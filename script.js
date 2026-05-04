@@ -24,6 +24,99 @@ const baseCritChance = 0.0002; // 0.02%
 const speedPerLevel = 0.02;
 const critPerLevel = 0.00015; // 0.015%
 
+
+const crackStages = [
+  { hpPct: 90, count: 2 },
+  { hpPct: 80, count: 4 },
+  { hpPct: 70, count: 6 },
+  { hpPct: 60, count: 8 },
+  { hpPct: 50, count: 10 },
+  { hpPct: 40, count: 13 },
+  { hpPct: 30, count: 16 },
+  { hpPct: 15, count: 19 },
+  { hpPct: 5,  count: 25 },
+];
+
+let rockCracks = [];
+let lastAutoImpactAt = 0;
+
+function getTargetCracks(hpPct) {
+  let target = 0;
+  for (const stage of crackStages) {
+    if (hpPct <= stage.hpPct) target = stage.count;
+  }
+  return target;
+}
+
+function generateCrackPath(cx, cy, len, dirX, dirY) {
+  const bend = (Math.random() - 0.5) * 0.65;
+  const midX = cx + dirX * len * (0.45 + Math.random() * 0.2) + dirY * len * bend * 0.25;
+  const midY = cy + dirY * len * (0.45 + Math.random() * 0.2) - dirX * len * bend * 0.25;
+  const endX = cx + dirX * len;
+  const endY = cy + dirY * len;
+  return `M${cx.toFixed(2)},${cy.toFixed(2)} L${midX.toFixed(2)},${midY.toFixed(2)} L${endX.toFixed(2)},${endY.toFixed(2)}`;
+}
+
+function ensureRockCracks() {
+  const hpPct = Math.max(0, (state.rockHpCur / state.rockHpMax) * 100);
+  const target = getTargetCracks(hpPct);
+
+  let attempts = 0;
+  while (rockCracks.length < target && attempts < 1200) {
+    attempts++;
+    const x = 18 + Math.random() * 84;
+    const y = 14 + Math.random() * 72;
+
+    const tooClose = rockCracks.some((c) => {
+      const dx = c.x - x;
+      const dy = c.y - y;
+      return Math.hypot(dx, dy) < 14;
+    });
+    if (tooClose) continue;
+
+    const ang = Math.random() * Math.PI * 2;
+    const len = 8 + Math.random() * 12;
+    rockCracks.push({
+      x, y,
+      path: generateCrackPath(x, y, len, Math.cos(ang), Math.sin(ang)),
+      width: (1.2 + Math.random() * 1.9).toFixed(2),
+      glow: (0.35 + Math.random() * 0.3).toFixed(2),
+    });
+  }
+  renderCracks();
+}
+
+function renderCracks() {
+  const g = document.getElementById('dynamic-cracks');
+  if (!g) return;
+  g.innerHTML = rockCracks.map((c) => (
+    `<path d="${c.path}" class="rock-crack-shadow" stroke-width="${c.width}"></path>` +
+    `<path d="${c.path}" class="rock-crack-light" stroke-width="${c.glow}"></path>`
+  )).join('');
+}
+
+function spawnAutoImpactBurst() {
+  const cave = document.getElementById('cave');
+  const rock = document.getElementById('rock');
+  if (!cave || !rock) return;
+  const caveRect = cave.getBoundingClientRect();
+  const rockRect = rock.getBoundingClientRect();
+  const cx = rockRect.left + rockRect.width / 2;
+  const cy = rockRect.top + rockRect.height / 2;
+  const maxTravel = Math.min(rockRect.width, rockRect.height) * 0.5;
+
+  for (let i = 0; i < 9; i++) {
+    const p = document.createElement('div');
+    p.className = 'impact-chunk';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = maxTravel * (0.4 + Math.random() * 0.6);
+    const size = 4 + Math.random() * 8;
+    p.style.cssText = `left:${cx - caveRect.left}px;top:${cy - caveRect.top}px;width:${size}px;height:${size * (0.75 + Math.random() * 0.5)}px;--dx:${Math.cos(angle) * dist}px;--dy:${Math.sin(angle) * dist}px;--rot:${(Math.random() - 0.5) * 420}deg;--dur:${0.3 + Math.random() * 0.25}s;`;
+    document.getElementById('particle-layer').appendChild(p);
+    p.addEventListener('animationend', () => p.remove());
+  }
+}
+
 function getHitRate() {
   return baseHitRate + state.pickSpeedLevel * speedPerLevel;
 }
@@ -47,6 +140,8 @@ function calcGoldReward(lvl) {
 function initRock() {
   state.rockHpMax = calcRockHp(state.rockLevel);
   state.rockHpCur = state.rockHpMax;
+  rockCracks = [];
+  renderCracks();
 }
 
 // ══════════════════════════════════════
@@ -208,6 +303,7 @@ function clickRock(e) {
   }
 
   spawnDebris(cx, cy);
+  ensureRockCracks();
   if (state.rockHpCur <= 0) respawnRock();
   updateUI();
 }
@@ -235,7 +331,14 @@ function idleTick() {
     const isCrit = Math.random() < getCritChance();
     const dmg = state.dps * getHitRate() * dt * (isCrit ? 2.2 : 1);
     state.rockHpCur = Math.max(0, state.rockHpCur - dmg);
+    ensureRockCracks();
     if (state.rockHpCur <= 0) respawnRock();
+
+    const nowBurst = Date.now();
+    if (nowBurst - lastAutoImpactAt > 180) {
+      lastAutoImpactAt = nowBurst;
+      spawnAutoImpactBurst();
+    }
 
     // Very subtle idle damage number (dps=1 so it's tiny)
     if (Math.random() < 0.04) {
