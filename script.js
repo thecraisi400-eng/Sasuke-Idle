@@ -53,26 +53,44 @@ function initRock() {
 
 
 function buildCrackPool(total = 25) {
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
   const pts = [];
-  const minDist = 14;
+  const minDist = 11;
   let guard = 0;
-  while (pts.length < total && guard < 1200) {
+
+  while (pts.length < total && guard < 1800) {
     guard++;
-    const x = 20 + Math.random() * 80;
-    const y = 14 + Math.random() * 72;
+    const x = 14 + Math.random() * 72;
+    const y = 12 + Math.random() * 76;
     if (pts.every(([px, py]) => Math.hypot(x - px, y - py) >= minDist)) pts.push([x, y]);
   }
 
   return pts.map(([x, y]) => {
-    const len = 5 + Math.random() * 8;
-    const a = Math.random() * Math.PI * 2;
-    const x2 = x + Math.cos(a) * len;
-    const y2 = y + Math.sin(a) * len;
-    const midx = (x + x2) / 2 + (Math.random() - 0.5) * 3;
-    const midy = (y + y2) / 2 + (Math.random() - 0.5) * 3;
+    const segments = Math.random() < 0.35 ? 3 : 2;
+    const crackType = Math.random();
+    const baseLen = crackType < 0.3 ? 14 + Math.random() * 11 : 6 + Math.random() * 9;
+    const roughness = 1.2 + Math.random() * 2.1;
+    let currentX = x;
+    let currentY = y;
+    let angle = Math.random() * Math.PI * 2;
+    const parts = [`M ${x.toFixed(1)} ${y.toFixed(1)}`];
+
+    for (let i = 0; i < segments; i++) {
+      const segLen = baseLen * (0.6 + Math.random() * 0.55);
+      angle += (Math.random() - 0.5) * 0.9;
+      const nextX = clamp(currentX + Math.cos(angle) * segLen, 6, 94);
+      const nextY = clamp(currentY + Math.sin(angle) * segLen, 8, 92);
+      const midx = (currentX + nextX) / 2 + (Math.random() - 0.5) * roughness;
+      const midy = (currentY + nextY) / 2 + (Math.random() - 0.5) * roughness;
+      parts.push(`Q ${midx.toFixed(1)} ${midy.toFixed(1)} ${nextX.toFixed(1)} ${nextY.toFixed(1)}`);
+      currentX = nextX;
+      currentY = nextY;
+    }
+
     return {
-      d: `M ${x.toFixed(1)} ${y.toFixed(1)} Q ${midx.toFixed(1)} ${midy.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`,
-      w: (1.15 + Math.random() * 1.1).toFixed(2),
+      d: parts.join(' '),
+      w: crackType < 0.3 ? (1.8 + Math.random() * 1.1).toFixed(2) : (0.7 + Math.random() * 1.1).toFixed(2),
+      opacity: (0.56 + Math.random() * 0.32).toFixed(2),
     };
   });
 }
@@ -201,7 +219,7 @@ function generateRockCracks() {
   for (const crack of visible) {
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d', crack.d);
-    path.setAttribute('stroke', 'rgba(22,12,12,0.82)');
+    path.setAttribute('stroke', `rgba(22,12,12,${crack.opacity ?? '0.82'})`);
     path.setAttribute('stroke-width', crack.w);
     path.setAttribute('stroke-linecap', 'round');
     path.setAttribute('fill', 'none');
