@@ -94,15 +94,15 @@ const critPfx   = ['','','💥 ','⚡ ','🔥 '];
 
 
 const crackStages = [
-  { threshold: 90, totalCracks: 1 },
-  { threshold: 80, totalCracks: 3 },
-  { threshold: 70, totalCracks: 4 },
-  { threshold: 60, totalCracks: 6 },
-  { threshold: 50, totalCracks: 7 },
-  { threshold: 40, totalCracks: 8 },
-  { threshold: 30, totalCracks: 9 },
-  { threshold: 15, totalCracks: 10 },
-  { threshold: 5, totalCracks: 12 },
+  { threshold: 90, totalCracks: 2 },
+  { threshold: 80, totalCracks: 4 },
+  { threshold: 70, totalCracks: 6 },
+  { threshold: 60, totalCracks: 9 },
+  { threshold: 50, totalCracks: 12 },
+  { threshold: 40, totalCracks: 15 },
+  { threshold: 30, totalCracks: 18 },
+  { threshold: 15, totalCracks: 22 },
+  { threshold: 5, totalCracks: 27 },
 ];
 let rockCracks = [];
 function spawnDmg(x, y, value, colorClass, isCrit) {
@@ -135,6 +135,29 @@ function spawnDebris(x, y) {
       --dx:${(Math.random()-0.5)*92}px;--dy:${-(14+Math.random()*58)}px;--dur:${0.35+Math.random()*0.55}s;`;
     document.getElementById('particle-layer').appendChild(d);
     d.addEventListener('animationend', () => d.remove());
+  }
+}
+
+function spawnDestructionBurst(x, y, intensity = 1) {
+  const cave  = document.getElementById('cave');
+  if (!cave) return;
+  const rect  = cave.getBoundingClientRect();
+  const cols  = ['#949aaa', '#7d8294', '#626776', '#4f5360', '#b3bac8', '#d4dae6'];
+  const count = Math.floor(8 + intensity * 14);
+
+  for (let i = 0; i < count; i++) {
+    const p  = document.createElement('div');
+    p.className = 'debris';
+    const sz = 3.5 + Math.random() * (7 + intensity * 3.5);
+    const spreadX = (Math.random() - 0.5) * (120 + intensity * 75);
+    const spreadY = -(20 + Math.random() * (75 + intensity * 35));
+    const dur = 0.42 + Math.random() * 0.72;
+    p.style.cssText = `width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};
+      left:${x - rect.left + (Math.random() - 0.5) * 28}px;top:${y - rect.top + (Math.random() - 0.5) * 20}px;
+      border-radius:${20 + Math.random() * 35}%;
+      --dx:${spreadX}px;--dy:${spreadY}px;--dur:${dur}s;`;
+    document.getElementById('particle-layer').appendChild(p);
+    p.addEventListener('animationend', () => p.remove());
   }
 }
 
@@ -296,6 +319,18 @@ function idleTick() {
         const rx   = rect.left + rect.width  * (0.3 + Math.random()*0.3);
         const ry   = rect.top  + rect.height * (0.35 + Math.random()*0.2);
         spawnDmg(rx, ry, dmg, isCrit ? 'dmg-red' : 'dmg-white', isCrit);
+      }
+    }
+
+    if (Math.random() < 0.14) {
+      const cave = document.getElementById('cave');
+      if (cave) {
+        const rect = cave.getBoundingClientRect();
+        const rx = rect.left + rect.width * (0.28 + Math.random() * 0.44);
+        const ry = rect.top + rect.height * (0.26 + Math.random() * 0.46);
+        const hpPct = state.rockHpMax ? state.rockHpCur / state.rockHpMax : 1;
+        const intensity = Math.min(2.5, 0.65 + (1 - hpPct) * 2 + (isCrit ? 0.45 : 0));
+        spawnDestructionBurst(rx, ry, intensity);
       }
     }
   }
