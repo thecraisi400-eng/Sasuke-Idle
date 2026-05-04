@@ -341,16 +341,6 @@ function idleTick() {
     state.rockHpCur = Math.max(0, state.rockHpCur - dmg);
     generateRockCracks();
     if (state.rockHpCur <= 0) respawnRock();
-
-    const cave = document.getElementById('cave');
-    if (cave && dmg > 0) {
-      const rect = cave.getBoundingClientRect();
-      const rx   = rect.left + rect.width  * (0.45 + Math.random()*0.10);
-      const ry   = rect.top  + rect.height * (0.40 + Math.random()*0.12);
-      spawnDmg(rx, ry, dmg, isCrit ? DAMAGE_COLORS.crit : DAMAGE_COLORS.auto, isCrit);
-      spawnImpactBurst(isCrit ? 1.1 : 0.9);
-      spawnDebris(rx, ry, 0.9);
-    }
   }
   updateUI();
 }
