@@ -359,6 +359,7 @@ let activeKey = null;
 let activeBtn = null;
 let lastPicksMarkup = "";
 let picksController = null;
+let clanController = null;
 
 function ensurePicksController() {
   if (!picksController && window.initPickButtons) {
@@ -366,6 +367,11 @@ function ensurePicksController() {
   }
 }
 
+function ensureClanController() {
+  if (!clanController && window.initClanButtons) {
+    clanController = window.initClanButtons(state, { fmt, updateUI });
+  }
+}
 
 function renderSectionContent() {
   const content = document.getElementById('section-content');
@@ -383,6 +389,12 @@ function renderSectionContent() {
       content.scrollTop = prevScrollTop;
       lastPicksMarkup = nextMarkup;
     }
+  } else if (activeKey === 'clans') {
+    ensureClanController();
+    content.classList.add('visible');
+    coming.style.display = 'none';
+    content.innerHTML = clanController ? clanController.renderClansContent() : '';
+    lastPicksMarkup = '';
   } else {
     content.classList.remove('visible');
     content.innerHTML = '';
@@ -433,4 +445,5 @@ function toggleSection(btn, title, sub, key) {
 initRock();
 generateRockCracks();
 ensurePicksController();
+ensureClanController();
 updateUI();
