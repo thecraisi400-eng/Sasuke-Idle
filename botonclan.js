@@ -4,21 +4,16 @@
     const CLAN_CREATION_COST = 500;
     const MAX_CLAN_NAME_LEN = 10;
     const JOIN_LIST_SIZE = 5;
+    const MAX_MEMBERS_PER_CLAN = 10;
 
     let view = 'menu';
     let feedbackTimeout = null;
 
-    const spanishClanNames = [
-      'Sierra', 'Rocoso', 'Fulgor', 'Trueno', 'Aurora', 'Piedra', 'Cumbre', 'Escudo', 'Fuerza', 'Templo',
-      'Vallejo', 'Forja', 'Bravio', 'Bosque', 'Ceniza', 'Lumbre', 'Antero', 'Guardia', 'Aureo', 'Titan',
-      'Niebla', 'Rayoz', 'Solar', 'Umbral', 'Jaguar', 'Falcon', 'Cedron', 'Aldea', 'Bronce', 'Vulcan'
-    ].filter((name) => name.length >= 5 && name.length <= 7);
+    const clanNameStarts = ['Lobos', 'Dragones', 'Guardianes', 'Titanes', 'Fénix', 'Centinelas', 'Halcones', 'Leones'];
+    const clanNameLinks = ['del', 'de'];
+    const clanNameEnds = ['Norte', 'Sur', 'Valle', 'Fuego', 'Acero', 'Trueno', 'Bosque', 'Desierto', 'Alba', 'Tormenta'];
 
     let currentClans = [];
-
-    function maxMinersByLevel(level) {
-      return Math.ceil(level / 2);
-    }
 
     function randomLevel() {
       const uncommon = Math.random() < 0.22;
@@ -26,15 +21,26 @@
       return 1 + Math.floor(Math.random() * 6); // 1..6
     }
 
+    function randomClanName(usedNames) {
+      let name = '';
+      while (!name || usedNames.has(name)) {
+        const start = clanNameStarts[Math.floor(Math.random() * clanNameStarts.length)];
+        const link = clanNameLinks[Math.floor(Math.random() * clanNameLinks.length)];
+        const end = clanNameEnds[Math.floor(Math.random() * clanNameEnds.length)];
+        name = `${start} ${link} ${end}`;
+      }
+      return name;
+    }
+
     function randomClans() {
-      const pool = [...spanishClanNames];
+      const usedNames = new Set();
       const clans = [];
-      for (let i = 0; i < JOIN_LIST_SIZE && pool.length > 0; i++) {
-        const idx = Math.floor(Math.random() * pool.length);
-        const name = pool.splice(idx, 1)[0];
+      for (let i = 0; i < JOIN_LIST_SIZE; i++) {
+        const name = randomClanName(usedNames);
+        usedNames.add(name);
         const level = randomLevel();
-        const maxMiners = maxMinersByLevel(level);
-        const members = Math.floor(Math.random() * (maxMiners + 1));
+        const members = 1 + Math.floor(Math.random() * MAX_MEMBERS_PER_CLAN);
+        const maxMiners = MAX_MEMBERS_PER_CLAN;
         clans.push({ name, level, members, maxMiners });
       }
       return clans;
