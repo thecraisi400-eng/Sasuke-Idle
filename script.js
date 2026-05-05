@@ -194,7 +194,7 @@ function updateUI() {
     if (ui.hpText) ui.hpText.textContent = fmtHp(state.rockHpCur) + ' / ' + fmtHp(state.rockHpMax);
     dirty.hp = false;
   }
-  if (dirty.all || dirty.section) {
+  if (dirty.all || dirty.section || state.sectionOpen) {
     renderSectionContent();
     dirty.section = false;
   }
