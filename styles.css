@@ -382,3 +382,59 @@ html, body {
   0%,100% { transform:scale(1); opacity:1; }
   50%     { transform:scale(1.3); opacity:0.7; }
 }
+
+
+/* ─── CLANES ─── */
+.clan-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  overflow-y: auto;
+}
+.clan-scroll {
+  width: 82%;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 12px;
+  padding: 12px;
+}
+.clan-scroll.full { width: 96%; }
+.clan-btn {
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 8px;
+  font-family:'Fredoka One',cursive;
+  cursor: pointer;
+}
+.clan-btn.primary, .clan-btn.create, .clan-btn.reload {
+  background: linear-gradient(180deg,#ffe082,#ffb300);
+  color: #231100;
+}
+.clan-btn.back { margin-top: 8px; background: #455a64; color: #fff; }
+.clan-input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(0,0,0,0.25);
+  color: #fff;
+  padding: 8px;
+  margin: 6px 0;
+}
+.clan-feedback { min-height: 18px; font-size: clamp(10px,2.4vw,13px); font-weight: 800; opacity:0; transition: opacity .2s ease; color:#ffcdd2; }
+.clan-feedback.visible { opacity:1; }
+.clan-feedback.ok { color:#c8e6c9; }
+.clan-feedback.error { color:#ff5252; text-shadow:0 0 8px rgba(255,82,82,.45); }
+.clan-list { display:flex; flex-direction:column; gap:8px; margin:8px 0; }
+.clan-item {
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(0,0,0,0.25);
+  color: #fff;
+}
+.clan-item.full { border-color: rgba(255,99,71,.8); }
