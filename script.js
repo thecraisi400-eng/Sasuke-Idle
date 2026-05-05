@@ -472,6 +472,7 @@ let lastPicksMarkup = "";
 let lastPicksSnapshot = "";
 let lastCrackCount = -1;
 let picksController = null;
+let clanController = null;
 
 function ensurePicksController() {
   if (!picksController && window.initPickButtons) {
@@ -479,6 +480,13 @@ function ensurePicksController() {
   }
 }
 
+
+
+function ensureClanController() {
+  if (!clanController && window.initClanButtons) {
+    clanController = window.initClanButtons(state, { fmt, updateUI });
+  }
+}
 
 function renderSectionContent() {
   const content = ui.content;
@@ -500,6 +508,11 @@ function renderSectionContent() {
       lastPicksMarkup = nextMarkup;
       lastPicksSnapshot = nextSnapshot;
     }
+  } else if (activeKey === 'clans') {
+    ensureClanController();
+    content.classList.add('visible');
+    coming.style.display = 'none';
+    content.innerHTML = clanController ? clanController.renderClanContent() : '';
   } else {
     content.classList.remove('visible');
     content.innerHTML = '';
@@ -560,6 +573,7 @@ window.addEventListener('orientationchange', refreshRects, { passive: true });
 initRock();
 generateRockCracks();
 ensurePicksController();
+ensureClanController();
 markDirty('all','currency','dps','level','xp','hp','section');
 updateUI();
 requestAnimationFrame(gameLoop);
