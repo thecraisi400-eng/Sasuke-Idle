@@ -476,7 +476,7 @@ let clanController = null;
 
 function ensurePicksController() {
   if (!picksController && window.initPickButtons) {
-    picksController = window.initPickButtons(state, { fmt, getHitRate, getCritChance, updateUI });
+    picksController = window.initPickButtons(state, { fmt, getHitRate, getCritChance, updateUI, markDirty });
   }
 }
 
@@ -484,7 +484,7 @@ function ensurePicksController() {
 
 function ensureClanController() {
   if (!clanController && window.initClanButtons) {
-    clanController = window.initClanButtons(state, { fmt, updateUI });
+    clanController = window.initClanButtons(state, { fmt, updateUI, markDirty });
   }
 }
 

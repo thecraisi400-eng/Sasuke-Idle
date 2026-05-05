@@ -1,6 +1,6 @@
 (function () {
   function initClanButtons(state, deps) {
-    const { fmt, updateUI } = deps;
+    const { fmt, updateUI, markDirty } = deps;
     const CLAN_COST = 500;
     let mode = 'menu';
     let feedback = '';
@@ -53,6 +53,7 @@
       mode = nextMode;
       feedback = '';
       if (nextMode === 'join') makeRandomClans();
+      markDirty('section');
       updateUI();
     }
 
@@ -61,25 +62,30 @@
       if (!trimmedName) {
         feedback = 'Debes ingresar un nombre de clan.';
         feedbackType = 'warn';
-        updateUI();
+        markDirty('section');
+      updateUI();
         return;
       }
       if (trimmedName.length > 10) {
         feedback = 'Máximo 10 caracteres.';
         feedbackType = 'warn';
-        updateUI();
+        markDirty('section');
+      updateUI();
         return;
       }
       if (state.special < CLAN_COST) {
         feedback = 'Fondos insuficientes';
         feedbackType = 'error';
-        updateUI();
+        markDirty('section');
+      updateUI();
         return;
       }
       state.special -= CLAN_COST;
+      markDirty('currency');
       feedback = `Clan "${trimmedName}" creado con éxito.`;
       feedbackType = 'ok';
       clanNameInput = '';
+      markDirty('section');
       updateUI();
     }
 
@@ -89,6 +95,7 @@
 
     function reloadClans() {
       makeRandomClans();
+      markDirty('section');
       updateUI();
     }
 

@@ -1,6 +1,6 @@
 (function () {
   function initPickButtons(state, deps) {
-    const { fmt, getHitRate, getCritChance, updateUI } = deps;
+    const { fmt, getHitRate, getCritChance, updateUI, markDirty } = deps;
 
     const MAX_LEVEL = 1000;
     let feedbackTimeout = null;
@@ -30,6 +30,7 @@
         return false;
       }
       state.gold -= cost;
+      markDirty('currency', 'section');
       return true;
     }
 
@@ -38,6 +39,7 @@
       if (!spendGoldOrWarn(sharp)) return;
       state.clickDmg += 1;
       state.dps += 1;
+      markDirty('dps', 'section');
       updateUI();
       showFeedback('¡Pico mejorado!', 'ok');
     }
@@ -47,6 +49,7 @@
       const { speed } = getCosts();
       if (!spendGoldOrWarn(speed)) return;
       state.pickSpeedLevel += 1;
+      markDirty('section');
       updateUI();
       showFeedback('¡Velocidad mejorada!', 'ok');
     }
@@ -56,6 +59,7 @@
       const { crit } = getCosts();
       if (!spendGoldOrWarn(crit)) return;
       state.pickCritLevel += 1;
+      markDirty('section');
       updateUI();
       showFeedback('¡Crítico mejorado!', 'ok');
     }
