@@ -357,7 +357,10 @@ const sectionColors = {
 
 let activeKey = null;
 let activeBtn = null;
-let lastPicksMarkup = "";
+const sectionMarkupCache = {
+  picks: '',
+  clans: '',
+};
 let picksController = null;
 let clanController = null;
 
@@ -378,27 +381,33 @@ function renderSectionContent() {
   const coming = document.querySelector('.section-coming');
   if (!content || !coming) return;
 
+  const renderDynamicSection = (key, markup) => {
+    const prevMarkup = sectionMarkupCache[key] || '';
+    if (markup !== prevMarkup) {
+      const prevScrollTop = content.scrollTop;
+      content.innerHTML = markup;
+      content.scrollTop = prevScrollTop;
+      sectionMarkupCache[key] = markup;
+    }
+  };
+
   if (activeKey === 'picks') {
     ensurePicksController();
     content.classList.add('visible');
     coming.style.display = 'none';
     const nextMarkup = picksController ? picksController.renderPicksContent() : '';
-    if (nextMarkup !== lastPicksMarkup) {
-      const prevScrollTop = content.scrollTop;
-      content.innerHTML = nextMarkup;
-      content.scrollTop = prevScrollTop;
-      lastPicksMarkup = nextMarkup;
-    }
+    renderDynamicSection('picks', nextMarkup);
   } else if (activeKey === 'clans') {
     ensureClanController();
     content.classList.add('visible');
     coming.style.display = 'none';
-    content.innerHTML = clanController ? clanController.renderClansContent() : '';
-    lastPicksMarkup = '';
+    const nextMarkup = clanController ? clanController.renderClansContent() : '';
+    renderDynamicSection('clans', nextMarkup);
   } else {
     content.classList.remove('visible');
     content.innerHTML = '';
-    lastPicksMarkup = '';
+    sectionMarkupCache.picks = '';
+    sectionMarkupCache.clans = '';
     coming.style.display = '';
   }
 }
