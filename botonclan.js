@@ -239,6 +239,15 @@
       </div>`;
     }
 
+    function syncClanHeaderVisibility() {
+      const title = document.getElementById('section-title');
+      const sub = document.getElementById('section-sub');
+      if (!title || !sub) return;
+      const hide = view === 'member';
+      title.style.display = hide ? 'none' : '';
+      sub.style.display = hide ? 'none' : '';
+    }
+
     function renderInSection() {
       const content = document.getElementById('section-content');
       if (!content) return;
@@ -246,9 +255,11 @@
       if (view === 'create') content.innerHTML = renderCreate();
       if (view === 'join') content.innerHTML = renderJoin();
       if (view === 'member') content.innerHTML = renderMemberPanel();
+      syncClanHeaderVisibility();
     }
 
     function renderClansContent() {
+      syncClanHeaderVisibility();
       if (view === 'menu') return renderMenu();
       if (view === 'create') return renderCreate();
       if (view === 'join') return renderJoin();

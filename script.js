@@ -431,6 +431,8 @@ function toggleSection(btn, title, sub, key) {
 
   const titleEl = document.getElementById('section-title');
   const subEl   = document.getElementById('section-sub');
+  titleEl.style.display = '';
+  subEl.style.display = '';
   titleEl.textContent = title; subEl.textContent = sub;
   titleEl.style.animation = 'none'; subEl.style.animation = 'none';
   void titleEl.offsetWidth;
