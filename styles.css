@@ -449,6 +449,14 @@ html, body {
   gap: 8px;
   justify-content: flex-start;
 }
+.clan-member-title {
+  text-align: center;
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(20px, 5.2vw, 34px);
+  color: #e3f2fd;
+  text-shadow: 0 0 10px rgba(66, 165, 245, 0.7);
+  letter-spacing: 1px;
+}
 .clan-top-scene {
   height: 46%;
   min-height: 320px;
