@@ -219,6 +219,7 @@
       const pct = Math.min(100, (clanExp / req) * 100);
       return `
       <div class="clan-member-panel">
+        <div class="scroll-title">🛡️ CLANES</div>
         <div class="clan-top-scene">
           <div class="scene-wall"></div>
           ${renderClanSprites()}
