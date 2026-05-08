@@ -131,3 +131,17 @@ html, body {
 #levelup-popup.show{transform:translate(-50%,-50%) scale(1)}
 #levelup-popup h2{font-family:'Fredoka One',cursive;color:#FFD700;font-size:28px;text-shadow:0 0 20px rgba(255,215,0,.8)}
 #levelup-popup p{color:#a0c4ff;font-size:13px;margin-top:4px;font-family:'Fredoka One',cursive}
+
+.panel-modal{position:absolute;inset:60px 0 30%;z-index:150;background:rgba(7,10,20,.96);border:1px solid rgba(255,255,255,.15);display:none;flex-direction:column;padding:10px}
+.panel-modal.show{display:flex}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.panel-header h2{font-family:'Fredoka One',cursive;color:#ffd700;font-size:18px}
+.panel-close{border:none;background:#2a2a44;color:#fff;border-radius:8px;padding:6px 10px}
+.picks-cards{overflow-y:auto;display:grid;grid-template-columns:1fr;gap:8px;padding-right:4px}
+.pick-card{background:linear-gradient(160deg,#16213e,#1e2f56);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:4px}
+.pick-card h3{font-size:14px;color:#a0c4ff;font-family:'Fredoka One',cursive}
+.pick-card p{font-size:13px;color:#fff}
+.buy-btn{margin-top:4px;background:linear-gradient(145deg,#795700,#c8960a);border:none;border-radius:8px;padding:8px;color:#fff;font-weight:700}
+.buy-btn:disabled{opacity:.45}
+.dmg-number.critical-dmg{color:#ff4d4d!important;font-size:24px!important;text-shadow:0 0 12px rgba(255,60,60,.95),1px 1px 0 rgba(0,0,0,.9)}
+@media (min-width:1080px){#app{max-width:1080px}.picks-cards{grid-template-columns:repeat(2,minmax(0,1fr));}}
