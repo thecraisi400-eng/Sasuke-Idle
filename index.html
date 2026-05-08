@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
-  <title>Idle Miner - Android 9:16</title>
+  <title>Idle Miner Android 9:16</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <main id="app" class="app" aria-label="Juego Idle de Minería">
+  <main id="app" class="app" aria-label="Juego idle de minería">
     <header class="status-bar glass">
       <div class="status-item level-box">
         <div class="status-label">Nivel 15</div>
@@ -20,23 +20,12 @@
       <div class="status-item coin-box" id="goldCounter">🪙 14,5K</div>
       <div class="status-item dps-box">
         <span id="dpsCounter">34.2K DPS</span>
-        <small>Daño pasivo</small>
       </div>
     </header>
 
     <section class="game-area" id="gameArea">
-      <div class="parallax depth-1"></div>
-      <div class="parallax depth-2"></div>
-      <div class="sparkle-layer" id="sparkleLayer"></div>
-
       <div class="torch torch-left"></div>
       <div class="torch torch-right"></div>
-
-      <aside class="side-stats glass">
-        <p>Crítico</p><strong id="critRate">12.5%</strong>
-        <p>Combo</p><strong id="comboCount">x1</strong>
-        <p>Mineros</p><strong>4/8</strong>
-      </aside>
 
       <div class="miner" aria-label="Minero en espera">
         <div class="miner-body">🧑‍🏭</div>
@@ -44,7 +33,6 @@
       </div>
 
       <div class="rock-wrapper">
-        <div class="enemy-title">Roca Antigua • Zona 3</div>
         <div class="rock-bars">
           <div class="bar red"><div class="fill" id="hpFill"></div></div>
           <div class="bar green"><div class="fill" id="xpFill"></div></div>
@@ -55,7 +43,7 @@
         </button>
       </div>
 
-      <div class="loot-feed glass" id="lootFeed">+ Botín: Fragmento de hierro</div>
+      <div id="contextLabel" class="context-label">Sección: Picos</div>
       <div id="damageLayer" class="damage-layer" aria-hidden="true"></div>
     </section>
 
