@@ -1,3 +1,23 @@
+// ===== GAME BALANCE =====
+// Ajustes principales de economía idle:
+// - ROCK_HP_GROWTH controla la curva de dificultad. 1.15 = +15% por roca destruida.
+//   Súbelo para una partida más dura; bájalo a 1.10-1.12 para progresión más suave.
+// - GOLD_REWARD_RATE evita la inflación convirtiendo solo una fracción del HP en oro.
+//   0.10 significa que una roca paga un 10% de su HP máximo.
+// - UPGRADE_COST_GROWTH es el escalado de los picos. 1.20 = +20% por nivel comprado.
+//   Con 1.20, sobre el nivel 50 una sola roca deja de pagar mejoras avanzadas y
+//   el jugador necesita acumular, optimizar Crítico y usar Doble Pico para avanzar.
+const BALANCE_CONFIG = {
+  BASE_ROCK_HP: 25,
+  ROCK_HP_GROWTH: 1.15,
+  GOLD_REWARD_RATE: 0.10,
+  UPGRADE_COST_GROWTH: 1.20,
+  SILVER_REWARD_RATE: 0.10,
+  CRITICAL_DAMAGE_MULTIPLIER: 2,
+  FAST_PROGRESSION_LEVEL_CAP: 10,
+  HARD_GATE_LEVEL: 50,
+};
+
 // ===== GAME STATE =====
 const state = {
   level: 1,
@@ -5,8 +25,9 @@ const state = {
   silver: 0,
   dps: 1,
   clickDamage: 2,
-  rockHP: 35,
-  rockMaxHP: 35,
+  rockHP: getRockHP(1),
+  rockMaxHP: getRockHP(1),
+  rockReward: getGoldReward(1),
   xp: 0,
   xpNeeded: 100,
 };
@@ -23,9 +44,9 @@ const PICK_UPGRADES = {
     nivel: 0,
     maxNivel: 1000,
     baseValor: 2,
-    incremento: 0.35,
-    costoBase: 25,
-    multiplicadorCosto: 1.14,
+    incremento: 0.45,
+    costoBase: 12,
+    multiplicadorCosto: BALANCE_CONFIG.UPGRADE_COST_GROWTH,
     get valorActual() {
       return roundTo(this.baseValor + this.nivel * this.incremento, 2);
     },
@@ -37,8 +58,8 @@ const PICK_UPGRADES = {
     maxNivel: 1000,
     baseValor: 1,
     incremento: 0.02,
-    costoBase: 60,
-    multiplicadorCosto: 1.18,
+    costoBase: 22,
+    multiplicadorCosto: BALANCE_CONFIG.UPGRADE_COST_GROWTH,
     get valorActual() {
       return roundTo(this.baseValor + this.nivel * this.incremento, 2);
     },
@@ -49,9 +70,9 @@ const PICK_UPGRADES = {
     nivel: 0,
     maxNivel: 1000,
     baseValor: 0.02,
-    incremento: 0.015,
-    costoBase: 90,
-    multiplicadorCosto: 1.17,
+    incremento: 0.02,
+    costoBase: 15,
+    multiplicadorCosto: BALANCE_CONFIG.UPGRADE_COST_GROWTH,
     get valorActual() {
       return roundTo(this.baseValor + this.nivel * this.incremento, 3);
     },
@@ -61,28 +82,36 @@ const PICK_UPGRADES = {
     nombre: 'DOBLE PICO',
     nivel: 0,
     maxNivel: 1000,
-    baseValor: 0.02,
-    incremento: 0.01,
-    costoBase: 100,
-    multiplicadorCosto: 1.17,
+    baseValor: 0.01,
+    incremento: 0.015,
+    costoBase: 18,
+    multiplicadorCosto: BALANCE_CONFIG.UPGRADE_COST_GROWTH,
     get valorActual() {
       return roundTo(this.baseValor + this.nivel * this.incremento, 3);
     },
   },
 };
 
-// Rock HP per level (exponentially harder)
-const rockHPByLevel = [35, 80, 180, 380, 750, 1400, 2600, 4800, 8500, 15000];
-// Gold reward per level
-const goldRewardByLevel = [3, 8, 20, 55, 140, 360, 900, 2200, 5500, 14000];
-
 function getRockHP(lvl) {
-  if (lvl <= rockHPByLevel.length) return rockHPByLevel[lvl - 1];
-  return Math.floor(rockHPByLevel[rockHPByLevel.length - 1] * Math.pow(2.2, lvl - rockHPByLevel.length));
+  // Fórmula base: HP = Base_HP * (1.15 ^ Nivel_Roca).
+  // Usamos (lvl - 1) para que el nivel 1 empiece exactamente en BASE_ROCK_HP,
+  // y cada nueva roca sea un 15% más resistente que la anterior.
+  const hp = BALANCE_CONFIG.BASE_ROCK_HP * Math.pow(BALANCE_CONFIG.ROCK_HP_GROWTH, lvl - 1);
+  return Math.max(1, Math.floor(hp));
 }
+
 function getGoldReward(lvl) {
-  if (lvl <= goldRewardByLevel.length) return goldRewardByLevel[lvl - 1];
-  return Math.floor(goldRewardByLevel[goldRewardByLevel.length - 1] * Math.pow(2.5, lvl - goldRewardByLevel.length));
+  // Fórmula anti-inflación: Oro = HP_Roca * 0.10.
+  // Si el early game se siente lento, sube GOLD_REWARD_RATE a 0.12-0.15;
+  // si el jugador compra demasiadas mejoras, bájalo a 0.08.
+  return Math.max(1, Math.ceil(getRockHP(lvl) * BALANCE_CONFIG.GOLD_REWARD_RATE));
+}
+
+function getDifficultyTier(lvl) {
+  if (lvl >= BALANCE_CONFIG.HARD_GATE_LEVEL) return 'Extrema';
+  if (lvl >= 30) return 'Difícil';
+  if (lvl > BALANCE_CONFIG.FAST_PROGRESSION_LEVEL_CAP) return 'Media';
+  return 'Fácil';
 }
 
 // ===== DOM REFS =====
@@ -120,7 +149,7 @@ function updateUI() {
   const pct = Math.max(0, (state.rockHP / state.rockMaxHP) * 100);
   hpFill.style.width = pct + '%';
   hpText.textContent = Math.ceil(state.rockHP) + ' / ' + state.rockMaxHP;
-  levelLabel.textContent = 'Nivel ' + state.level;
+  levelLabel.textContent = 'Nivel ' + state.level + ' · ' + getDifficultyTier(state.level);
   xpFill.style.width = (((state.rockMaxHP - state.rockHP) / state.rockMaxHP) * 100) + '%';
   dpsDisplay.textContent = roundTo(PICK_UPGRADES.speedPick.valorActual, 2).toFixed(2) + ' DPS';
   renderPickUpgrades();
@@ -133,8 +162,24 @@ function formatNum(n) {
   return Math.floor(n).toString();
 }
 
+function formatUpgradeValue(upgrade) {
+  if (upgrade.id === 'critPick' || upgrade.id === 'doublePick') {
+    return `${Math.min(upgrade.valorActual * 100, 100).toFixed(1)}%`;
+  }
+
+  return upgrade.valorActual.toFixed(2);
+}
+
 function getUpgradeCost(upgrade) {
+  // Fórmula: Costo = Base_Costo * (1.20 ^ Nivel_Mejora).
+  // Cambia BALANCE_CONFIG.UPGRADE_COST_GROWTH si quieres endurecer o suavizar
+  // todas las mejoras sin tocar cada pico manualmente.
   return Math.floor(upgrade.costoBase * Math.pow(upgrade.multiplicadorCosto, upgrade.nivel));
+}
+
+function checkTransaction(oroDisponible, costoMejora) {
+  // Gatekeeping centralizado: ninguna compra debe saltarse esta validación.
+  return oroDisponible >= costoMejora;
 }
 
 function buyPickUpgrade(upgradeId) {
@@ -142,7 +187,7 @@ function buyPickUpgrade(upgradeId) {
   if (!upgrade || upgrade.nivel >= upgrade.maxNivel) return;
 
   const cost = getUpgradeCost(upgrade);
-  if (oroActual < cost) return;
+  if (!checkTransaction(oroActual, cost)) return;
 
   state.gold -= cost;
   upgrade.nivel += 1;
@@ -162,11 +207,11 @@ function renderPickUpgrades() {
   picksCards.innerHTML = entries
     .map((upgrade) => {
       const cost = getUpgradeCost(upgrade);
-      const disabled = oroActual < cost || upgrade.nivel >= upgrade.maxNivel;
+      const disabled = !checkTransaction(oroActual, cost) || upgrade.nivel >= upgrade.maxNivel;
       return `
         <article class="pick-card">
           <h3>${upgrade.nombre}</h3>
-          <p>Valor actual: <strong>${upgrade.valorActual.toFixed(2)}</strong></p>
+          <p>Valor actual: <strong>${formatUpgradeValue(upgrade)}</strong></p>
           <p>Nivel: <strong>${upgrade.nivel}/${upgrade.maxNivel}</strong></p>
           <button class="buy-btn" data-upgrade-id="${upgrade.id}" ${disabled ? 'disabled' : ''}>
             Comprar - ${formatNum(cost)} 💰
@@ -188,12 +233,12 @@ function togglePicksModal(show) {
 
 function processHit(isClick = false) {
   const baseDamage = dañoActual;
-  const critRoll = Math.random() * 100;
-  const doubleRoll = Math.random() * 100;
-  const critTriggered = critRoll <= PICK_UPGRADES.critPick.valorActual;
-  const doubleTriggered = doubleRoll <= PICK_UPGRADES.doublePick.valorActual;
+  const critChance = Math.min(PICK_UPGRADES.critPick.valorActual, 1);
+  const doubleChance = Math.min(PICK_UPGRADES.doublePick.valorActual, 1);
+  const critTriggered = Math.random() <= critChance;
+  const doubleTriggered = Math.random() <= doubleChance;
   const totalHits = doubleTriggered ? 2 : 1;
-  const damagePerHit = critTriggered ? baseDamage * 2 : baseDamage;
+  const damagePerHit = critTriggered ? baseDamage * BALANCE_CONFIG.CRITICAL_DAMAGE_MULTIPLIER : baseDamage;
 
   for (let i = 0; i < totalHits; i++) {
     dealDamage(damagePerHit, isClick, critTriggered);
@@ -216,7 +261,7 @@ function dealDamage(dmg, isClick = false, isCritical = false) {
   spawnDamageNumber(dmg, isClick, isCritical);
   spawnImpactParticles();
   if (state.rockHP <= 0) {
-    rockBroken();
+    checkRockStatus();
   } else {
     rockEl.classList.remove('shake');
     void rockEl.offsetWidth;
@@ -226,20 +271,25 @@ function dealDamage(dmg, isClick = false, isCritical = false) {
   updateUI();
 }
 
-function rockBroken() {
-  const reward = getGoldReward(state.level);
+function checkRockStatus() {
+  if (state.rockHP > 0) return false;
+
+  const reward = state.rockReward;
   state.gold += reward;
-  state.silver += Math.floor(reward * 0.1);
+  state.silver += Math.floor(reward * BALANCE_CONFIG.SILVER_REWARD_RATE);
   spawnGoldFloat(reward);
+
   state.xp += 20 + state.level * 10;
   state.level++;
   state.rockMaxHP = getRockHP(state.level);
   state.rockHP = state.rockMaxHP;
+  state.rockReward = getGoldReward(state.level);
   state.dps = Math.max(1, Math.floor(PICK_UPGRADES.speedPick.valorActual));
   state.clickDamage = Math.max(2, PICK_UPGRADES.sharpPick.valorActual);
   state.xpNeeded = 100 + state.level * 60;
   showLevelUp(state.level);
   updateUI();
+  return true;
 }
 
 function showLevelUp(lvl) {
