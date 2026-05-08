@@ -121,6 +121,7 @@ const hpFill = document.getElementById('hp-bar-fill');
 const hpText = document.getElementById('hp-bar-text');
 const levelLabel = document.getElementById('level-label');
 const xpFill = document.getElementById('xp-bar-fill');
+const damageDisplay = document.getElementById('damage-display');
 const dpsDisplay = document.getElementById('dps-display');
 const rockEl = document.getElementById('rock');
 const rockFlash = document.getElementById('rock-flash');
@@ -137,9 +138,24 @@ function roundTo(value, decimals = 2) {
   return Math.round((value + Number.EPSILON) * factor) / factor;
 }
 
+function getCurrentPickDamage() {
+  return roundTo(PICK_UPGRADES.sharpPick.valorActual, 2);
+}
+
+function getHitsPerSecond() {
+  return Math.max(1, Math.floor(PICK_UPGRADES.speedPick.valorActual));
+}
+
+function syncDamageState() {
+  state.clickDamage = getCurrentPickDamage();
+  dañoActual = state.clickDamage;
+  state.dps = roundTo(dañoActual * getHitsPerSecond(), 2);
+  return dañoActual;
+}
+
 function syncGlobals() {
   oroActual = state.gold;
-  dañoActual = state.clickDamage;
+  syncDamageState();
 }
 
 function updateUI() {
@@ -151,7 +167,8 @@ function updateUI() {
   hpText.textContent = Math.ceil(state.rockHP) + ' / ' + state.rockMaxHP;
   levelLabel.textContent = 'Nivel ' + state.level + ' · ' + getDifficultyTier(state.level);
   xpFill.style.width = (((state.rockMaxHP - state.rockHP) / state.rockMaxHP) * 100) + '%';
-  dpsDisplay.textContent = roundTo(PICK_UPGRADES.speedPick.valorActual, 2).toFixed(2) + ' DPS';
+  damageDisplay.textContent = '⚒ ' + roundTo(dañoActual, 2).toFixed(2) + ' Daño';
+  dpsDisplay.textContent = roundTo(state.dps, 2).toFixed(2) + ' DPS';
   renderPickUpgrades();
 }
 
@@ -192,11 +209,7 @@ function buyPickUpgrade(upgradeId) {
   state.gold -= cost;
   upgrade.nivel += 1;
 
-  if (upgradeId === 'sharpPick') {
-    state.clickDamage = upgrade.valorActual;
-    dañoActual = state.clickDamage;
-  }
-
+  syncDamageState();
   updateUI();
 }
 
@@ -232,17 +245,8 @@ function togglePicksModal(show) {
 }
 
 function processHit(isClick = false) {
-  const baseDamage = dañoActual;
-  const critChance = Math.min(PICK_UPGRADES.critPick.valorActual, 1);
-  const doubleChance = Math.min(PICK_UPGRADES.doublePick.valorActual, 1);
-  const critTriggered = Math.random() <= critChance;
-  const doubleTriggered = Math.random() <= doubleChance;
-  const totalHits = doubleTriggered ? 2 : 1;
-  const damagePerHit = critTriggered ? baseDamage * BALANCE_CONFIG.CRITICAL_DAMAGE_MULTIPLIER : baseDamage;
-
-  for (let i = 0; i < totalHits; i++) {
-    dealDamage(damagePerHit, isClick, critTriggered);
-  }
+  const panelDamage = syncDamageState();
+  dealDamage(panelDamage, isClick, false);
 }
 
 // ===== CLICK ROCK =====
@@ -284,8 +288,7 @@ function checkRockStatus() {
   state.rockMaxHP = getRockHP(state.level);
   state.rockHP = state.rockMaxHP;
   state.rockReward = getGoldReward(state.level);
-  state.dps = Math.max(1, Math.floor(PICK_UPGRADES.speedPick.valorActual));
-  state.clickDamage = Math.max(2, PICK_UPGRADES.sharpPick.valorActual);
+  syncDamageState();
   state.xpNeeded = 100 + state.level * 60;
   showLevelUp(state.level);
   updateUI();
@@ -334,7 +337,7 @@ setInterval(spawnDustParticle, 600);
 
 setInterval(() => {
   if (state.rockHP > 0) {
-    for (let i = 0; i < Math.max(1, Math.floor(PICK_UPGRADES.speedPick.valorActual)); i++) {
+    for (let i = 0; i < getHitsPerSecond(); i++) {
       processHit(false);
     }
   }
