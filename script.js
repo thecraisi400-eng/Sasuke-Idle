@@ -11,6 +11,66 @@ const state = {
   xpNeeded: 100,
 };
 
+// Variables globales solicitadas
+let oroActual = state.gold;
+let dañoActual = state.clickDamage;
+
+// Configuración modular de mejoras de picos
+const PICK_UPGRADES = {
+  sharpPick: {
+    id: 'sharpPick',
+    nombre: 'PICO AFILADO',
+    nivel: 0,
+    maxNivel: 1000,
+    baseValor: 2,
+    incremento: 0.35,
+    costoBase: 25,
+    multiplicadorCosto: 1.14,
+    get valorActual() {
+      return roundTo(this.baseValor + this.nivel * this.incremento, 2);
+    },
+  },
+  speedPick: {
+    id: 'speedPick',
+    nombre: 'VELOCIDAD PICO',
+    nivel: 0,
+    maxNivel: 1000,
+    baseValor: 1,
+    incremento: 0.02,
+    costoBase: 60,
+    multiplicadorCosto: 1.18,
+    get valorActual() {
+      return roundTo(this.baseValor + this.nivel * this.incremento, 2);
+    },
+  },
+  critPick: {
+    id: 'critPick',
+    nombre: 'CRÍTICO PICO',
+    nivel: 0,
+    maxNivel: 1000,
+    baseValor: 0.02,
+    incremento: 0.015,
+    costoBase: 90,
+    multiplicadorCosto: 1.17,
+    get valorActual() {
+      return roundTo(this.baseValor + this.nivel * this.incremento, 3);
+    },
+  },
+  doublePick: {
+    id: 'doublePick',
+    nombre: 'DOBLE PICO',
+    nivel: 0,
+    maxNivel: 1000,
+    baseValor: 0.02,
+    incremento: 0.01,
+    costoBase: 100,
+    multiplicadorCosto: 1.17,
+    get valorActual() {
+      return roundTo(this.baseValor + this.nivel * this.incremento, 3);
+    },
+  },
+};
+
 // Rock HP per level (exponentially harder)
 const rockHPByLevel = [35, 80, 180, 380, 750, 1400, 2600, 4800, 8500, 15000];
 // Gold reward per level
@@ -40,8 +100,21 @@ const particlesContainer = document.getElementById('particles-container');
 const levelupPopup = document.getElementById('levelup-popup');
 const popupLevel = document.getElementById('popup-level');
 const minerEl = document.getElementById('miner');
+const picksModal = document.getElementById('picks-modal');
+const picksCards = document.getElementById('picks-cards');
+
+function roundTo(value, decimals = 2) {
+  const factor = 10 ** decimals;
+  return Math.round((value + Number.EPSILON) * factor) / factor;
+}
+
+function syncGlobals() {
+  oroActual = state.gold;
+  dañoActual = state.clickDamage;
+}
 
 function updateUI() {
+  syncGlobals();
   goldEl.textContent = formatNum(state.gold);
   silverEl.textContent = formatNum(state.silver);
   const pct = Math.max(0, (state.rockHP / state.rockMaxHP) * 100);
@@ -49,7 +122,8 @@ function updateUI() {
   hpText.textContent = Math.ceil(state.rockHP) + ' / ' + state.rockMaxHP;
   levelLabel.textContent = 'Nivel ' + state.level;
   xpFill.style.width = (((state.rockMaxHP - state.rockHP) / state.rockMaxHP) * 100) + '%';
-  dpsDisplay.textContent = formatNum(state.dps) + ' DPS';
+  dpsDisplay.textContent = roundTo(PICK_UPGRADES.speedPick.valorActual, 2).toFixed(2) + ' DPS';
+  renderPickUpgrades();
 }
 
 function formatNum(n) {
@@ -59,27 +133,90 @@ function formatNum(n) {
   return Math.floor(n).toString();
 }
 
+function getUpgradeCost(upgrade) {
+  return Math.floor(upgrade.costoBase * Math.pow(upgrade.multiplicadorCosto, upgrade.nivel));
+}
+
+function buyPickUpgrade(upgradeId) {
+  const upgrade = PICK_UPGRADES[upgradeId];
+  if (!upgrade || upgrade.nivel >= upgrade.maxNivel) return;
+
+  const cost = getUpgradeCost(upgrade);
+  if (oroActual < cost) return;
+
+  state.gold -= cost;
+  upgrade.nivel += 1;
+
+  if (upgradeId === 'sharpPick') {
+    state.clickDamage = upgrade.valorActual;
+    dañoActual = state.clickDamage;
+  }
+
+  updateUI();
+}
+
+function renderPickUpgrades() {
+  if (!picksCards) return;
+  const entries = Object.values(PICK_UPGRADES);
+
+  picksCards.innerHTML = entries
+    .map((upgrade) => {
+      const cost = getUpgradeCost(upgrade);
+      const disabled = oroActual < cost || upgrade.nivel >= upgrade.maxNivel;
+      return `
+        <article class="pick-card">
+          <h3>${upgrade.nombre}</h3>
+          <p>Valor actual: <strong>${upgrade.valorActual.toFixed(2)}</strong></p>
+          <p>Nivel: <strong>${upgrade.nivel}/${upgrade.maxNivel}</strong></p>
+          <button class="buy-btn" data-upgrade-id="${upgrade.id}" ${disabled ? 'disabled' : ''}>
+            Comprar - ${formatNum(cost)} 💰
+          </button>
+        </article>
+      `;
+    })
+    .join('');
+
+  picksCards.querySelectorAll('.buy-btn').forEach((btn) => {
+    btn.addEventListener('click', () => buyPickUpgrade(btn.dataset.upgradeId));
+  });
+}
+
+function togglePicksModal(show) {
+  picksModal.classList.toggle('show', show);
+}
+
+function processHit(isClick = false) {
+  const baseDamage = dañoActual;
+  const critRoll = Math.random() * 100;
+  const doubleRoll = Math.random() * 100;
+  const critTriggered = critRoll <= PICK_UPGRADES.critPick.valorActual;
+  const doubleTriggered = doubleRoll <= PICK_UPGRADES.doublePick.valorActual;
+  const totalHits = doubleTriggered ? 2 : 1;
+  const damagePerHit = critTriggered ? baseDamage * 2 : baseDamage;
+
+  for (let i = 0; i < totalHits; i++) {
+    dealDamage(damagePerHit, isClick, critTriggered);
+  }
+}
+
 // ===== CLICK ROCK =====
 function clickRock() {
-  dealDamage(state.clickDamage, true);
-  // Swing miner
+  processHit(true);
   minerEl.classList.remove('swing');
   void minerEl.offsetWidth;
   minerEl.classList.add('swing');
   minerEl.addEventListener('animationend', () => minerEl.classList.remove('swing'), {once: true});
-  // Rock flash
   rockFlash.style.opacity = '0.18';
   setTimeout(() => { rockFlash.style.opacity = '0'; }, 60);
 }
 
-function dealDamage(dmg, isClick = false) {
+function dealDamage(dmg, isClick = false, isCritical = false) {
   state.rockHP -= dmg;
-  spawnDamageNumber(dmg, isClick);
+  spawnDamageNumber(dmg, isClick, isCritical);
   spawnImpactParticles();
   if (state.rockHP <= 0) {
     rockBroken();
   } else {
-    // Shake
     rockEl.classList.remove('shake');
     void rockEl.offsetWidth;
     rockEl.classList.add('shake');
@@ -89,23 +226,17 @@ function dealDamage(dmg, isClick = false) {
 }
 
 function rockBroken() {
-  // Award gold
   const reward = getGoldReward(state.level);
   state.gold += reward;
   state.silver += Math.floor(reward * 0.1);
   spawnGoldFloat(reward);
-  // XP
   state.xp += 20 + state.level * 10;
-  // Level up
   state.level++;
   state.rockMaxHP = getRockHP(state.level);
   state.rockHP = state.rockMaxHP;
-  // Increase DPS slightly
-  state.dps = Math.max(1, Math.floor(1 + state.level * 0.5));
-  state.clickDamage = Math.max(2, Math.floor(2 + state.level * 0.8));
-  // XP needed increases
+  state.dps = Math.max(1, Math.floor(PICK_UPGRADES.speedPick.valorActual));
+  state.clickDamage = Math.max(2, PICK_UPGRADES.sharpPick.valorActual);
   state.xpNeeded = 100 + state.level * 60;
-  // Show level up
   showLevelUp(state.level);
   updateUI();
 }
@@ -116,24 +247,23 @@ function showLevelUp(lvl) {
   setTimeout(() => levelupPopup.classList.remove('show'), 2000);
 }
 
-// ===== DAMAGE NUMBERS =====
-function spawnDamageNumber(dmg, isClick) {
+function spawnDamageNumber(dmg, isClick, isCritical = false) {
   const el = document.createElement('div');
   el.className = 'dmg-number';
+  if (isCritical) el.classList.add('critical-dmg');
   el.textContent = '-' + Math.ceil(dmg);
-  // Position near rock center with random spread
   const rect = rockEl.getBoundingClientRect();
   const caveRect = caveArea.getBoundingClientRect();
   const cx = rect.left - caveRect.left + rect.width / 2;
   const cy = rect.top - caveRect.top + rect.height / 2;
   el.style.left = (cx + (Math.random() * 60 - 30)) + 'px';
   el.style.top = (cy + (Math.random() * 30 - 40)) + 'px';
-  if (isClick) { el.style.fontSize = '22px'; el.style.color = '#ffeeaa'; }
+  if (isClick && !isCritical) { el.style.fontSize = '22px'; el.style.color = '#ffeeaa'; }
   caveArea.appendChild(el);
   setTimeout(() => el.remove(), 1200);
 }
 
-function spawnGoldFloat(amount) {
+function spawnGoldFloat(amount) { /* unchanged */
   const el = document.createElement('div');
   el.className = 'gold-float';
   el.textContent = '+' + formatNum(amount) + ' 💰';
@@ -147,69 +277,25 @@ function spawnGoldFloat(amount) {
   setTimeout(() => el.remove(), 1500);
 }
 
-// ===== PARTICLES =====
-function spawnImpactParticles() {
-  const rect = rockEl.getBoundingClientRect();
-  const caveRect = caveArea.getBoundingClientRect();
-  const cx = rect.left - caveRect.left + rect.width / 2;
-  const cy = rect.top - caveRect.top + rect.height / 2;
-  for (let i = 0; i < 5; i++) {
-    const p = document.createElement('div');
-    p.className = 'spark-particle';
-    p.style.left = (cx + (Math.random() * 40 - 20)) + 'px';
-    p.style.top = (cy + (Math.random() * 20 - 10)) + 'px';
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 20 + Math.random() * 30;
-    p.style.setProperty('--sx', Math.cos(angle) * dist + 'px');
-    p.style.setProperty('--sy', (-15 - Math.random() * dist) + 'px');
-    p.style.animationDuration = (0.4 + Math.random() * 0.4) + 's';
-    caveArea.appendChild(p);
-    setTimeout(() => p.remove(), 800);
-  }
-}
-
-// ===== AMBIENT DUST =====
-function spawnDustParticle() {
-  const p = document.createElement('div');
-  p.className = 'dust-particle';
-  const sz = 1 + Math.random() * 2.5;
-  p.style.width = sz + 'px';
-  p.style.height = sz + 'px';
-  p.style.left = (Math.random() * 100) + '%';
-  p.style.top = (40 + Math.random() * 50) + '%';
-  p.style.setProperty('--dx', (Math.random() * 20 - 10) + 'px');
-  p.style.animationDuration = (4 + Math.random() * 6) + 's';
-  p.style.animationDelay = (Math.random() * 3) + 's';
-  particlesContainer.appendChild(p);
-  setTimeout(() => p.remove(), 12000);
-}
-
+function spawnImpactParticles() { const rect = rockEl.getBoundingClientRect(); const caveRect = caveArea.getBoundingClientRect(); const cx = rect.left - caveRect.left + rect.width / 2; const cy = rect.top - caveRect.top + rect.height / 2; for (let i = 0; i < 5; i++) { const p = document.createElement('div'); p.className = 'spark-particle'; p.style.left = (cx + (Math.random() * 40 - 20)) + 'px'; p.style.top = (cy + (Math.random() * 20 - 10)) + 'px'; const angle = Math.random() * Math.PI * 2; const dist = 20 + Math.random() * 30; p.style.setProperty('--sx', Math.cos(angle) * dist + 'px'); p.style.setProperty('--sy', (-15 - Math.random() * dist) + 'px'); p.style.animationDuration = (0.4 + Math.random() * 0.4) + 's'; caveArea.appendChild(p); setTimeout(() => p.remove(), 800); } }
+function spawnDustParticle() { const p = document.createElement('div'); p.className = 'dust-particle'; const sz = 1 + Math.random() * 2.5; p.style.width = sz + 'px'; p.style.height = sz + 'px'; p.style.left = (Math.random() * 100) + '%'; p.style.top = (40 + Math.random() * 50) + '%'; p.style.setProperty('--dx', (Math.random() * 20 - 10) + 'px'); p.style.animationDuration = (4 + Math.random() * 6) + 's'; p.style.animationDelay = (Math.random() * 3) + 's'; particlesContainer.appendChild(p); setTimeout(() => p.remove(), 12000); }
 setInterval(spawnDustParticle, 600);
 
-// ===== IDLE DPS =====
 setInterval(() => {
   if (state.rockHP > 0) {
-    dealDamage(state.dps, false);
+    for (let i = 0; i < Math.max(1, Math.floor(PICK_UPGRADES.speedPick.valorActual)); i++) {
+      processHit(false);
+    }
   }
 }, 1000);
 
-// ===== SECTION SWITCH =====
-const sectionBgs = {
-  picks:    'linear-gradient(180deg, #0a1228 0%, #0d1a3e 100%)',
-  clans:    'linear-gradient(180deg, #081828 0%, #0d2240 100%)',
-  battle:   'linear-gradient(180deg, #1a0808 0%, #2a0f0f 100%)',
-  attrs:    'linear-gradient(180deg, #1a1200 0%, #2e1e00 100%)',
-  arena:    'linear-gradient(180deg, #1a0410 0%, #2e0818 100%)',
-  events:   'linear-gradient(180deg, #0d0428 0%, #1a0840 100%)',
-  prestige: 'linear-gradient(180deg, #120800 0%, #221005 100%)',
-  pets:     'linear-gradient(180deg, #041210 0%, #081e14 100%)',
-  settings: 'linear-gradient(180deg, #0a0a12 0%, #141420 100%)',
-};
+const sectionBgs = { picks:'linear-gradient(180deg, #0a1228 0%, #0d1a3e 100%)',clans:'linear-gradient(180deg, #081828 0%, #0d2240 100%)',battle:'linear-gradient(180deg, #1a0808 0%, #2a0f0f 100%)',attrs:'linear-gradient(180deg, #1a1200 0%, #2e1e00 100%)',arena:'linear-gradient(180deg, #1a0410 0%, #2e0818 100%)',events:'linear-gradient(180deg, #0d0428 0%, #1a0840 100%)',prestige:'linear-gradient(180deg, #120800 0%, #221005 100%)',pets:'linear-gradient(180deg, #041210 0%, #081e14 100%)',settings:'linear-gradient(180deg, #0a0a12 0%, #141420 100%)'};
 
 function switchSection(section) {
   const bg = sectionBgs[section] || sectionBgs.picks;
   document.getElementById('cave-bg').style.background = bg;
+  if (section === 'picks') togglePicksModal(true);
+  else togglePicksModal(false);
 }
 
-// ===== INIT =====
 updateUI();
