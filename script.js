@@ -332,9 +332,9 @@ function spawnGoldFloat(amount) {
   const caveRect = caveArea.getBoundingClientRect();
   const cx = rect.left - caveRect.left + rect.width / 2;
   const rockTop = rect.top - caveRect.top;
-  const extraHeightOffset = rect.height * 0.5;
+  const goldFloatVerticalOffset = rect.height * 1.2;
   el.style.left = (cx - 30) + 'px';
-  el.style.top = (rockTop - 10 - extraHeightOffset) + 'px';
+  el.style.top = (rockTop - 10 - goldFloatVerticalOffset) + 'px';
   caveArea.appendChild(el);
   setTimeout(() => el.remove(), 1500);
 }
