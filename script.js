@@ -324,16 +324,17 @@ function spawnDamageNumber(dmg, isClick, isCritical = false) {
   setTimeout(() => el.remove(), 1200);
 }
 
-function spawnGoldFloat(amount) { /* unchanged */
+function spawnGoldFloat(amount) {
   const el = document.createElement('div');
   el.className = 'gold-float';
   el.textContent = '+' + formatNum(amount) + ' 💰';
   const rect = rockEl.getBoundingClientRect();
   const caveRect = caveArea.getBoundingClientRect();
   const cx = rect.left - caveRect.left + rect.width / 2;
-  const cy = rect.top - caveRect.top;
+  const rockTop = rect.top - caveRect.top;
+  const extraHeightOffset = rect.height * 0.5;
   el.style.left = (cx - 30) + 'px';
-  el.style.top = (cy - 10) + 'px';
+  el.style.top = (rockTop - 10 - extraHeightOffset) + 'px';
   caveArea.appendChild(el);
   setTimeout(() => el.remove(), 1500);
 }
