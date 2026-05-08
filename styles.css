@@ -80,7 +80,8 @@ html, body {
 .coin-display { display:flex; align-items:center; gap:4px; background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3); border-radius: 20px; padding: 3px 10px; }
 .coin-display span.icon { font-size:16px; }
 .coin-display span.val { font-family: 'Fredoka One', cursive; font-size:14px; color:#FFD700; min-width:30px; text-align:left; }
-.dps-label { font-family:'Fredoka One', cursive; font-size:13px; color:#fff; min-width:50px; text-align:right; }
+.damage-label,.dps-label { font-family:'Fredoka One', cursive; font-size:12px; color:#fff; min-width:58px; text-align:right; white-space:nowrap; }
+.damage-label { color:#ffeeaa; }
 #cave-area { flex:0 0 60%; position:relative; overflow:hidden; cursor:pointer; background:#0a0a14; }
 #cave-bg { position:absolute; inset:0; background: radial-gradient(ellipse at 50% 120%, rgba(30,60,120,0.35) 0%, transparent 70%), radial-gradient(ellipse at 20% 50%, rgba(20,30,80,0.3) 0%, transparent 60%), radial-gradient(ellipse at 80% 50%, rgba(20,30,80,0.3) 0%, transparent 60%), linear-gradient(180deg, #0a0a16 0%, #0f0f22 40%, #090913 100%); }
 #cave-tunnels { position:absolute; inset:0; opacity:0.5; }
