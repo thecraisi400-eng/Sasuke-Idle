@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <title>Idle Miner - Android 9:16</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main id="app" class="app" aria-label="Juego Idle de Minería">
+    <header class="status-bar glass">
+      <div class="status-item level-box">
+        <div class="status-label">Nivel 15</div>
+        <div class="progress-track"><div class="progress-fill" style="width:75%"></div></div>
+        <small>75% al siguiente nivel</small>
+      </div>
+      <div class="status-item coin-box" id="goldCounter">🪙 14,5K</div>
+      <div class="status-item dps-box">
+        <span id="dpsCounter">34.2K DPS</span>
+        <small>Daño pasivo</small>
+      </div>
+    </header>
+
+    <section class="game-area" id="gameArea">
+      <div class="parallax depth-1"></div>
+      <div class="parallax depth-2"></div>
+      <div class="sparkle-layer" id="sparkleLayer"></div>
+
+      <div class="torch torch-left"></div>
+      <div class="torch torch-right"></div>
+
+      <aside class="side-stats glass">
+        <p>Crítico</p><strong id="critRate">12.5%</strong>
+        <p>Combo</p><strong id="comboCount">x1</strong>
+        <p>Mineros</p><strong>4/8</strong>
+      </aside>
+
+      <div class="miner" aria-label="Minero en espera">
+        <div class="miner-body">🧑‍🏭</div>
+        <div class="pickaxe">⛏️</div>
+      </div>
+
+      <div class="rock-wrapper">
+        <div class="enemy-title">Roca Antigua • Zona 3</div>
+        <div class="rock-bars">
+          <div class="bar red"><div class="fill" id="hpFill"></div></div>
+          <div class="bar green"><div class="fill" id="xpFill"></div></div>
+        </div>
+        <button id="rock" class="rock" aria-label="Roca para minar">
+          <span class="rock-crack"></span>
+          <span class="rock-shine"></span>
+        </button>
+      </div>
+
+      <div class="loot-feed glass" id="lootFeed">+ Botín: Fragmento de hierro</div>
+      <div id="damageLayer" class="damage-layer" aria-hidden="true"></div>
+    </section>
+
+    <nav class="bottom-grid" aria-label="Navegación principal">
+      <button class="menu-btn b1 active" data-section="Picos">⛏️<span>Picos</span></button>
+      <button class="menu-btn b2" data-section="Clanes">👥<span>Clanes</span></button>
+      <button class="menu-btn b3" data-section="Batalla">⚔️<span>Batalla</span></button>
+      <button class="menu-btn b4" data-section="Atributos">📈<span>Atributos</span></button>
+      <button class="menu-btn b5" data-section="Arena (PvP)">🏟️<span>Arena</span></button>
+      <button class="menu-btn b6" data-section="Eventos">🎉<span>Eventos</span></button>
+      <button class="menu-btn b7" data-section="Prestigio">👑<span>Prestigio</span></button>
+      <button class="menu-btn b8" data-section="Mascotas">🐾<span>Mascotas</span></button>
+      <button class="menu-btn b9" data-section="Ajustes">⚙️<span>Ajustes</span></button>
+    </nav>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
