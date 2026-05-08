@@ -182,6 +182,7 @@ function renderPickUpgrades() {
 }
 
 function togglePicksModal(show) {
+  if (!picksModal) return;
   picksModal.classList.toggle('show', show);
 }
 
@@ -278,7 +279,7 @@ function spawnGoldFloat(amount) { /* unchanged */
 }
 
 function spawnImpactParticles() { const rect = rockEl.getBoundingClientRect(); const caveRect = caveArea.getBoundingClientRect(); const cx = rect.left - caveRect.left + rect.width / 2; const cy = rect.top - caveRect.top + rect.height / 2; for (let i = 0; i < 5; i++) { const p = document.createElement('div'); p.className = 'spark-particle'; p.style.left = (cx + (Math.random() * 40 - 20)) + 'px'; p.style.top = (cy + (Math.random() * 20 - 10)) + 'px'; const angle = Math.random() * Math.PI * 2; const dist = 20 + Math.random() * 30; p.style.setProperty('--sx', Math.cos(angle) * dist + 'px'); p.style.setProperty('--sy', (-15 - Math.random() * dist) + 'px'); p.style.animationDuration = (0.4 + Math.random() * 0.4) + 's'; caveArea.appendChild(p); setTimeout(() => p.remove(), 800); } }
-function spawnDustParticle() { const p = document.createElement('div'); p.className = 'dust-particle'; const sz = 1 + Math.random() * 2.5; p.style.width = sz + 'px'; p.style.height = sz + 'px'; p.style.left = (Math.random() * 100) + '%'; p.style.top = (40 + Math.random() * 50) + '%'; p.style.setProperty('--dx', (Math.random() * 20 - 10) + 'px'); p.style.animationDuration = (4 + Math.random() * 6) + 's'; p.style.animationDelay = (Math.random() * 3) + 's'; particlesContainer.appendChild(p); setTimeout(() => p.remove(), 12000); }
+function spawnDustParticle() { if (!particlesContainer) return; const p = document.createElement('div'); p.className = 'dust-particle'; const sz = 1 + Math.random() * 2.5; p.style.width = sz + 'px'; p.style.height = sz + 'px'; p.style.left = (Math.random() * 100) + '%'; p.style.top = (40 + Math.random() * 50) + '%'; p.style.setProperty('--dx', (Math.random() * 20 - 10) + 'px'); p.style.animationDuration = (4 + Math.random() * 6) + 's'; p.style.animationDelay = (Math.random() * 3) + 's'; particlesContainer.appendChild(p); setTimeout(() => p.remove(), 12000); }
 setInterval(spawnDustParticle, 600);
 
 setInterval(() => {
