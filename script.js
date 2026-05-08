@@ -137,7 +137,19 @@ function roundTo(value, decimals = 2) {
   return Math.round((value + Number.EPSILON) * factor) / factor;
 }
 
+function getCurrentDPS() {
+  const pickDamage = Math.max(2, PICK_UPGRADES.sharpPick.valorActual);
+  const pickSpeed = Math.max(1, PICK_UPGRADES.speedPick.valorActual);
+  return roundTo(pickDamage * pickSpeed, 2);
+}
+
+function syncCombatStats() {
+  state.clickDamage = Math.max(2, PICK_UPGRADES.sharpPick.valorActual);
+  state.dps = getCurrentDPS();
+}
+
 function syncGlobals() {
+  syncCombatStats();
   oroActual = state.gold;
   dañoActual = state.clickDamage;
 }
@@ -151,7 +163,7 @@ function updateUI() {
   hpText.textContent = Math.ceil(state.rockHP) + ' / ' + state.rockMaxHP;
   levelLabel.textContent = 'Nivel ' + state.level + ' · ' + getDifficultyTier(state.level);
   xpFill.style.width = (((state.rockMaxHP - state.rockHP) / state.rockMaxHP) * 100) + '%';
-  dpsDisplay.textContent = roundTo(PICK_UPGRADES.speedPick.valorActual, 2).toFixed(2) + ' DPS';
+  dpsDisplay.textContent = state.dps.toFixed(2) + ' DPS';
   renderPickUpgrades();
 }
 
@@ -192,10 +204,8 @@ function buyPickUpgrade(upgradeId) {
   state.gold -= cost;
   upgrade.nivel += 1;
 
-  if (upgradeId === 'sharpPick') {
-    state.clickDamage = upgrade.valorActual;
-    dañoActual = state.clickDamage;
-  }
+  syncCombatStats();
+  dañoActual = state.clickDamage;
 
   updateUI();
 }
@@ -232,6 +242,7 @@ function togglePicksModal(show) {
 }
 
 function processHit(isClick = false) {
+  syncCombatStats();
   const baseDamage = dañoActual;
   const critChance = Math.min(PICK_UPGRADES.critPick.valorActual, 1);
   const doubleChance = Math.min(PICK_UPGRADES.doublePick.valorActual, 1);
@@ -284,8 +295,7 @@ function checkRockStatus() {
   state.rockMaxHP = getRockHP(state.level);
   state.rockHP = state.rockMaxHP;
   state.rockReward = getGoldReward(state.level);
-  state.dps = Math.max(1, Math.floor(PICK_UPGRADES.speedPick.valorActual));
-  state.clickDamage = Math.max(2, PICK_UPGRADES.sharpPick.valorActual);
+  syncCombatStats();
   state.xpNeeded = 100 + state.level * 60;
   showLevelUp(state.level);
   updateUI();
@@ -334,9 +344,8 @@ setInterval(spawnDustParticle, 600);
 
 setInterval(() => {
   if (state.rockHP > 0) {
-    for (let i = 0; i < Math.max(1, Math.floor(PICK_UPGRADES.speedPick.valorActual)); i++) {
-      processHit(false);
-    }
+    syncCombatStats();
+    dealDamage(state.dps, false, false);
   }
 }, 1000);
 
