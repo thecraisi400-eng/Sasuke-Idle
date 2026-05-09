@@ -4,15 +4,15 @@
 //   Súbelo para una partida más dura; bájalo a 1.10-1.12 para progresión más suave.
 // - GOLD_REWARD_RATE evita la inflación convirtiendo solo una fracción del HP en oro.
 //   0.10 significa que una roca paga un 10% de su HP máximo.
-// - UPGRADE_COST_GROWTH es el escalado de los picos. 1.20 = +20% por nivel comprado.
-//   Con 1.20, sobre el nivel 50 una sola roca deja de pagar mejoras avanzadas y
+// - UPGRADE_COST_GROWTH es el escalado de los picos. 1.40 = +40% por nivel comprado.
+//   Con 1.40, sobre el nivel 50 una sola roca deja de pagar mejoras avanzadas y
 //   el jugador necesita acumular, optimizar Crítico y usar Doble Pico para avanzar.
 const BALANCE_CONFIG = {
   BASE_ROCK_HP: 25,
   ROCK_HP_GROWTH: 1.15,
   GOLD_REWARD_RATE: 0.10,
-  UPGRADE_COST_GROWTH: 1.20,
-  SILVER_REWARD_RATE: 0.10,
+  UPGRADE_COST_GROWTH: 1.40,
+  GOLD_FLOAT_HEIGHT_MULTIPLIER: 2.88,
   CRITICAL_DAMAGE_MULTIPLIER: 2,
   FAST_PROGRESSION_LEVEL_CAP: 10,
   HARD_GATE_LEVEL: 50,
@@ -44,11 +44,14 @@ const PICK_UPGRADES = {
     nivel: 0,
     maxNivel: 1000,
     baseValor: 2,
-    incremento: 0.45,
+    incrementoMin: 0.30,
+    incrementoMax: 0.75,
+    bonusValor: 0,
+    decimalesValor: 2,
     costoBase: 12,
     multiplicadorCosto: BALANCE_CONFIG.UPGRADE_COST_GROWTH,
     get valorActual() {
-      return roundTo(this.baseValor + this.nivel * this.incremento, 2);
+      return roundTo(this.baseValor + this.bonusValor, this.decimalesValor);
     },
   },
   speedPick: {
@@ -57,11 +60,14 @@ const PICK_UPGRADES = {
     nivel: 0,
     maxNivel: 1000,
     baseValor: 1,
-    incremento: 0.02,
+    incrementoMin: 0.01,
+    incrementoMax: 0.035,
+    bonusValor: 0,
+    decimalesValor: 2,
     costoBase: 22,
     multiplicadorCosto: BALANCE_CONFIG.UPGRADE_COST_GROWTH,
     get valorActual() {
-      return roundTo(this.baseValor + this.nivel * this.incremento, 2);
+      return roundTo(this.baseValor + this.bonusValor, this.decimalesValor);
     },
   },
   critPick: {
@@ -70,11 +76,14 @@ const PICK_UPGRADES = {
     nivel: 0,
     maxNivel: 1000,
     baseValor: 0.02,
-    incremento: 0.02,
+    incrementoMin: 0.01,
+    incrementoMax: 0.03,
+    bonusValor: 0,
+    decimalesValor: 3,
     costoBase: 15,
     multiplicadorCosto: BALANCE_CONFIG.UPGRADE_COST_GROWTH,
     get valorActual() {
-      return roundTo(this.baseValor + this.nivel * this.incremento, 3);
+      return roundTo(this.baseValor + this.bonusValor, this.decimalesValor);
     },
   },
   doublePick: {
@@ -83,11 +92,14 @@ const PICK_UPGRADES = {
     nivel: 0,
     maxNivel: 1000,
     baseValor: 0.01,
-    incremento: 0.015,
+    incrementoMin: 0.008,
+    incrementoMax: 0.022,
+    bonusValor: 0,
+    decimalesValor: 3,
     costoBase: 18,
     multiplicadorCosto: BALANCE_CONFIG.UPGRADE_COST_GROWTH,
     get valorActual() {
-      return roundTo(this.baseValor + this.nivel * this.incremento, 3);
+      return roundTo(this.baseValor + this.bonusValor, this.decimalesValor);
     },
   },
 };
@@ -137,6 +149,16 @@ function roundTo(value, decimals = 2) {
   return Math.round((value + Number.EPSILON) * factor) / factor;
 }
 
+function formatDecimal(value, decimals = 2) {
+  return roundTo(value, decimals).toFixed(decimals);
+}
+
+function getRandomUpgradeIncrement(upgrade) {
+  const min = upgrade.incrementoMin ?? 0;
+  const max = upgrade.incrementoMax ?? min;
+  return roundTo(min + Math.random() * (max - min), upgrade.decimalesValor ?? 2);
+}
+
 function getCurrentDPS() {
   const pickDamage = Math.max(2, PICK_UPGRADES.sharpPick.valorActual);
   const pickSpeed = Math.max(1, PICK_UPGRADES.speedPick.valorActual);
@@ -160,7 +182,7 @@ function updateUI() {
   silverEl.textContent = formatNum(state.silver);
   const pct = Math.max(0, (state.rockHP / state.rockMaxHP) * 100);
   hpFill.style.width = pct + '%';
-  hpText.textContent = Math.ceil(state.rockHP) + ' / ' + state.rockMaxHP;
+  hpText.textContent = formatDecimal(Math.max(state.rockHP, 0), 2) + ' / ' + formatDecimal(state.rockMaxHP, 2);
   levelLabel.textContent = 'Nivel ' + state.level + ' · ' + getDifficultyTier(state.level);
   xpFill.style.width = (((state.rockMaxHP - state.rockHP) / state.rockMaxHP) * 100) + '%';
   dpsDisplay.textContent = state.dps.toFixed(2) + ' DPS';
@@ -183,7 +205,7 @@ function formatUpgradeValue(upgrade) {
 }
 
 function getUpgradeCost(upgrade) {
-  // Fórmula: Costo = Base_Costo * (1.20 ^ Nivel_Mejora).
+  // Fórmula: Costo = Base_Costo * (1.40 ^ Nivel_Mejora).
   // Cambia BALANCE_CONFIG.UPGRADE_COST_GROWTH si quieres endurecer o suavizar
   // todas las mejoras sin tocar cada pico manualmente.
   return Math.floor(upgrade.costoBase * Math.pow(upgrade.multiplicadorCosto, upgrade.nivel));
@@ -203,6 +225,10 @@ function buyPickUpgrade(upgradeId) {
 
   state.gold -= cost;
   upgrade.nivel += 1;
+  upgrade.bonusValor = roundTo(
+    (upgrade.bonusValor ?? 0) + getRandomUpgradeIncrement(upgrade),
+    upgrade.decimalesValor ?? 2
+  );
 
   syncCombatStats();
   dañoActual = state.clickDamage;
@@ -287,7 +313,6 @@ function checkRockStatus() {
 
   const reward = state.rockReward;
   state.gold += reward;
-  state.silver += Math.floor(reward * BALANCE_CONFIG.SILVER_REWARD_RATE);
   spawnGoldFloat(reward);
 
   state.xp += 20 + state.level * 10;
@@ -312,7 +337,7 @@ function spawnDamageNumber(dmg, isClick, isCritical = false) {
   const el = document.createElement('div');
   el.className = 'dmg-number';
   if (isCritical) el.classList.add('critical-dmg');
-  el.textContent = '-' + Math.ceil(dmg);
+  el.textContent = '-' + formatDecimal(dmg, 2);
   const rect = rockEl.getBoundingClientRect();
   const caveRect = caveArea.getBoundingClientRect();
   const cx = rect.left - caveRect.left + rect.width / 2;
@@ -332,7 +357,7 @@ function spawnGoldFloat(amount) {
   const caveRect = caveArea.getBoundingClientRect();
   const cx = rect.left - caveRect.left + rect.width / 2;
   const rockTop = rect.top - caveRect.top;
-  const goldFloatVerticalOffset = rect.height * 1.2;
+  const goldFloatVerticalOffset = rect.height * BALANCE_CONFIG.GOLD_FLOAT_HEIGHT_MULTIPLIER;
   el.style.left = (cx - 30) + 'px';
   el.style.top = (rockTop - 10 - goldFloatVerticalOffset) + 'px';
   caveArea.appendChild(el);
