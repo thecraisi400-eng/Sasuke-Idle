@@ -194,10 +194,6 @@
 }
   `;
 
-  function calcularDanioADesbloquear(nivelActual) {
-    return Math.floor(nivelActual / 30) * 0.2;
-  }
-
   function resetearHPDeRocas() {
     if (typeof window.resetearRocasANivel1 === 'function') {
       window.resetearRocasANivel1();
@@ -328,8 +324,7 @@
       const disponibles = Math.max(0, totalPuntos - reclamados);
       if (disponibles <= 0) return;
 
-      const bono = calcularDanioADesbloquear(nivel);
-      window.dañoPermanenteTotal = Number(window.dañoPermanenteTotal ?? 0) + bono;
+      window.attributePoints = Math.max(0, Number(window.attributePoints ?? 0)) + disponibles;
       window.prestigePointsClaimed = reclamados + disponibles;
       window.prestigePointsAvailable = 0;
 
