@@ -293,6 +293,32 @@ function resetearRocasANivel1() {
 window.resetearRocasANivel1 = resetearRocasANivel1;
 window.updatePrestigeUI = updateUI;
 
+
+function resetGameForPrestige() {
+  state.level = 0;
+  state.gold = 0;
+  state.silver = 0;
+  state.dps = 1;
+  state.clickDamage = 2;
+  state.xp = 0;
+  state.xpNeeded = 100;
+  state.rockMaxHP = getRockHP(1);
+  state.rockHP = state.rockMaxHP;
+  state.rockReward = getGoldReward(1);
+
+  Object.values(PICK_UPGRADES).forEach((upgrade) => {
+    upgrade.nivel = 0;
+    upgrade.bonusValor = 0;
+  });
+
+  syncGlobals();
+  updateUI();
+}
+
+window.resetGameForPrestige = resetGameForPrestige;
+window.prestigePointsAvailable = Number(window.prestigePointsAvailable ?? 0);
+window.prestigePointsClaimed = Number(window.prestigePointsClaimed ?? 0);
+
 function processHit(isClick = false) {
   syncCombatStats();
   const baseDamage = dañoActual;
