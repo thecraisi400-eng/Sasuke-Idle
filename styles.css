@@ -144,4 +144,29 @@ html, body {
 .buy-btn{margin-top:4px;background:linear-gradient(145deg,#795700,#c8960a);border:none;border-radius:8px;padding:8px;color:#fff;font-weight:700}
 .buy-btn:disabled{opacity:.45}
 .dmg-number.critical-dmg{color:#ff4d4d!important;font-size:24px!important;text-shadow:0 0 12px rgba(255,60,60,.95),1px 1px 0 rgba(0,0,0,.9)}
+
+.attrs-modal{background:transparent;border:none;padding:8px}
+.attrs-frame{
+  width:100%;height:100%;padding:10px;border-radius:14px;display:flex;flex-direction:column;gap:8px;
+  background:linear-gradient(160deg,#d6c39b,#b89d74 45%,#8e7553);
+  border:2px solid #6f5a3d;box-shadow:inset 0 0 0 2px rgba(245,228,184,.5),0 8px 20px rgba(0,0,0,.45);
+  position:relative;
+}
+.attrs-frame::before,.attrs-frame::after{
+  content:'✦';position:absolute;font-size:14px;color:#5d4931;background:#ceb488;border:1px solid #6f5a3d;border-radius:4px;padding:1px 4px
+}
+.attrs-frame::before{left:7px;top:7px}.attrs-frame::after{right:7px;top:7px}
+.attrs-header{display:flex;justify-content:space-between;align-items:center}
+.attrs-header h2{font-family:'Fredoka One',cursive;font-size:16px;color:#fff;letter-spacing:1px;text-shadow:0 2px 2px rgba(0,0,0,.65)}
+.attrs-prestige-wallet{font-family:'Fredoka One',cursive;color:#8ce8ff;background:rgba(36,25,14,.8);border:1px solid #4f3a25;padding:4px 9px;border-radius:10px}
+.attrs-list{
+  flex:1;overflow-y:auto;padding:8px;border-radius:10px;background:linear-gradient(180deg,#3b2616,#2e1d10);
+  border:2px solid #1d130c;box-shadow:inset 0 0 0 2px rgba(140,107,72,.6);display:flex;flex-direction:column;gap:8px
+}
+.attr-card{display:flex;align-items:center;gap:9px;background:#5a3a23;border:1px solid #2b1a10;border-radius:12px;padding:8px}
+.attr-icon{width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:#2e2015;font-size:22px;border:2px solid #999}
+.attr-icon.gray{border-color:#8f8f98}.attr-icon.gold{border-color:#d4aa40}.attr-icon.green{border-color:#5ebc62}.attr-icon.red{border-color:#c95050}
+.attr-content{display:flex;flex-direction:column;gap:3px}
+.attr-title{font-size:11px;font-family:'Fredoka One',cursive;color:#fff;line-height:1.2}
+.attr-cost{font-size:11px;font-family:'Fredoka One',cursive;color:#57ff7a}
 @media (min-width:1080px){#app{max-width:1080px}.picks-cards{grid-template-columns:repeat(2,minmax(0,1fr));}}

@@ -146,6 +146,16 @@ const popupLevel = document.getElementById('popup-level');
 const minerEl = document.getElementById('miner');
 const picksModal = document.getElementById('picks-modal');
 const picksCards = document.getElementById('picks-cards');
+const attrsModal = document.getElementById('attrs-modal');
+const attrsList = document.getElementById('attrs-list');
+const attrsPrestigePointsEl = document.getElementById('attrs-prestige-points');
+
+const ATTRIBUTE_ITEMS = [
+  { icon: '⚔️', border: 'gray', title: "MULTIPLICADOR DE DPS 'x0.5'", cost: 3 },
+  { icon: '💰', border: 'gold', title: "MULTIPLICADOR DE ORO '💰'", cost: 2 },
+  { icon: '⛏️', border: 'green', title: 'REDUCCIÓN DE COSTO DE PICOS (3%)', cost: 5 },
+  { icon: '💥', border: 'red', title: 'PROBABILIDAD DE CRÍTICO (+0.01%)', cost: 7 },
+];
 
 function roundTo(value, decimals = 2) {
   const factor = 10 ** decimals;
@@ -199,6 +209,7 @@ function updateUI() {
   xpFill.style.width = (((state.rockMaxHP - state.rockHP) / state.rockMaxHP) * 100) + '%';
   dpsDisplay.textContent = state.dps.toFixed(2) + ' DPS';
   renderPickUpgrades();
+  renderAttributesPanel();
 }
 
 function formatNum(n) {
@@ -277,6 +288,25 @@ function renderPickUpgrades() {
 function togglePicksModal(show) {
   if (!picksModal) return;
   picksModal.classList.toggle('show', show);
+}
+
+function renderAttributesPanel() {
+  if (!attrsList || !attrsPrestigePointsEl) return;
+  attrsPrestigePointsEl.textContent = formatNum(Math.max(0, Number(window.prestigePointsAvailable ?? 0)));
+  attrsList.innerHTML = ATTRIBUTE_ITEMS.map((item) => `
+    <article class="attr-card">
+      <div class="attr-icon ${item.border}">${item.icon}</div>
+      <div class="attr-content">
+        <p class="attr-title">${item.title}</p>
+        <p class="attr-cost">COSTO: ${item.cost} 💰 PUNTOS</p>
+      </div>
+    </article>
+  `).join('');
+}
+
+function toggleAttrsModal(show) {
+  if (!attrsModal) return;
+  attrsModal.classList.toggle('show', show);
 }
 
 function resetearRocasANivel1() {
@@ -436,10 +466,18 @@ function switchSection(section) {
 
   if (section === 'picks') {
     togglePicksModal(true);
+    toggleAttrsModal(false);
     return;
   }
 
   togglePicksModal(false);
+  toggleAttrsModal(false);
+
+  if (section === 'attrs') {
+    toggleAttrsModal(true);
+    renderAttributesPanel();
+    return;
+  }
 
   if (section === 'prestige' && typeof window.crearSistemaPrestigio === 'function') {
     window.crearSistemaPrestigio();
