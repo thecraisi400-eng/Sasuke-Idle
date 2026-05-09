@@ -243,7 +243,7 @@
           <p class="prestige-calc">Puntos por Nivel (x1/15): <span class="prestige-pos" id="prestige-points-level">+4</span></p>
           <p class="prestige-calc">Puntos por Monedas (x1/meta): <span class="prestige-pos" id="prestige-points-coins">+2</span></p>
           <div class="prestige-actions">
-            <button type="button" class="prestige-btn prestige-btn-main" id="prestige-reset">+6 Puntos de Prestigio</button>
+            <button type="button" class="prestige-btn prestige-btn-main" id="prestige-reset">+0 Puntos de Prestigio</button>
             <button type="button" class="prestige-btn prestige-btn-ghost" id="prestige-close">Cerrar</button>
           </div>
         </div>
@@ -299,6 +299,8 @@
 
       const { target: monedasMeta, totalGold: monedas, milestones: puntosMonedas } = getPrestigeMetaData();
       const totalPuntos = puntosNivel + puntosMonedas;
+      const disponibles = Math.max(0, totalPuntos - Number(window.prestigePointsClaimed ?? 0));
+      window.prestigePointsAvailable = disponibles;
 
       levelText.textContent = `${nivel}/${nivelMax}`;
       coinsText.textContent = `${monedas.toLocaleString('es-ES')} / ${monedasMeta.toLocaleString('es-ES')}`;
@@ -306,8 +308,9 @@
       coinsFill.style.width = `${Math.min((monedas / monedasMeta) * 100, 100)}%`;
       levelPointsText.textContent = `+${puntosNivel}`;
       coinPointsText.textContent = `+${puntosMonedas}`;
-      resetBtn.textContent = `+${totalPuntos} Puntos de Prestigio`;
-      resetBtn.title = 'Listo para prestigiar';
+      resetBtn.textContent = `+${disponibles} Puntos de Prestigio`;
+      resetBtn.title = disponibles > 0 ? 'Haz clic para reclamar y reiniciar' : 'No hay puntos para reclamar';
+      resetBtn.disabled = disponibles <= 0;
     }
 
     function cerrar() {
@@ -317,12 +320,25 @@
 
     resetBtn.addEventListener('click', () => {
       const nivel = getNivel();
-      if (nivel < 30) return;
+      const puntosNivel = Math.floor(nivel / PRESTIGE_LEVEL_STEP);
+      const { milestones: puntosMonedas } = getPrestigeMetaData();
+      const totalPuntos = puntosNivel + puntosMonedas;
+      const reclamados = Math.max(0, Number(window.prestigePointsClaimed ?? 0));
+      const disponibles = Math.max(0, totalPuntos - reclamados);
+      if (disponibles <= 0) return;
 
       const bono = calcularDanioADesbloquear(nivel);
       window.dañoPermanenteTotal = Number(window.dañoPermanenteTotal ?? 0) + bono;
-      window.nivelActual = 1;
-      resetearHPDeRocas();
+      window.prestigePointsClaimed = reclamados + disponibles;
+      window.prestigePointsAvailable = 0;
+
+      if (typeof window.resetGameForPrestige === 'function') {
+        window.resetGameForPrestige();
+      } else {
+        window.nivelActual = 0;
+        resetearHPDeRocas();
+      }
+
       if (typeof window.updatePrestigeUI === 'function') window.updatePrestigeUI();
       cerrar();
     });
