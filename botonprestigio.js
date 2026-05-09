@@ -237,11 +237,11 @@
             <div class="prestige-bar"><div class="prestige-fill blue" id="prestige-level-fill"></div></div>
           </div>
           <div class="prestige-row">
-            <div class="prestige-row-top"><span><span class="prestige-icon coin">🪙</span> Monedas Ganadas: <span id="prestige-coins">245,000 / 300,000</span></span></div>
+            <div class="prestige-row-top"><span><span class="prestige-icon coin">💰</span> Monedas Ganadas: <span id="prestige-coins">245,000 / 300,000</span></span></div>
             <div class="prestige-bar"><div class="prestige-fill gold" id="prestige-coins-fill"></div></div>
           </div>
-          <p class="prestige-calc">Puntos por Nivel (x1/10): <span class="prestige-pos" id="prestige-points-level">+4</span></p>
-          <p class="prestige-calc">Puntos por Monedas (x1/100k): <span class="prestige-pos" id="prestige-points-coins">+2</span></p>
+          <p class="prestige-calc">Puntos por Nivel (x1/15): <span class="prestige-pos" id="prestige-points-level">+4</span></p>
+          <p class="prestige-calc">Puntos por Monedas (x1/meta): <span class="prestige-pos" id="prestige-points-coins">+2</span></p>
           <div class="prestige-actions">
             <button type="button" class="prestige-btn prestige-btn-main" id="prestige-reset">+6 Puntos de Prestigio</button>
             <button type="button" class="prestige-btn prestige-btn-ghost" id="prestige-close">Cerrar</button>
@@ -262,22 +262,49 @@
     const resetBtn = overlay.querySelector('#prestige-reset');
     const closeBtn = overlay.querySelector('#prestige-close');
 
+    const PRESTIGE_LEVEL_STEP = 15;
+    const PRESTIGE_BASE_GOLD_TARGET = 5000;
+
     function getNivel() {
       return Number(window.nivelActual ?? 1);
     }
 
+    function getTotalGoldEarned() {
+      return Number(window.totalGoldEarned ?? window.oroTotalGanado ?? 0);
+    }
+
+    function getPrestigeMetaData() {
+      if (!window.prestigeGoldData) {
+        window.prestigeGoldData = { target: PRESTIGE_BASE_GOLD_TARGET, multiplier: 1 };
+      }
+
+      const totalGold = getTotalGoldEarned();
+      let target = Math.max(PRESTIGE_BASE_GOLD_TARGET, Number(window.prestigeGoldData.target) || PRESTIGE_BASE_GOLD_TARGET);
+      let multiplier = Number(window.prestigeGoldData.multiplier) || 1;
+
+      while (totalGold >= target) {
+        const randomPercent = 0.6 + Math.random() * 0.6;
+        multiplier += randomPercent;
+        target = Math.round(PRESTIGE_BASE_GOLD_TARGET * multiplier);
+      }
+
+      window.prestigeGoldData.target = target;
+      window.prestigeGoldData.multiplier = multiplier;
+      return { target, totalGold };
+    }
+
     function refresh() {
-      const nivel = 43;
-      const nivelMax = 50;
-      const monedas = 245000;
-      const monedasMeta = 300000;
-      const puntosNivel = 4;
-      const puntosMonedas = 2;
+      const nivel = getNivel();
+      const nivelMax = Math.max(PRESTIGE_LEVEL_STEP, Math.ceil(nivel / PRESTIGE_LEVEL_STEP) * PRESTIGE_LEVEL_STEP);
+      const puntosNivel = Math.floor(nivel / PRESTIGE_LEVEL_STEP);
+
+      const { target: monedasMeta, totalGold: monedas } = getPrestigeMetaData();
+      const puntosMonedas = Math.floor(monedas / PRESTIGE_BASE_GOLD_TARGET);
 
       levelText.textContent = `${nivel}/${nivelMax}`;
       coinsText.textContent = `${monedas.toLocaleString('es-ES')} / ${monedasMeta.toLocaleString('es-ES')}`;
-      levelFill.style.width = `${(nivel / nivelMax) * 100}%`;
-      coinsFill.style.width = `${(monedas / monedasMeta) * 100}%`;
+      levelFill.style.width = `${Math.min((nivel / nivelMax) * 100, 100)}%`;
+      coinsFill.style.width = `${Math.min((monedas / monedasMeta) * 100, 100)}%`;
       levelPointsText.textContent = `+${puntosNivel}`;
       coinPointsText.textContent = `+${puntosMonedas}`;
       resetBtn.title = 'Listo para prestigiar';

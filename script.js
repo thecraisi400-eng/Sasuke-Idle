@@ -30,6 +30,7 @@ const state = {
   rockReward: getGoldReward(1),
   xp: 0,
   xpNeeded: 100,
+  totalGoldEarned: 0,
 };
 
 // Variables globales solicitadas
@@ -183,6 +184,8 @@ function syncGlobals() {
   window.nivelActual = state.level;
   window.oroActual = oroActual;
   window.dañoActual = dañoActual;
+  window.totalGoldEarned = state.totalGoldEarned;
+  window.oroTotalGanado = state.totalGoldEarned;
 }
 
 function updateUI() {
@@ -336,6 +339,7 @@ function checkRockStatus() {
 
   const reward = state.rockReward;
   state.gold += reward;
+  state.totalGoldEarned += reward;
   spawnGoldFloat(reward);
 
   state.xp += 20 + state.level * 10;
