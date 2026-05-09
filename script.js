@@ -199,6 +199,17 @@ function getRandomUpgradeIncrement(upgrade) {
   return roundTo(min + Math.random() * (max - min), upgrade.decimalesValor ?? 2);
 }
 
+function getSharpPickPowerByLevel(level) {
+  // Fórmula avanzada de daño con crecimiento compuesto + exponencial suave:
+  // daño = base + (a * nivel^1.18) + (b * (1.045^nivel - 1))
+  // Esto garantiza crecimiento favorable y perceptible en cada mejora.
+  const lvl = Math.max(0, Number(level) || 0);
+  const base = PICK_UPGRADES.sharpPick.baseValor;
+  const polynomialGrowth = 0.7 * Math.pow(lvl, 1.18);
+  const exponentialGrowth = 1.35 * (Math.pow(1.045, lvl) - 1);
+  return roundTo(base + polynomialGrowth + exponentialGrowth, PICK_UPGRADES.sharpPick.decimalesValor ?? 2);
+}
+
 function getAttributeDamageMultiplier() {
   return 1 + getAttributeUpgradeValue('dpsMultiplier');
 }
@@ -289,10 +300,18 @@ function buyPickUpgrade(upgradeId) {
 
   state.gold -= cost;
   upgrade.nivel += 1;
-  upgrade.bonusValor = roundTo(
-    (upgrade.bonusValor ?? 0) + getRandomUpgradeIncrement(upgrade),
-    upgrade.decimalesValor ?? 2
-  );
+  if (upgrade.id === 'sharpPick') {
+    // Recalculamos por nivel para que siempre suba el daño de forma notoria.
+    upgrade.bonusValor = roundTo(
+      getSharpPickPowerByLevel(upgrade.nivel) - upgrade.baseValor,
+      upgrade.decimalesValor ?? 2
+    );
+  } else {
+    upgrade.bonusValor = roundTo(
+      (upgrade.bonusValor ?? 0) + getRandomUpgradeIncrement(upgrade),
+      upgrade.decimalesValor ?? 2
+    );
+  }
 
   syncCombatStats();
   dañoActual = state.clickDamage;
