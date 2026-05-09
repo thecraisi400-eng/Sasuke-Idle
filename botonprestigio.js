@@ -17,15 +17,6 @@
   --prestige-bg-3: #1b1208;
   --prestige-blur: 8px;
   --prestige-overlay-opacity: 0.82;
-
-  --scroll-paper: #f0dfbc;
-  --scroll-paper-2: #e4cb9f;
-  --scroll-ink: #2c1a0c;
-  --scroll-shadow: rgba(0, 0, 0, 0.45);
-
-  --cta-active: #b94721;
-  --cta-active-2: #d86b34;
-  --cta-disabled: #845c4e;
 }
 
 .prestige-overlay {
@@ -66,18 +57,17 @@
 
 .prestige-scroll {
   position: relative;
-  width: min(92vw, 560px);
-  border-radius: 22px;
-  padding: clamp(18px, 2.7vw, 30px);
-  color: var(--scroll-ink);
+  width: min(92vw, 430px);
+  border-radius: 24px;
+  padding: 14px;
+  color: #f6e7c4;
   background:
-    radial-gradient(125% 100% at 50% 0%, rgba(255,255,255,0.25), transparent 45%),
-    linear-gradient(165deg, var(--scroll-paper), var(--scroll-paper-2));
+    radial-gradient(130% 90% at 50% 0%, rgba(255,255,255,0.26), transparent 40%),
+    linear-gradient(165deg, #f3e4c5, #decaa0);
+  border: 5px solid #6e6a62;
   box-shadow:
-    0 30px 65px var(--scroll-shadow),
-    inset 0 0 0 1px rgba(81, 52, 24, 0.32),
-    inset 0 12px 24px rgba(255, 255, 255, 0.18),
-    inset 0 -12px 20px rgba(92, 53, 20, 0.16);
+    0 30px 65px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.35);
   overflow: hidden;
   transform: translateY(14px) scale(0.985);
   transition: transform 340ms cubic-bezier(.19,.75,.24,1);
@@ -87,75 +77,112 @@
   transform: translateY(0) scale(1);
 }
 
-.prestige-scroll::before,
-.prestige-scroll::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 16px;
-  background: linear-gradient(to bottom, rgba(64, 38, 20, 0.25), transparent);
-}
-
-.prestige-scroll::after {
-  top: auto;
-  bottom: 0;
-  transform: rotate(180deg);
+.prestige-panel {
+  background: linear-gradient(180deg, #3e2412, #2d180a);
+  border: 4px solid #d4a52f;
+  border-radius: 16px;
+  padding: 16px 14px;
+  box-shadow: inset 0 0 0 2px rgba(255, 213, 118, 0.25);
 }
 
 .prestige-title {
-  margin: 0 0 10px;
-  font-family: "Cinzel", "Georgia", "Times New Roman", serif;
-  font-size: clamp(1.3rem, 3.5vw, 2rem);
-  letter-spacing: 0.04em;
+  margin: 0 0 14px;
+  text-align: center;
+  color: #ffd64a;
+  font-family: "Fredoka One", "Arial Black", sans-serif;
+  font-size: clamp(1rem, 3.4vw, 1.2rem);
+  letter-spacing: 0.03em;
 }
 
-.prestige-copy {
-  margin: 6px 0;
-  font-family: "Merriweather", "Georgia", serif;
-  font-size: clamp(0.96rem, 2.5vw, 1.12rem);
-  line-height: 1.5;
+.diamond {
+  color: #ff8a25;
+  text-shadow: 0 0 8px rgba(255, 138, 37, 0.5);
 }
 
-.prestige-highlight {
+.prestige-row {
+  margin-bottom: 12px;
+}
+
+.prestige-row-top {
+  display: flex;
+  justify-content: space-between;
+  color: #f6e7c4;
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin-bottom: 4px;
+}
+
+.prestige-icon {
+  font-size: 1.05rem;
+  text-shadow: 0 0 10px currentColor;
+}
+
+.prestige-icon.star {
+  color: #6db2ff;
+}
+
+.prestige-icon.coin {
+  color: #ffd64a;
+}
+
+.prestige-bar {
+  width: 100%;
+  height: 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.36);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.prestige-fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.prestige-fill.blue {
+  background: linear-gradient(90deg, #2f6dd8, #4ec7ff);
+}
+
+.prestige-fill.gold {
+  background: linear-gradient(90deg, #c88a00, #ffd64a);
+}
+
+.prestige-calc {
+  margin: 5px 0;
+  color: #f6e7c4;
+  font-size: 0.95rem;
+}
+
+.prestige-pos {
+  color: #5bff8a;
   font-weight: 800;
 }
 
 .prestige-actions {
-  margin-top: 18px;
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  margin-top: 14px;
 }
 
 .prestige-btn {
-  border: 0;
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-weight: 700;
-  font-size: 0.98rem;
+  width: 100%;
+  border: 2px solid #90d4ff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-weight: 900;
+  font-size: 1.02rem;
   cursor: pointer;
 }
 
 .prestige-btn-main {
-  flex: 1 1 190px;
   color: #fff;
-  background: linear-gradient(180deg, var(--cta-active-2), var(--cta-active));
-  box-shadow: 0 8px 18px rgba(125, 42, 17, 0.38);
-}
-
-.prestige-btn-main[disabled] {
-  opacity: 0.5;
-  pointer-events: none;
-  background: var(--cta-disabled);
-  box-shadow: none;
+  background: linear-gradient(180deg, #4fc6ff, #2f70de);
+  box-shadow: 0 0 18px rgba(79, 198, 255, 0.75);
 }
 
 .prestige-btn-ghost {
-  flex: 1 1 120px;
-  color: #3d2412;
-  background: rgba(255, 255, 255, 0.34);
-  border: 1px solid rgba(61, 36, 18, 0.25);
+  margin-top: 8px;
+  color: #f3e6cf;
+  border-color: #8c7a63;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 @media (max-width: 430px) {
@@ -163,18 +190,7 @@
     padding: 10px;
   }
 
-  .prestige-scroll {
-    border-radius: 16px;
-    padding: 16px;
-  }
-
-  .prestige-actions {
-    flex-direction: column;
-  }
-
-  .prestige-btn {
-    width: 100%;
-  }
+  .prestige-scroll { border-radius: 16px; }
 }
   `;
 
@@ -214,12 +230,22 @@
       <div class="prestige-cave-bg" aria-hidden="true"></div>
       <div class="prestige-cave-fog" aria-hidden="true"></div>
       <article class="prestige-scroll" role="dialog" aria-modal="true" aria-label="Sistema de prestigio">
-        <h2 class="prestige-title">Ritual de Prestigio</h2>
-        <p class="prestige-copy" id="prestige-level"></p>
-        <p class="prestige-copy" id="prestige-bonus"></p>
-        <div class="prestige-actions">
-          <button type="button" class="prestige-btn prestige-btn-main" id="prestige-reset">Reiniciar y Obtener Bono</button>
-          <button type="button" class="prestige-btn prestige-btn-ghost" id="prestige-close">Cerrar</button>
+        <div class="prestige-panel">
+          <h2 class="prestige-title"><span class="diamond">◆</span> ESTADO DE PRESTIGIO ACTUAL <span class="diamond">◆</span></h2>
+          <div class="prestige-row">
+            <div class="prestige-row-top"><span><span class="prestige-icon star">★</span> Nivel Actual: <span id="prestige-level">43/50</span></span></div>
+            <div class="prestige-bar"><div class="prestige-fill blue" id="prestige-level-fill"></div></div>
+          </div>
+          <div class="prestige-row">
+            <div class="prestige-row-top"><span><span class="prestige-icon coin">🪙</span> Monedas Ganadas: <span id="prestige-coins">245,000 / 300,000</span></span></div>
+            <div class="prestige-bar"><div class="prestige-fill gold" id="prestige-coins-fill"></div></div>
+          </div>
+          <p class="prestige-calc">Puntos por Nivel (x1/10): <span class="prestige-pos" id="prestige-points-level">+4</span></p>
+          <p class="prestige-calc">Puntos por Monedas (x1/100k): <span class="prestige-pos" id="prestige-points-coins">+2</span></p>
+          <div class="prestige-actions">
+            <button type="button" class="prestige-btn prestige-btn-main" id="prestige-reset">+6 Puntos de Prestigio</button>
+            <button type="button" class="prestige-btn prestige-btn-ghost" id="prestige-close">Cerrar</button>
+          </div>
         </div>
       </article>
     `;
@@ -228,7 +254,11 @@
     prestigeHost.appendChild(overlay);
 
     const levelText = overlay.querySelector('#prestige-level');
-    const bonusText = overlay.querySelector('#prestige-bonus');
+    const coinsText = overlay.querySelector('#prestige-coins');
+    const levelFill = overlay.querySelector('#prestige-level-fill');
+    const coinsFill = overlay.querySelector('#prestige-coins-fill');
+    const levelPointsText = overlay.querySelector('#prestige-points-level');
+    const coinPointsText = overlay.querySelector('#prestige-points-coins');
     const resetBtn = overlay.querySelector('#prestige-reset');
     const closeBtn = overlay.querySelector('#prestige-close');
 
@@ -237,15 +267,20 @@
     }
 
     function refresh() {
-      const nivel = getNivel();
-      const bono = calcularDanioADesbloquear(nivel);
+      const nivel = 43;
+      const nivelMax = 50;
+      const monedas = 245000;
+      const monedasMeta = 300000;
+      const puntosNivel = 4;
+      const puntosMonedas = 2;
 
-      levelText.innerHTML = `Nivel Actual Alcanzado: <span class="prestige-highlight">${nivel}</span>`;
-      bonusText.innerHTML = `Bono de Daño a desbloquear: <span class="prestige-highlight">${bono.toFixed(2)} DPS</span>`;
-
-      const habilitado = nivel >= 30;
-      resetBtn.disabled = !habilitado;
-      resetBtn.title = habilitado ? 'Listo para prestigiar' : 'Necesitas llegar al nivel 30';
+      levelText.textContent = `${nivel}/${nivelMax}`;
+      coinsText.textContent = `${monedas.toLocaleString('es-ES')} / ${monedasMeta.toLocaleString('es-ES')}`;
+      levelFill.style.width = `${(nivel / nivelMax) * 100}%`;
+      coinsFill.style.width = `${(monedas / monedasMeta) * 100}%`;
+      levelPointsText.textContent = `+${puntosNivel}`;
+      coinPointsText.textContent = `+${puntosMonedas}`;
+      resetBtn.title = 'Listo para prestigiar';
     }
 
     function cerrar() {
