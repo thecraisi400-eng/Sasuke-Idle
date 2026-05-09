@@ -232,47 +232,47 @@
 
   <!-- NAV MENU -->
   <div id="nav-menu">
-    <div class="menu-btn btn-picks" onclick="switchSection('picks')">
+    <div class="menu-btn btn-picks" data-section="picks" onclick="switchSection('picks')">
       <span class="btn-index">1</span>
       <span class="btn-icon">⛏️</span>
       <span class="btn-name">Picos</span>
     </div>
-    <div class="menu-btn btn-clans" onclick="switchSection('clans')">
+    <div class="menu-btn btn-clans" data-section="clans" onclick="switchSection('clans')">
       <span class="btn-index">2</span>
       <span class="btn-icon">🛡️</span>
       <span class="btn-name">Clanes</span>
     </div>
-    <div class="menu-btn btn-battle" onclick="switchSection('battle')">
+    <div class="menu-btn btn-battle" data-section="battle" onclick="switchSection('battle')">
       <span class="btn-index">3</span>
       <span class="btn-icon">⚔️</span>
       <span class="btn-name">Batalla</span>
     </div>
-    <div class="menu-btn btn-attrs" onclick="switchSection('attrs')">
+    <div class="menu-btn btn-attrs" data-section="attrs" onclick="switchSection('attrs')">
       <span class="btn-index">4</span>
       <span class="btn-icon">✨</span>
       <span class="btn-name">Atributos</span>
     </div>
-    <div class="menu-btn btn-arena" onclick="switchSection('arena')">
+    <div class="menu-btn btn-arena" data-section="arena" onclick="switchSection('arena')">
       <span class="btn-index">5</span>
       <span class="btn-icon">🏟️</span>
       <span class="btn-name">Arena PvP</span>
     </div>
-    <div class="menu-btn btn-events" onclick="switchSection('events')">
+    <div class="menu-btn btn-events" data-section="events" onclick="switchSection('events')">
       <span class="btn-index">6</span>
       <span class="btn-icon">🎪</span>
       <span class="btn-name">Eventos</span>
     </div>
-    <div class="menu-btn btn-prestige" onclick="switchSection('prestige')">
+    <div class="menu-btn btn-prestige" data-section="prestige" onclick="switchSection('prestige')">
       <span class="btn-index">7</span>
       <span class="btn-icon">🏆</span>
       <span class="btn-name">Prestigio</span>
     </div>
-    <div class="menu-btn btn-pets" onclick="switchSection('pets')">
+    <div class="menu-btn btn-pets" data-section="pets" onclick="switchSection('pets')">
       <span class="btn-index">8</span>
       <span class="btn-icon">🐉</span>
       <span class="btn-name">Mascotas</span>
     </div>
-    <div class="menu-btn btn-settings" onclick="switchSection('settings')">
+    <div class="menu-btn btn-settings" data-section="settings" onclick="switchSection('settings')">
       <span class="btn-index">9</span>
       <span class="btn-icon">⚙️</span>
       <span class="btn-name">Ajustes</span>
@@ -284,7 +284,7 @@
   <div id="picks-modal" class="panel-modal">
     <div class="panel-header">
       <h2>Mejoras de Picos</h2>
-      <button class="panel-close" onclick="togglePicksModal(false)">✖</button>
+      <button class="panel-close" onclick="closeActivePanel()">✖</button>
     </div>
     <div id="picks-cards" class="picks-cards"></div>
   </div>
@@ -294,9 +294,18 @@
       <div class="attrs-header">
         <h2>ATRIBUTOS</h2>
         <div class="attrs-prestige-wallet">💠 <span id="attrs-prestige-points">0</span></div>
+        <button class="panel-close" onclick="closeActivePanel()">✖</button>
       </div>
       <div id="attrs-list" class="attrs-list"></div>
     </div>
+  </div>
+
+  <div id="section-modal" class="panel-modal section-modal">
+    <div class="panel-header">
+      <h2 id="section-title">Menú</h2>
+      <button class="panel-close" onclick="closeActivePanel()">✖</button>
+    </div>
+    <div id="section-content" class="section-content"></div>
   </div>
 
 </div>

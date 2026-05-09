@@ -315,6 +315,7 @@
 
     function cerrar() {
       overlay.classList.remove('is-open');
+      if (typeof window.resetPanelState === 'function') window.resetPanelState();
       setTimeout(() => overlay.remove(), 340);
     }
 
