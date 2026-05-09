@@ -38,6 +38,26 @@ let oroActual = state.gold;
 let dañoActual = state.clickDamage;
 window.nivelActual = state.level;
 window.dañoPermanenteTotal = Number(window.dañoPermanenteTotal ?? 0);
+window.attributePoints = Math.max(0, Number(window.attributePoints ?? 0));
+window.attributeUpgrades = window.attributeUpgrades || {};
+
+const ATTRIBUTE_DEFAULTS = {
+  dpsMultiplier: 0,
+  goldMultiplier: 0,
+  pickCostReduction: 0,
+  criticalChance: 0,
+};
+
+function getAttributeUpgradeValue(key) {
+  const upgrades = window.attributeUpgrades || {};
+  return Math.max(0, Number(upgrades[key] ?? ATTRIBUTE_DEFAULTS[key] ?? 0));
+}
+
+function addAttributeUpgradeValue(key, amount) {
+  window.attributeUpgrades = window.attributeUpgrades || {};
+  window.attributeUpgrades[key] = roundTo(getAttributeUpgradeValue(key) + amount, 6);
+  return window.attributeUpgrades[key];
+}
 
 // Configuración modular de mejoras de picos
 const PICK_UPGRADES = {
@@ -158,10 +178,10 @@ const DEFAULT_CAVE_BG = caveBg?.style.background || '';
 let activeSection = null;
 
 const ATTRIBUTE_ITEMS = [
-  { icon: '⚔️', border: 'gray', title: "MULTIPLICADOR DE DPS 'x0.5'", cost: 3 },
-  { icon: '💰', border: 'gold', title: "MULTIPLICADOR DE ORO '💰'", cost: 2 },
-  { icon: '⛏️', border: 'green', title: 'REDUCCIÓN DE COSTO DE PICOS (3%)', cost: 5 },
-  { icon: '💥', border: 'red', title: 'PROBABILIDAD DE CRÍTICO (+0.01%)', cost: 7 },
+  { id: 'dpsMultiplier', icon: '⚔️', border: 'gray', title: "MULTIPLICADOR DE DPS 'x0.5'", cost: 3, increment: 0.5, statLabel: 'Daño permanente' },
+  { id: 'goldMultiplier', icon: '💰', border: 'gold', title: "MULTIPLICADOR DE ORO '💰'", cost: 2, increment: 0.25, statLabel: 'Oro extra' },
+  { id: 'pickCostReduction', icon: '⛏️', border: 'green', title: 'REDUCCIÓN DE COSTO DE PICOS (3%)', cost: 5, increment: 0.03, statLabel: 'Descuento de picos' },
+  { id: 'criticalChance', icon: '💥', border: 'red', title: 'PROBABILIDAD DE CRÍTICO (+0.01%)', cost: 7, increment: 0.0001, statLabel: 'Crítico permanente' },
 ];
 
 function roundTo(value, decimals = 2) {
@@ -179,10 +199,22 @@ function getRandomUpgradeIncrement(upgrade) {
   return roundTo(min + Math.random() * (max - min), upgrade.decimalesValor ?? 2);
 }
 
+function getAttributeDamageMultiplier() {
+  return 1 + getAttributeUpgradeValue('dpsMultiplier');
+}
+
+function getAttributeGoldMultiplier() {
+  return 1 + getAttributeUpgradeValue('goldMultiplier');
+}
+
+function getPickCostReductionMultiplier() {
+  return Math.max(0.1, 1 - getAttributeUpgradeValue('pickCostReduction'));
+}
+
 function getCurrentDPS() {
   const pickDamage = Math.max(2, PICK_UPGRADES.sharpPick.valorActual);
   const pickSpeed = Math.max(1, PICK_UPGRADES.speedPick.valorActual);
-  return roundTo(pickDamage * pickSpeed, 2);
+  return roundTo(pickDamage * pickSpeed * getAttributeDamageMultiplier(), 2);
 }
 
 function getPermanentDamageBonus() {
@@ -190,8 +222,9 @@ function getPermanentDamageBonus() {
 }
 
 function syncCombatStats() {
-  state.clickDamage = Math.max(2, PICK_UPGRADES.sharpPick.valorActual) + getPermanentDamageBonus();
-  state.dps = getCurrentDPS() + getPermanentDamageBonus();
+  const permanentDamage = getPermanentDamageBonus();
+  state.clickDamage = roundTo((Math.max(2, PICK_UPGRADES.sharpPick.valorActual) + permanentDamage) * getAttributeDamageMultiplier(), 2);
+  state.dps = roundTo(getCurrentDPS() + permanentDamage, 2);
 }
 
 function syncGlobals() {
@@ -238,7 +271,8 @@ function getUpgradeCost(upgrade) {
   // Fórmula: Costo = Base_Costo * (1.40 ^ Nivel_Mejora).
   // Cambia BALANCE_CONFIG.UPGRADE_COST_GROWTH si quieres endurecer o suavizar
   // todas las mejoras sin tocar cada pico manualmente.
-  return Math.floor(upgrade.costoBase * Math.pow(upgrade.multiplicadorCosto, upgrade.nivel));
+  const baseCost = upgrade.costoBase * Math.pow(upgrade.multiplicadorCosto, upgrade.nivel);
+  return Math.max(1, Math.floor(baseCost * getPickCostReductionMultiplier()));
 }
 
 function checkTransaction(oroDisponible, costoMejora) {
@@ -297,18 +331,63 @@ function togglePicksModal(show) {
   picksModal.classList.toggle('show', show);
 }
 
+function getAttributeDisplayValue(item) {
+  const value = getAttributeUpgradeValue(item.id);
+  if (item.id === 'pickCostReduction' || item.id === 'criticalChance') {
+    return `${roundTo(value * 100, 4)}%`;
+  }
+  return `x${formatDecimal(value, 2)}`;
+}
+
+function showAttributeFloatMessage(message) {
+  const host = attrsModal?.classList.contains('show') ? attrsModal : caveArea;
+  if (!host) return;
+
+  const el = document.createElement('div');
+  el.className = 'attr-float-message';
+  el.textContent = message;
+  host.appendChild(el);
+  setTimeout(() => el.remove(), 1600);
+}
+
+function buyAttributeUpgrade(attributeId) {
+  const item = ATTRIBUTE_ITEMS.find((attr) => attr.id === attributeId);
+  if (!item) return;
+
+  const available = Math.max(0, Number(window.attributePoints ?? 0));
+  if (available < item.cost) {
+    showAttributeFloatMessage(`No hay suficientes 💠`);
+    return;
+  }
+
+  window.attributePoints = available - item.cost;
+  addAttributeUpgradeValue(item.id, item.increment);
+
+  syncCombatStats();
+  renderPickUpgrades();
+  renderAttributesPanel();
+  updateUI();
+}
+
 function renderAttributesPanel() {
   if (!attrsList || !attrsPrestigePointsEl) return;
-  attrsPrestigePointsEl.textContent = formatNum(Math.max(0, Number(window.prestigePointsAvailable ?? 0)));
+  attrsPrestigePointsEl.textContent = formatNum(Math.max(0, Number(window.attributePoints ?? 0)));
   attrsList.innerHTML = ATTRIBUTE_ITEMS.map((item) => `
     <article class="attr-card">
-      <div class="attr-icon ${item.border}">${item.icon}</div>
-      <div class="attr-content">
-        <p class="attr-title">${item.title}</p>
-        <p class="attr-cost">COSTO: ${item.cost} 💰 PUNTOS</p>
-      </div>
+      <button type="button" class="attr-buy-btn" data-attribute-id="${item.id}">
+        <div class="attr-icon ${item.border}">${item.icon}</div>
+        <div class="attr-content">
+          <p class="attr-title">${item.title}</p>
+          <p class="attr-current">${item.statLabel}: <strong>${getAttributeDisplayValue(item)}</strong></p>
+          <p class="attr-cost">COSTO: ${item.cost} 💠 PUNTOS</p>
+        </div>
+      </button>
     </article>
   `).join('');
+
+  attrsList.querySelectorAll('.attr-buy-btn').forEach((btn) => {
+    btn.addEventListener('click', () => buyAttributeUpgrade(btn.dataset.attributeId));
+  });
 }
 
 function toggleAttrsModal(show) {
@@ -444,7 +523,7 @@ window.prestigePointsClaimed = Number(window.prestigePointsClaimed ?? 0);
 function processHit(isClick = false) {
   syncCombatStats();
   const baseDamage = dañoActual;
-  const critChance = Math.min(PICK_UPGRADES.critPick.valorActual, 1);
+  const critChance = Math.min(PICK_UPGRADES.critPick.valorActual + getAttributeUpgradeValue('criticalChance'), 1);
   const doubleChance = Math.min(PICK_UPGRADES.doublePick.valorActual, 1);
   const critTriggered = Math.random() <= critChance;
   const doubleTriggered = Math.random() <= doubleChance;
@@ -485,7 +564,7 @@ function dealDamage(dmg, isClick = false, isCritical = false) {
 function checkRockStatus() {
   if (state.rockHP > 0) return false;
 
-  const reward = state.rockReward;
+  const reward = Math.max(1, Math.ceil(state.rockReward * getAttributeGoldMultiplier()));
   state.gold += reward;
   state.totalGoldEarned += reward;
   spawnGoldFloat(reward);
