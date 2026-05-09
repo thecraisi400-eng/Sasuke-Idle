@@ -275,22 +275,21 @@
 
     function getPrestigeMetaData() {
       if (!window.prestigeGoldData) {
-        window.prestigeGoldData = { target: PRESTIGE_BASE_GOLD_TARGET, multiplier: 1 };
+        window.prestigeGoldData = { target: PRESTIGE_BASE_GOLD_TARGET, milestones: 0 };
       }
 
       const totalGold = getTotalGoldEarned();
+      let milestones = Math.max(0, Number(window.prestigeGoldData.milestones) || 0);
       let target = Math.max(PRESTIGE_BASE_GOLD_TARGET, Number(window.prestigeGoldData.target) || PRESTIGE_BASE_GOLD_TARGET);
-      let multiplier = Number(window.prestigeGoldData.multiplier) || 1;
 
       while (totalGold >= target) {
-        const randomPercent = 0.6 + Math.random() * 0.6;
-        multiplier += randomPercent;
-        target = Math.round(PRESTIGE_BASE_GOLD_TARGET * multiplier);
+        milestones += 1;
+        target = PRESTIGE_BASE_GOLD_TARGET * (milestones + 1);
       }
 
       window.prestigeGoldData.target = target;
-      window.prestigeGoldData.multiplier = multiplier;
-      return { target, totalGold };
+      window.prestigeGoldData.milestones = milestones;
+      return { target, totalGold, milestones };
     }
 
     function refresh() {
@@ -298,8 +297,8 @@
       const nivelMax = Math.max(PRESTIGE_LEVEL_STEP, Math.ceil(nivel / PRESTIGE_LEVEL_STEP) * PRESTIGE_LEVEL_STEP);
       const puntosNivel = Math.floor(nivel / PRESTIGE_LEVEL_STEP);
 
-      const { target: monedasMeta, totalGold: monedas } = getPrestigeMetaData();
-      const puntosMonedas = Math.floor(monedas / PRESTIGE_BASE_GOLD_TARGET);
+      const { target: monedasMeta, totalGold: monedas, milestones: puntosMonedas } = getPrestigeMetaData();
+      const totalPuntos = puntosNivel + puntosMonedas;
 
       levelText.textContent = `${nivel}/${nivelMax}`;
       coinsText.textContent = `${monedas.toLocaleString('es-ES')} / ${monedasMeta.toLocaleString('es-ES')}`;
@@ -307,6 +306,7 @@
       coinsFill.style.width = `${Math.min((monedas / monedasMeta) * 100, 100)}%`;
       levelPointsText.textContent = `+${puntosNivel}`;
       coinPointsText.textContent = `+${puntosMonedas}`;
+      resetBtn.textContent = `+${totalPuntos} Puntos de Prestigio`;
       resetBtn.title = 'Listo para prestigiar';
     }
 
