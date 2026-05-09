@@ -121,9 +121,10 @@ html, body {
 @keyframes floatUp{0%{transform:translateY(0) scale(1);opacity:1}60%{transform:translateY(-45px) scale(1.1);opacity:1}100%{transform:translateY(-70px) scale(.8);opacity:0}}
 .gold-float{position:absolute;font-family:'Fredoka One',cursive;font-size:14px;color:#FFD700;text-shadow:0 0 8px rgba(255,215,0,.9);pointer-events:none;z-index:50;animation:floatUp 1.5s ease-out forwards}
 #nav-menu{flex:0 0 30%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px;padding:3px;background:#080810;border-top:2px solid #1a1a30;overflow:hidden}
-.menu-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:8px;border:1.5px solid rgba(255,255,255,.1);cursor:pointer;position:relative;overflow:hidden;transition:filter .15s, transform .1s;user-select:none;-webkit-user-select:none;padding:2px 0}
+.menu-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:8px;border:1.5px solid rgba(255,255,255,.1);cursor:pointer;position:relative;overflow:hidden;transition:filter .15s, transform .1s, border-color .15s, box-shadow .15s;user-select:none;-webkit-user-select:none;padding:2px 0}
 .menu-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg, rgba(255,255,255,.12) 0%, transparent 50%);pointer-events:none}
 .menu-btn:active{transform:scale(.93);filter:brightness(.85)}
+.menu-btn.active{border-color:rgba(255,215,0,.9);box-shadow:0 0 12px rgba(255,215,0,.35);filter:brightness(1.16)}
 .menu-btn .btn-index{position:absolute;top:3px;left:5px;font-size:9px;color:rgba(255,255,255,.5);font-family:'Fredoka One',cursive;line-height:1}
 .menu-btn .btn-icon{font-size:20px;line-height:1}.menu-btn .btn-name{font-size:9px;font-family:'Fredoka One',cursive;color:rgba(255,255,255,.9);text-align:center;letter-spacing:.2px;line-height:1.1}
 .btn-picks{background:linear-gradient(145deg,#1a2a5e,#0f1a40)}.btn-clans{background:linear-gradient(145deg,#1a4a7e,#0f2a55)}.btn-battle{background:linear-gradient(145deg,#6e1a1a,#4a0f0f)}.btn-attrs{background:linear-gradient(145deg,#6e4a00,#4a2e00)}.btn-arena{background:linear-gradient(145deg,#5e0f20,#3a0810)}.btn-events{background:linear-gradient(145deg,#3a1a6e,#20084a)}.btn-prestige{background:linear-gradient(145deg,#4a2a0f,#2e1608)}.btn-pets{background:linear-gradient(145deg,#0f4a1a,#082e10)}.btn-settings{background:linear-gradient(145deg,#2a2a3a,#1a1a28)}
@@ -137,6 +138,14 @@ html, body {
 .panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .panel-header h2{font-family:'Fredoka One',cursive;color:#ffd700;font-size:18px}
 .panel-close{border:none;background:#2a2a44;color:#fff;border-radius:8px;padding:6px 10px}
+
+.section-modal{background:rgba(7,10,20,.94)}
+.section-content{flex:1;display:flex;align-items:center;justify-content:center;padding:10px;text-align:center;color:#fff}
+.section-empty-card{width:min(100%,320px);padding:18px 14px;border-radius:16px;background:linear-gradient(160deg,rgba(22,33,62,.95),rgba(13,18,38,.95));border:1px solid rgba(255,255,255,.16);box-shadow:0 10px 24px rgba(0,0,0,.35)}
+.section-empty-icon{font-size:44px;margin-bottom:8px;filter:drop-shadow(0 0 12px rgba(255,255,255,.25))}
+.section-empty-card h3{font-family:'Fredoka One',cursive;color:#ffd700;font-size:20px;margin-bottom:8px}
+.section-empty-card p{font-size:14px;line-height:1.35;color:#f5f7ff;margin-bottom:10px}
+.section-empty-card small{display:block;color:#a0c4ff;font-size:11px;line-height:1.25}
 .picks-cards{overflow-y:auto;display:grid;grid-template-columns:1fr;gap:8px;padding-right:4px}
 .pick-card{background:linear-gradient(160deg,#16213e,#1e2f56);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:4px}
 .pick-card h3{font-size:14px;color:#a0c4ff;font-family:'Fredoka One',cursive}

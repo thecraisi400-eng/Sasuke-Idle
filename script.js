@@ -149,6 +149,13 @@ const picksCards = document.getElementById('picks-cards');
 const attrsModal = document.getElementById('attrs-modal');
 const attrsList = document.getElementById('attrs-list');
 const attrsPrestigePointsEl = document.getElementById('attrs-prestige-points');
+const sectionModal = document.getElementById('section-modal');
+const sectionTitle = document.getElementById('section-title');
+const sectionContent = document.getElementById('section-content');
+const caveBg = document.getElementById('cave-bg');
+const navButtons = document.querySelectorAll('#nav-menu .menu-btn');
+const DEFAULT_CAVE_BG = caveBg?.style.background || '';
+let activeSection = null;
 
 const ATTRIBUTE_ITEMS = [
   { icon: '⚔️', border: 'gray', title: "MULTIPLICADOR DE DPS 'x0.5'", cost: 3 },
@@ -309,6 +316,91 @@ function toggleAttrsModal(show) {
   attrsModal.classList.toggle('show', show);
 }
 
+const SECTION_PANEL_CONTENT = {
+  clans: {
+    title: 'Clanes',
+    icon: '🛡️',
+    description: 'Organiza tu clan, revisa miembros y prepara bonificaciones grupales.',
+  },
+  battle: {
+    title: 'Batalla',
+    icon: '⚔️',
+    description: 'Enfrenta enemigos y gana recompensas adicionales con tu daño actual.',
+  },
+  arena: {
+    title: 'Arena PvP',
+    icon: '🏟️',
+    description: 'Compite contra otros mineros para subir de rango en la arena.',
+  },
+  events: {
+    title: 'Eventos',
+    icon: '🎪',
+    description: 'Consulta eventos temporales y bonificaciones especiales.',
+  },
+  pets: {
+    title: 'Mascotas',
+    icon: '🐉',
+    description: 'Colecciona mascotas que podrán ayudarte con oro, crítico y daño.',
+  },
+  settings: {
+    title: 'Ajustes',
+    icon: '⚙️',
+    description: 'Configura opciones de juego, sonido y preferencias de visualización.',
+  },
+};
+
+function getPrestigeOverlay() {
+  return document.querySelector('.prestige-overlay');
+}
+
+function hidePrestigePanel() {
+  const overlay = getPrestigeOverlay();
+  if (overlay) overlay.remove();
+}
+
+function toggleSectionModal(show, section = null) {
+  if (!sectionModal) return;
+  sectionModal.classList.toggle('show', show);
+
+  if (!show || !section || !sectionTitle || !sectionContent) return;
+
+  const content = SECTION_PANEL_CONTENT[section];
+  if (!content) return;
+
+  sectionTitle.textContent = content.title;
+  sectionContent.innerHTML = `
+    <div class="section-empty-card">
+      <div class="section-empty-icon">${content.icon}</div>
+      <h3>${content.title}</h3>
+      <p>${content.description}</p>
+      <small>Panel seleccionado. Vuelve a tocar esta misma opción para regresar a la pantalla inicial.</small>
+    </div>
+  `;
+}
+
+function markActiveMenu(section) {
+  navButtons.forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.section === section);
+  });
+}
+
+function resetPanelState() {
+  activeSection = null;
+  markActiveMenu(null);
+  if (caveBg) caveBg.style.background = DEFAULT_CAVE_BG;
+}
+
+function closeActivePanel() {
+  resetPanelState();
+  togglePicksModal(false);
+  toggleAttrsModal(false);
+  toggleSectionModal(false);
+  hidePrestigePanel();
+}
+
+window.closeActivePanel = closeActivePanel;
+window.resetPanelState = resetPanelState;
+
 function resetearRocasANivel1() {
   state.level = 1;
   state.xp = 0;
@@ -461,17 +553,25 @@ setInterval(() => {
 const sectionBgs = { picks:'linear-gradient(180deg, #0a1228 0%, #0d1a3e 100%)',clans:'linear-gradient(180deg, #081828 0%, #0d2240 100%)',battle:'linear-gradient(180deg, #1a0808 0%, #2a0f0f 100%)',attrs:'linear-gradient(180deg, #1a1200 0%, #2e1e00 100%)',arena:'linear-gradient(180deg, #1a0410 0%, #2e0818 100%)',events:'linear-gradient(180deg, #0d0428 0%, #1a0840 100%)',prestige:'linear-gradient(180deg, #120800 0%, #221005 100%)',pets:'linear-gradient(180deg, #041210 0%, #081e14 100%)',settings:'linear-gradient(180deg, #0a0a12 0%, #141420 100%)'};
 
 function switchSection(section) {
-  const bg = sectionBgs[section] || sectionBgs.picks;
-  document.getElementById('cave-bg').style.background = bg;
-
-  if (section === 'picks') {
-    togglePicksModal(true);
-    toggleAttrsModal(false);
+  if (activeSection === section) {
+    closeActivePanel();
     return;
   }
 
+  activeSection = section;
+  const bg = sectionBgs[section] || sectionBgs.picks;
+  if (caveBg) caveBg.style.background = bg;
+  markActiveMenu(section);
+
   togglePicksModal(false);
   toggleAttrsModal(false);
+  toggleSectionModal(false);
+  hidePrestigePanel();
+
+  if (section === 'picks') {
+    togglePicksModal(true);
+    return;
+  }
 
   if (section === 'attrs') {
     toggleAttrsModal(true);
@@ -481,7 +581,10 @@ function switchSection(section) {
 
   if (section === 'prestige' && typeof window.crearSistemaPrestigio === 'function') {
     window.crearSistemaPrestigio();
+    return;
   }
+
+  toggleSectionModal(true, section);
 }
 
 updateUI();
