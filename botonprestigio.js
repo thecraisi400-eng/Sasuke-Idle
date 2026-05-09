@@ -29,7 +29,7 @@
 }
 
 .prestige-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 9000;
   display: grid;
@@ -224,7 +224,8 @@
       </article>
     `;
 
-    document.body.appendChild(overlay);
+    const prestigeHost = document.getElementById('cave-area') || document.body;
+    prestigeHost.appendChild(overlay);
 
     const levelText = overlay.querySelector('#prestige-level');
     const bonusText = overlay.querySelector('#prestige-bonus');
