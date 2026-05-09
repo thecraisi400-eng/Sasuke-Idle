@@ -35,6 +35,8 @@ const state = {
 // Variables globales solicitadas
 let oroActual = state.gold;
 let dañoActual = state.clickDamage;
+window.nivelActual = state.level;
+window.dañoPermanenteTotal = Number(window.dañoPermanenteTotal ?? 0);
 
 // Configuración modular de mejoras de picos
 const PICK_UPGRADES = {
@@ -165,15 +167,22 @@ function getCurrentDPS() {
   return roundTo(pickDamage * pickSpeed, 2);
 }
 
+function getPermanentDamageBonus() {
+  return Math.max(0, Number(window.dañoPermanenteTotal ?? 0));
+}
+
 function syncCombatStats() {
-  state.clickDamage = Math.max(2, PICK_UPGRADES.sharpPick.valorActual);
-  state.dps = getCurrentDPS();
+  state.clickDamage = Math.max(2, PICK_UPGRADES.sharpPick.valorActual) + getPermanentDamageBonus();
+  state.dps = getCurrentDPS() + getPermanentDamageBonus();
 }
 
 function syncGlobals() {
   syncCombatStats();
   oroActual = state.gold;
   dañoActual = state.clickDamage;
+  window.nivelActual = state.level;
+  window.oroActual = oroActual;
+  window.dañoActual = dañoActual;
 }
 
 function updateUI() {
@@ -266,6 +275,20 @@ function togglePicksModal(show) {
   if (!picksModal) return;
   picksModal.classList.toggle('show', show);
 }
+
+function resetearRocasANivel1() {
+  state.level = 1;
+  state.xp = 0;
+  state.xpNeeded = 100;
+  state.rockMaxHP = getRockHP(state.level);
+  state.rockHP = state.rockMaxHP;
+  state.rockReward = getGoldReward(state.level);
+  syncGlobals();
+  updateUI();
+}
+
+window.resetearRocasANivel1 = resetearRocasANivel1;
+window.updatePrestigeUI = updateUI;
 
 function processHit(isClick = false) {
   syncCombatStats();
@@ -380,8 +403,17 @@ const sectionBgs = { picks:'linear-gradient(180deg, #0a1228 0%, #0d1a3e 100%)',c
 function switchSection(section) {
   const bg = sectionBgs[section] || sectionBgs.picks;
   document.getElementById('cave-bg').style.background = bg;
-  if (section === 'picks') togglePicksModal(true);
-  else togglePicksModal(false);
+
+  if (section === 'picks') {
+    togglePicksModal(true);
+    return;
+  }
+
+  togglePicksModal(false);
+
+  if (section === 'prestige' && typeof window.crearSistemaPrestigio === 'function') {
+    window.crearSistemaPrestigio();
+  }
 }
 
 updateUI();

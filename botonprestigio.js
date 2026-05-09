@@ -198,6 +198,9 @@
   }
 
   function crearSistemaPrestigio() {
+    const overlayActivo = document.querySelector('.prestige-overlay');
+    if (overlayActivo) overlayActivo.remove();
+
     if (!document.getElementById('prestige-style')) {
       const style = document.createElement('style');
       style.id = 'prestige-style';
@@ -257,6 +260,7 @@
       window.dañoPermanenteTotal = Number(window.dañoPermanenteTotal ?? 0) + bono;
       window.nivelActual = 1;
       resetearHPDeRocas();
+      if (typeof window.updatePrestigeUI === 'function') window.updatePrestigeUI();
       cerrar();
     });
 
