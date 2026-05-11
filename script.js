@@ -380,12 +380,36 @@ function getAttributeDisplayValue(item) {
   return `x${formatDecimal(value, 2)}`;
 }
 
-function showAttributeFloatMessage(message) {
+
+function getAttributeLevel(item) {
+  const currentValue = getAttributeUpgradeValue(item.id);
+  const increment = Number(item.increment) || 1;
+  return Math.max(0, Math.round(currentValue / increment));
+}
+
+function getAttributeBenefitText(item) {
+  const value = getAttributeUpgradeValue(item.id);
+  if (item.id === 'dpsMultiplier') {
+    return `DPS x${formatDecimal(getAttributeDpsMultiplier(), 2)}`;
+  }
+  if (item.id === 'goldMultiplier') {
+    return `Oro x${formatDecimal(getAttributeGoldMultiplier(), 2)}`;
+  }
+  if (item.id === 'pickCostReduction') {
+    const discount = roundTo(value * 100, 2);
+    return `-${discount}% costo picos`;
+  }
+  if (item.id === 'criticalChance') {
+    return `+${roundTo(value * 100, 4)}% crítico`;
+  }
+  return getAttributeDisplayValue(item);
+}
+function showAttributeFloatMessage(message, type = 'info') {
   const host = attrsModal?.classList.contains('show') ? attrsModal : caveArea;
   if (!host) return;
 
   const el = document.createElement('div');
-  el.className = 'attr-float-message';
+  el.className = `attr-float-message attr-float-${type}`;
   el.textContent = message;
   host.appendChild(el);
   setTimeout(() => el.remove(), 1600);
@@ -397,7 +421,7 @@ function buyAttributeUpgrade(attributeId) {
 
   const available = Math.max(0, Number(window.attributePoints ?? 0));
   if (available < item.cost) {
-    showAttributeFloatMessage(`No hay suficientes 💠`);
+    showAttributeFloatMessage('No hay puntos suficientes 💠', 'error');
     return;
   }
 
@@ -407,6 +431,7 @@ function buyAttributeUpgrade(attributeId) {
   syncCombatStats();
   renderPickUpgrades();
   renderAttributesPanel();
+  showAttributeFloatMessage(`✅ Mejora exitosa: ${item.title}`, 'success');
   updateUI();
 }
 
@@ -421,6 +446,10 @@ function renderAttributesPanel() {
           <p class="attr-title">${item.title}</p>
           <p class="attr-current">${item.statLabel}: <strong>${getAttributeDisplayValue(item)}</strong></p>
           <p class="attr-cost">COSTO: ${item.cost} 💠 PUNTOS</p>
+        </div>
+        <div class="attr-meta">
+          <p class="attr-level">Nv. ${getAttributeLevel(item)}</p>
+          <p class="attr-benefit">${getAttributeBenefitText(item)}</p>
         </div>
       </button>
     </article>
