@@ -325,8 +325,9 @@
       if (disponibles <= 0) return;
 
       window.attributePoints = Math.max(0, Number(window.attributePoints ?? 0)) + disponibles;
-      window.prestigePointsClaimed = reclamados + disponibles;
+      window.prestigePointsClaimed = 0;
       window.prestigePointsAvailable = 0;
+      window.prestigeGoldData = { target: PRESTIGE_BASE_GOLD_TARGET, milestones: 0 };
 
       if (typeof window.resetGameForPrestige === 'function') {
         window.resetGameForPrestige();

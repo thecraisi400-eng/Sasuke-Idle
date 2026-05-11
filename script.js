@@ -178,9 +178,9 @@ const DEFAULT_CAVE_BG = caveBg?.style.background || '';
 let activeSection = null;
 
 const ATTRIBUTE_ITEMS = [
-  { id: 'dpsMultiplier', icon: '⚔️', border: 'gray', title: "MULTIPLICADOR DE DPS 'x0.5'", cost: 3, increment: 0.5, statLabel: 'Daño permanente' },
+  { id: 'dpsMultiplier', icon: '⚔️', border: 'gray', title: "MULTIPLICADOR DE DPS 'x0.5'", cost: 3, increment: 1, statLabel: 'Multiplicador DPS' },
   { id: 'goldMultiplier', icon: '💰', border: 'gold', title: "MULTIPLICADOR DE ORO '💰'", cost: 2, increment: 0.25, statLabel: 'Oro extra' },
-  { id: 'pickCostReduction', icon: '⛏️', border: 'green', title: 'REDUCCIÓN DE COSTO DE PICOS (3%)', cost: 5, increment: 0.03, statLabel: 'Descuento de picos' },
+  { id: 'pickCostReduction', icon: '⛏️', border: 'green', title: 'REDUCCIÓN DE COSTO DE PICOS (1%)', cost: 5, increment: 0.01, statLabel: 'Descuento de picos' },
   { id: 'criticalChance', icon: '💥', border: 'red', title: 'PROBABILIDAD DE CRÍTICO (+0.01%)', cost: 7, increment: 0.0001, statLabel: 'Crítico permanente' },
 ];
 
@@ -210,8 +210,9 @@ function getSharpPickPowerByLevel(level) {
   return roundTo(base + polynomialGrowth + exponentialGrowth, PICK_UPGRADES.sharpPick.decimalesValor ?? 2);
 }
 
-function getAttributeDamageMultiplier() {
-  return 1 + getAttributeUpgradeValue('dpsMultiplier');
+function getAttributeDpsMultiplier() {
+  const points = getAttributeUpgradeValue('dpsMultiplier');
+  return points > 0 ? points * 0.5 : 1;
 }
 
 function getAttributeGoldMultiplier() {
@@ -225,7 +226,7 @@ function getPickCostReductionMultiplier() {
 function getCurrentDPS() {
   const pickDamage = Math.max(2, PICK_UPGRADES.sharpPick.valorActual);
   const pickSpeed = Math.max(1, PICK_UPGRADES.speedPick.valorActual);
-  return roundTo(pickDamage * pickSpeed * getAttributeDamageMultiplier(), 2);
+  return roundTo(pickDamage * pickSpeed * getAttributeDpsMultiplier(), 2);
 }
 
 function getPermanentDamageBonus() {
@@ -234,7 +235,7 @@ function getPermanentDamageBonus() {
 
 function syncCombatStats() {
   const permanentDamage = getPermanentDamageBonus();
-  state.clickDamage = roundTo((Math.max(2, PICK_UPGRADES.sharpPick.valorActual) + permanentDamage) * getAttributeDamageMultiplier(), 2);
+  state.clickDamage = roundTo(Math.max(2, PICK_UPGRADES.sharpPick.valorActual) + permanentDamage, 2);
   state.dps = roundTo(getCurrentDPS() + permanentDamage, 2);
 }
 
@@ -255,12 +256,35 @@ function updateUI() {
   silverEl.textContent = formatNum(state.silver);
   const pct = Math.max(0, (state.rockHP / state.rockMaxHP) * 100);
   hpFill.style.width = pct + '%';
-  hpText.textContent = formatDecimal(Math.max(state.rockHP, 0), 2) + ' / ' + formatDecimal(state.rockMaxHP, 2);
+  hpText.textContent = formatCompactNumber(Math.max(state.rockHP, 0)) + ' / ' + formatCompactNumber(state.rockMaxHP);
   levelLabel.textContent = 'Nivel ' + state.level + ' · ' + getDifficultyTier(state.level);
   xpFill.style.width = (((state.rockMaxHP - state.rockHP) / state.rockMaxHP) * 100) + '%';
   dpsDisplay.textContent = state.dps.toFixed(2) + ' DPS';
   renderPickUpgrades();
   renderAttributesPanel();
+}
+
+
+function formatCompactNumber(value) {
+  const absValue = Math.abs(Number(value) || 0);
+  if (absValue < 1000) return Math.floor(absValue).toString();
+
+  const units = [
+    { value: 1e12, suffix: 'T' },
+    { value: 1e9, suffix: 'B' },
+    { value: 1e6, suffix: 'M' },
+    { value: 1e3, suffix: 'K' },
+  ];
+
+  for (const unit of units) {
+    if (absValue >= unit.value) {
+      const compact = absValue / unit.value;
+      if (compact >= 100 || Number.isInteger(compact)) return `${Math.floor(compact)}${unit.suffix}`;
+      return `${Math.floor(compact * 10) / 10}${unit.suffix}`;
+    }
+  }
+
+  return Math.floor(absValue).toString();
 }
 
 function formatNum(n) {
@@ -515,16 +539,19 @@ window.updatePrestigeUI = updateUI;
 
 
 function resetGameForPrestige() {
-  state.level = 0;
+  state.level = 1;
   state.gold = 0;
   state.silver = 0;
   state.dps = 1;
   state.clickDamage = 2;
   state.xp = 0;
   state.xpNeeded = 100;
-  state.rockMaxHP = getRockHP(1);
+  state.rockMaxHP = getRockHP(state.level);
   state.rockHP = state.rockMaxHP;
-  state.rockReward = getGoldReward(1);
+  state.rockReward = getGoldReward(state.level);
+  state.totalGoldEarned = 0;
+  window.totalGoldEarned = 0;
+  window.oroTotalGanado = 0;
 
   Object.values(PICK_UPGRADES).forEach((upgrade) => {
     upgrade.nivel = 0;
