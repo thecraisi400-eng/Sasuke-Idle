@@ -139,7 +139,7 @@ function getGoldReward(lvl) {
   // Fórmula anti-inflación: Oro = HP_Roca * 0.10.
   // Si el early game se siente lento, sube GOLD_REWARD_RATE a 0.12-0.15;
   // si el jugador compra demasiadas mejoras, bájalo a 0.08.
-  return Math.max(1, Math.ceil(getRockHP(lvl) * BALANCE_CONFIG.GOLD_REWARD_RATE));
+  return Math.max(0.01, roundTo(getRockHP(lvl) * BALANCE_CONFIG.GOLD_REWARD_RATE, 2));
 }
 
 function getDifficultyTier(lvl) {
@@ -266,8 +266,10 @@ function updateUI() {
 
 
 function formatCompactNumber(value) {
-  const absValue = Math.abs(Number(value) || 0);
-  if (absValue < 1000) return Math.floor(absValue).toString();
+  const num = Number(value) || 0;
+  const absValue = Math.abs(num);
+  const sign = num < 0 ? '-' : '';
+  if (absValue < 1000) return `${sign}${formatDecimal(absValue, 2)}`;
 
   const units = [
     { value: 1e12, suffix: 'T' },
@@ -279,19 +281,15 @@ function formatCompactNumber(value) {
   for (const unit of units) {
     if (absValue >= unit.value) {
       const compact = absValue / unit.value;
-      if (compact >= 100 || Number.isInteger(compact)) return `${Math.floor(compact)}${unit.suffix}`;
-      return `${Math.floor(compact * 10) / 10}${unit.suffix}`;
+      return `${sign}${formatDecimal(compact, 2)} ${unit.suffix}`;
     }
   }
 
-  return Math.floor(absValue).toString();
+  return `${sign}${formatDecimal(absValue, 2)}`;
 }
 
 function formatNum(n) {
-  if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
-  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
-  return Math.floor(n).toString();
+  return formatCompactNumber(n);
 }
 
 function formatUpgradeValue(upgrade) {
@@ -610,7 +608,7 @@ function dealDamage(dmg, isClick = false, isCritical = false) {
 function checkRockStatus() {
   if (state.rockHP > 0) return false;
 
-  const reward = Math.max(1, Math.ceil(state.rockReward * getAttributeGoldMultiplier()));
+  const reward = Math.max(0.01, roundTo(state.rockReward * getAttributeGoldMultiplier(), 2));
   state.gold += reward;
   state.totalGoldEarned += reward;
   spawnGoldFloat(reward);
