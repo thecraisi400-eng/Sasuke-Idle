@@ -930,19 +930,19 @@ function drawLumberjack(ctx, cx, groundY, chopAngle) {
   ctx.strokeStyle = '#444';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.moveTo(-2*s, 20*s);
-  ctx.lineTo(-16*s, 14*s);
-  ctx.lineTo(-18*s, 20*s);
-  ctx.lineTo(-14*s, 32*s);
-  ctx.lineTo(-2*s, 30*s);
+  ctx.moveTo(3*s, 20*s);
+  ctx.lineTo(17*s, 14*s);
+  ctx.lineTo(19*s, 20*s);
+  ctx.lineTo(15*s, 32*s);
+  ctx.lineTo(3*s, 30*s);
   ctx.closePath();
   ctx.fill(); ctx.stroke();
 
   ctx.strokeStyle = 'rgba(255,255,255,0.55)';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.moveTo(-16*s, 15*s);
-  ctx.lineTo(-14*s, 30*s);
+  ctx.moveTo(17*s, 15*s);
+  ctx.lineTo(15*s, 30*s);
   ctx.stroke();
 
   ctx.restore();
