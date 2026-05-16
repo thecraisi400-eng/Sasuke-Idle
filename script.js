@@ -1421,7 +1421,8 @@ function drawScene() {
   }
 
   // ===== CAMBIO 3: TRONCO REALISTA EN EL SUELO =====
-  const logX = W * 0.38, logY = groundY - 22, logW = W * 0.38, logH = 36;
+  const verticalOffset = H * 0.15;
+  const logX = W * 0.45, logY = groundY - 22 + verticalOffset, logW = W * 0.38, logH = 36;
   drawRealisticGroundLog(ctx, logX, logY, logW, logH);
 
   // ===== HP BAR =====
@@ -1442,7 +1443,7 @@ function drawScene() {
   if (chopAngle > maxSwing) { chopDir = -1; }
   if (chopAngle < -0.15) { chopDir = 1; }
 
-  drawLumberjack(ctx, W * 0.36, groundY, chopAngle - 0.25);
+  drawLumberjack(ctx, W * 0.36, groundY + verticalOffset, chopAngle - 0.25);
 
   // Chispas al golpear
   if (chopAngle < -0.10 && chopDir === 1) {
