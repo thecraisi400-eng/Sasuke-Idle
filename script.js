@@ -360,6 +360,7 @@ function updateUI() {
 function checkLevelUp() {
   while (G.xp >= G.xpNeeded) {
     G.xp -= G.xpNeeded;
+    G.level += 1;
     G.xpNeeded = Math.floor(G.xpNeeded * 1.5);
     G.crystals += G.level;
     if (G.level % 5 === 0) {
@@ -1912,6 +1913,14 @@ function showToast(msg) {
   toastTimeout = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
+
+function updateAppHeight() {
+  const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  if (viewportHeight) {
+    document.documentElement.style.setProperty('--app-height', `${viewportHeight}px`);
+  }
+}
+
 // =============================================
 // INIT
 // =============================================
@@ -1921,6 +1930,7 @@ function startGame() {
   if (gameStarted) return;
   gameStarted = true;
 
+  updateAppHeight();
   loadGame();
   resizeCanvas();
 
@@ -1945,5 +1955,19 @@ if (document.readyState === 'loading') {
   startGame();
 }
 
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.closeModalOutside = closeModalOutside;
+window.buyAxeUpgrade = buyAxeUpgrade;
+window.buyAttrUpgrade = buyAttrUpgrade;
+window.buyShopItem = buyShopItem;
+window.buySkill = buySkill;
+window.doPrestige = doPrestige;
+window.toggleSetting = toggleSetting;
+window.resetGame = resetGame;
+
 window.addEventListener('load', startGame);
-window.addEventListener('resize', resizeCanvas);
+window.addEventListener('resize', () => { updateAppHeight(); resizeCanvas(); });
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => { updateAppHeight(); resizeCanvas(); });
+}
