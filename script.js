@@ -439,9 +439,7 @@ function triggerLogBreak() {
   logPileClickable = true;
 
   const W = canvas.width, H = canvas.height;
-  const groundY = H * 0.775;
-  const logX = W * 0.38 + W * 0.38;
-  const logY = groundY - 18 + 14;
+  const { groundY, logX, logY } = getSceneAnchors(W, H);
   const pileX = getPileX(W);
   const pileY = groundY - 10;
 
@@ -515,7 +513,7 @@ function drawSmallStandingLog(ctx, x, y, w, h) {
 }
 
 function drawLogPile(ctx, W, H) {
-  const groundY = H * 0.775;
+  const { groundY } = getSceneAnchors(W, H);
   const pileX = getPileX(W);
   const logsInPile = getLogsInPile();
   const extra = getExtraLogCount();
@@ -612,6 +610,17 @@ function drawLogPile(ctx, W, H) {
   }
 }
 
+
+
+function getSceneAnchors(W, H) {
+  const groundY = H * 0.775;
+  const logX = W * 0.38 + W * 0.08;
+  const logY = groundY - 22 + H * 0.07;
+  const spriteX = W * 0.36;
+  const spriteGroundY = groundY + H * 0.07;
+  return { groundY, logX, logY, spriteX, spriteGroundY };
+}
+
 function drawFlyingLog(ctx) {
   if (!flyingLog) return;
   flyingLog.progress += 0.04;
@@ -634,10 +643,8 @@ function drawFlyingLog(ctx) {
 }
 
 function drawHPBar(ctx, W, H) {
-  const groundY = H * 0.775;
-  const logX = W * 0.38;
+  const { logX, logY } = getSceneAnchors(W, H);
   const logW = W * 0.38;
-  const logY = groundY - 18;
 
   const barW = logW;
   const barH = 16;
@@ -1306,7 +1313,7 @@ function drawScene() {
   ctx.translate(sx, sy);
   ctx.clearRect(-10, -10, W + 20, H + 20);
 
-  const groundY = H * 0.775;
+  const { groundY, logX, logY, spriteX, spriteGroundY } = getSceneAnchors(W, H);
   const hour = getGameHour();
   const night = isNight();
 
@@ -1421,7 +1428,7 @@ function drawScene() {
   }
 
   // ===== CAMBIO 3: TRONCO REALISTA EN EL SUELO =====
-  const logX = W * 0.38, logY = groundY - 22, logW = W * 0.38, logH = 36;
+  const logW = W * 0.38, logH = 36;
   drawRealisticGroundLog(ctx, logX, logY, logW, logH);
 
   // ===== HP BAR =====
@@ -1442,11 +1449,11 @@ function drawScene() {
   if (chopAngle > maxSwing) { chopDir = -1; }
   if (chopAngle < -0.15) { chopDir = 1; }
 
-  drawLumberjack(ctx, W * 0.36, groundY, chopAngle - 0.25);
+  drawLumberjack(ctx, spriteX, spriteGroundY, chopAngle - 0.25);
 
   // Chispas al golpear
   if (chopAngle < -0.10 && chopDir === 1) {
-    const sx2 = W * 0.36 + 20, sy2 = groundY - 22;
+    const sx2 = spriteX + 20, sy2 = spriteGroundY - 22;
     for (let i = 0; i < 4; i++) {
       const angle = Math.random() * Math.PI - Math.PI/2;
       const dist = Math.random() * 12 + 4;
