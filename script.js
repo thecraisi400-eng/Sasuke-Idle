@@ -330,8 +330,6 @@ function loadGame() {
     if (!raw) return;
     const save = JSON.parse(raw);
     Object.assign(G, save.G);
-    // CAMBIO 2: forzar cristales a 0 en el estado cargado
-    G.crystals = 0;
     if (save.AXE_UPGRADES) save.AXE_UPGRADES.forEach((v,i) => { AXE_UPGRADES[i].owned = v; });
     if (save.ATTR_UPGRADES) save.ATTR_UPGRADES.forEach((v,i) => { ATTR_UPGRADES[i].owned = v; });
     if (save.missionClaimed) Object.assign(missionClaimed, save.missionClaimed);
@@ -388,6 +386,34 @@ function checkMissions() {
 // =============================================
 const canvas = document.getElementById('scene-canvas');
 const ctx = canvas.getContext('2d');
+
+// VS Code Live Preview / WebView can run on an older Chromium build where
+// CanvasRenderingContext2D.roundRect is not available. The scene uses rounded
+// rectangles heavily, so a missing roundRect would stop the first frame and
+// make the game look frozen. This lightweight polyfill keeps the renderer
+// compatible without changing the drawing code below.
+if (ctx && typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radii = 0) {
+    const values = Array.isArray(radii) ? radii : [radii, radii, radii, radii];
+    const [tl = 0, tr = tl, br = tl, bl = tr] = values.map(r => Math.max(0, Number(r) || 0));
+    const maxRadius = Math.min(Math.abs(width), Math.abs(height)) / 2;
+    const rtl = Math.min(tl, maxRadius);
+    const rtr = Math.min(tr, maxRadius);
+    const rbr = Math.min(br, maxRadius);
+    const rbl = Math.min(bl, maxRadius);
+
+    this.moveTo(x + rtl, y);
+    this.lineTo(x + width - rtr, y);
+    this.quadraticCurveTo(x + width, y, x + width, y + rtr);
+    this.lineTo(x + width, y + height - rbr);
+    this.quadraticCurveTo(x + width, y + height, x + width - rbr, y + height);
+    this.lineTo(x + rbl, y + height);
+    this.quadraticCurveTo(x, y + height, x, y + height - rbl);
+    this.lineTo(x, y + rtl);
+    this.quadraticCurveTo(x, y, x + rtl, y);
+    return this;
+  };
+}
 let animFrame = 0;
 let chopAngle = 0;
 let chopDir = 1;
@@ -690,8 +716,9 @@ function drawHPBar(ctx, W, H) {
 
 function resizeCanvas() {
   const top = document.getElementById('top-section');
-  canvas.width = top.clientWidth;
-  canvas.height = top.clientHeight;
+  const rect = top.getBoundingClientRect();
+  canvas.width = Math.max(1, Math.round(rect.width));
+  canvas.height = Math.max(1, Math.round(rect.height));
 }
 
 function drawRealisticTree(ctx, x, groundY, scale) {
@@ -1888,7 +1915,12 @@ function showToast(msg) {
 // =============================================
 // INIT
 // =============================================
-window.addEventListener('load', () => {
+let gameStarted = false;
+
+function startGame() {
+  if (gameStarted) return;
+  gameStarted = true;
+
   loadGame();
   resizeCanvas();
 
@@ -1901,10 +1933,17 @@ window.addEventListener('load', () => {
   drawScene();
   updateUI();
 
-  G.skillPoints = Math.floor(G.level / 5);
+  G.skillPoints = Math.max(G.skillPoints, Math.floor(G.level / 5));
 
   gameLoop();
   setInterval(saveGame, 10000);
-});
+}
 
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startGame);
+} else {
+  startGame();
+}
+
+window.addEventListener('load', startGame);
 window.addEventListener('resize', resizeCanvas);
