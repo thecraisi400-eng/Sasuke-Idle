@@ -1118,7 +1118,7 @@ function drawRealisticGroundLog(ctx, logX, logY, logW, logH) {
 
 // =============================================
 // LUMBERJACK SPRITE
-// CAMBIO 1: hacha bajada un 20% más (pivote del brazo desplazado hacia abajo)
+// CAMBIO 1: hacha bajada un 27% más (pivote del brazo desplazado hacia abajo)
 // =============================================
 function drawLumberjack(ctx, cx, groundY, chopAngle) {
   ctx.save();
@@ -1247,10 +1247,10 @@ function drawLumberjack(ctx, cx, groundY, chopAngle) {
   ctx.fill();
 
   // ===== BRAZO DERECHO + HACHA =====
-  // CAMBIO 1: pivot del hombro bajado un 20% adicional
-  // Original era -52*s, ahora es -52*s + 10*s = -42*s (20% de 52 ≈ 10)
+  // CAMBIO 1: pivot del hombro bajado un 27% en total
+  // Original era -52*s, ahora es -52*s + 14*s = -38*s (27% de 52 ≈ 14)
   ctx.save();
-  ctx.translate(14*s, -42*s);   // CAMBIO 1: bajado de -52*s a -42*s
+  ctx.translate(14*s, -38*s);   // CAMBIO 1: bajado de -42*s a -38*s (+7%)
   ctx.rotate(chopAngle);
 
   // Brazo derecho (manga) — alargado para compensar el desplazamiento
