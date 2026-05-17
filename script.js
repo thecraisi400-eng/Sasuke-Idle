@@ -372,10 +372,6 @@ function checkLevelUp() {
     G.level += 1;
     G.xpNeeded = Math.floor(G.xpNeeded * 1.5);
     G.crystals += G.level;
-    if (G.level % 5 === 0) {
-      G.skillPoints++;
-      showToast(`⭐ +1 Punto de Habilidad (Nv. ${G.level})`);
-    }
   }
 }
 
@@ -460,11 +456,7 @@ function triggerLogBreak() {
   shakeIntensity = 6;
 
   G.level++;
-  showToast(`🪓 ¡Palo roto! Nivel ${G.level}`);
-  if (G.level % 5 === 0) {
-    G.skillPoints++;
-    showToast(`⭐ +1 Punto de Habilidad (Nv. ${G.level})`);
-  }
+  showNextLevelBanner();
   updateUI();
 
   const goldEarned = getGoldPerLog();
@@ -1760,10 +1752,13 @@ function renderAxeModal() {
     const canAfford = G.gold >= cost;
     const levelText = `Nivel ${u.level}`;
     let effectText = '';
-    if (u.id === 'edge') effectText = `Daño auto: +${u.effectStep.toFixed(2)}`;
-    if (u.id === 'quality') effectText = `Velocidad: +${u.effectStep.toFixed(2)} golpes/s`;
-    if (u.id === 'crit') effectText = `Crítico: +0.05%`;
-    if (u.id === 'double') effectText = `Doble golpe: +0.05%`;
+    if (u.id === 'edge') {
+      const nextGain = getAxeUpgradeGain(u);
+      effectText = `Daño auto: +${nextGain.toFixed(2)} · Actual: ${G.axeDamage.toFixed(2)}`;
+    }
+    if (u.id === 'quality') effectText = `Velocidad: +${u.effectStep.toFixed(2)} golpes/s · Actual: ${G.axeAttackSpeed.toFixed(2)}`;
+    if (u.id === 'crit') effectText = `Crítico: +0.05% · Actual: ${(G.axeCritChance * 100).toFixed(2)}%`;
+    if (u.id === 'double') effectText = `Doble golpe: +0.05% · Actual: ${(G.axeDoubleChance * 100).toFixed(2)}%`;
     html += `<div class="upgrade-item">
       <div class="upgrade-icon">${u.icon}</div>
       <div class="upgrade-info">
@@ -1777,6 +1772,11 @@ function renderAxeModal() {
   return html;
 }
 
+function getAxeUpgradeGain(u) {
+  if (u.id === 'edge') return u.effectStep * (1 + u.level * 0.18);
+  return u.effectStep;
+}
+
 function buyAxeUpgrade(i) {
   const u = AXE_UPGRADES[i];
   if (!u || u.type === 'item') return;
@@ -1784,7 +1784,7 @@ function buyAxeUpgrade(i) {
   if (G.gold < cost) { showToast('💰 Oro insuficiente'); return; }
   G.gold -= cost;
   u.level += 1;
-  if (u.id === 'edge') G.axeDamage += u.effectStep;
+  if (u.id === 'edge') G.axeDamage += getAxeUpgradeGain(u);
   if (u.id === 'quality') G.axeAttackSpeed += u.effectStep;
   if (u.id === 'crit') G.axeCritChance = Math.min(1, G.axeCritChance + u.effectStep);
   if (u.id === 'double') G.axeDoubleChance = Math.min(1, G.axeDoubleChance + u.effectStep);
@@ -1907,7 +1907,6 @@ function renderClansModal() {
 
 function renderSkillsModal() {
   let html = `<div class="stat-row"><span class="label">Puntos de Habilidad</span><span class="value">${G.skillPoints} ⭐</span></div>
-  <div style="font-size:11px;color:#888;margin-bottom:10px">Ganas 1 punto cada 5 niveles alcanzados.</div>
   <p class="modal-section-title">Árbol de Habilidades</p>`;
   SKILLS_TREE.forEach(sk => {
     const lvl = G.skills[sk.stat];
@@ -2050,6 +2049,15 @@ function resetGame() {
 // TOAST
 // =============================================
 let toastTimeout;
+let nextLevelBannerTimeout;
+function showNextLevelBanner() {
+  const banner = document.getElementById('next-level-banner');
+  if (!banner) return;
+  banner.classList.add('show');
+  clearTimeout(nextLevelBannerTimeout);
+  nextLevelBannerTimeout = setTimeout(() => banner.classList.remove('show'), 1100);
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -2088,7 +2096,6 @@ function startGame() {
   drawScene();
   updateUI();
 
-  G.skillPoints = Math.max(G.skillPoints, Math.floor(G.level / 5));
 
   gameLoop();
   setInterval(saveGame, 10000);
