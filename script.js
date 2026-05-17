@@ -342,6 +342,7 @@ function loadGame() {
     if (save.AXE_UPGRADES) save.AXE_UPGRADES.forEach((v,i) => { AXE_UPGRADES[i].owned = v; });
     if (save.ATTR_UPGRADES) save.ATTR_UPGRADES.forEach((v,i) => { ATTR_UPGRADES[i].owned = v; });
     if (save.missionClaimed) Object.assign(missionClaimed, save.missionClaimed);
+    G.crystals = 0;
     if (save.TIME) {
       TIME.gameMinutes = save.TIME.gameMinutes;
       TIME.day = save.TIME.day;
@@ -371,7 +372,6 @@ function checkLevelUp() {
     G.xp -= G.xpNeeded;
     G.level += 1;
     G.xpNeeded = Math.floor(G.xpNeeded * 1.5);
-    G.crystals += G.level;
   }
 }
 
@@ -381,7 +381,7 @@ function checkMissions() {
     if (G[m.stat] >= m.goal) {
       missionClaimed[m.id] = true;
       if (m.rewardType === 'gold') { G.gold += m.reward; G.totalGoldEarned += m.reward; }
-      else G.crystals += m.reward;
+      else G.crystals = 0;
       showToast(`✅ Misión "${m.name}" completada! +${m.reward} ${m.rewardType === 'gold' ? 'Oro' : 'Cristales'}`);
     }
   });
@@ -1864,7 +1864,7 @@ function buyShopItem(i) {
   if (item.costCurrency === 'crystal' && G.crystals < item.cost) { showToast('💎 Cristales insuficientes'); return; }
   if (item.costCurrency === 'gold') G.gold -= item.cost;
   else G.crystals -= item.cost;
-  if (item.crystals) { G.crystals += item.crystals; showToast(`💎 +${item.crystals} Cristales obtenidos!`); }
+  if (item.crystals) { showToast('ℹ️ Las monedas de cristal están desactivadas.'); G.crystals = 0; }
   if (item.gold) { G.gold += item.gold; G.totalGoldEarned += item.gold; showToast(`🪙 +${fmtNum(item.gold)} Oro obtenido!`); }
   updateUI();
   openModal('shop');
@@ -1957,14 +1957,12 @@ function renderEventsModal() {
 }
 
 function renderPrestigeModal() {
-  const crystalReward = Math.max(1, Math.floor(G.level * 0.5 + G.totalGoldEarned / 10000));
   return `<div class="prestige-box">
     <h3>👑 Prestigio</h3>
-    <p>Reinicia tu progreso (Oro, Nivel, Mejoras) a cambio de:<br>
-    <strong style="color:#f5c518;font-size:16px">+${crystalReward} 💎 Cristales</strong><br>
-    y un multiplicador de Oro permanente (+10%)</p>
+    <p>Reinicia tu progreso (Oro, Nivel, Mejoras) para obtener:<br>
+    <strong style="color:#f5c518;font-size:16px">Multiplicador de Oro permanente (+10%)</strong></p>
     <div style="font-size:12px;color:#aaa;margin-bottom:12px">Prestigios realizados: ${G.prestigeCount}</div>
-    <button class="prestige-confirm-btn" onclick="doPrestige(${crystalReward})">⚡ Hacer Prestigio</button>
+    <button class="prestige-confirm-btn" onclick="doPrestige()">⚡ Hacer Prestigio</button>
   </div>
   <p class="modal-section-title">Tus Estadísticas</p>
   <div class="stat-row"><span class="label">Oro total ganado</span><span class="value">${fmtNum(G.totalGoldEarned)} 🪙</span></div>
@@ -1974,9 +1972,9 @@ function renderPrestigeModal() {
   <div class="stat-row"><span class="label">Tiempo de juego</span><span class="value">Día ${TIME.day} · ${getTimeLabel()}</span></div>`;
 }
 
-function doPrestige(reward) {
+function doPrestige() {
   if (G.level < 5) { showToast('⚠️ Necesitas al menos Nivel 5 para Prestigiar'); return; }
-  G.crystals += reward;
+  G.crystals = 0;
   G.gold = 0;
   G.level = 1;
   G.xp = 0;
