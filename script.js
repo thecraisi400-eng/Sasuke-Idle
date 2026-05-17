@@ -856,6 +856,56 @@ function drawMoon(ctx, x, y, r, opacity) {
   ctx.globalAlpha = 1;
 }
 
+function drawRealisticStar(ctx, x, y, radius, alpha, color, flare) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  const glowRadius = Math.max(radius * 5.5, 5);
+  const glow = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
+  glow.addColorStop(0, color.replace(')', ', 0.70)').replace('rgb', 'rgba'));
+  glow.addColorStop(0.45, color.replace(')', ', 0.16)').replace('rgb', 'rgba'));
+  glow.addColorStop(1, color.replace(')', ', 0)').replace('rgb', 'rgba'));
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(x, y, radius * 1.05, radius * 0.82, -0.25, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.beginPath();
+  ctx.arc(x - radius * 0.18, y - radius * 0.18, Math.max(radius * 0.36, 0.35), 0, Math.PI * 2);
+  ctx.fill();
+
+  if (flare > 0) {
+    ctx.strokeStyle = color.replace(')', ', 0.82)').replace('rgb', 'rgba');
+    ctx.lineWidth = Math.max(0.45, radius * 0.32);
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(x - radius * (2.8 + flare), y);
+    ctx.lineTo(x + radius * (2.8 + flare), y);
+    ctx.moveTo(x, y - radius * (2.2 + flare * 0.75));
+    ctx.lineTo(x, y + radius * (2.2 + flare * 0.75));
+    ctx.stroke();
+
+    if (flare > 1.1) {
+      ctx.globalAlpha = alpha * 0.65;
+      ctx.beginPath();
+      ctx.moveTo(x - radius * 1.9, y - radius * 1.9);
+      ctx.lineTo(x + radius * 1.9, y + radius * 1.9);
+      ctx.moveTo(x - radius * 1.9, y + radius * 1.9);
+      ctx.lineTo(x + radius * 1.9, y - radius * 1.9);
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
 function drawStars(ctx, W, H, groundY, hour) {
   let starsAlpha = 0;
   if (hour >= 19 || hour < 5) {
@@ -865,26 +915,33 @@ function drawStars(ctx, W, H, groundY, hour) {
   }
   if (starsAlpha <= 0) return;
 
-  const starCount = 60;
+  const starCount = 92;
+  const skyTop = Math.max(8, H * 0.025);
+  const skyBottom = Math.max(skyTop + 1, groundY * 0.70);
+  const skyHeight = skyBottom - skyTop;
+  const now = Date.now();
+  const palette = ['rgb(255,252,226)', 'rgb(225,238,255)', 'rgb(255,232,198)', 'rgb(235,245,255)'];
+
   ctx.save();
   for (let i = 0; i < starCount; i++) {
-    const sx = ((i * 137 + 50) % W);
-    const sy = ((i * 97 + 30) % (groundY * 0.72));
-    const twinkle = 0.5 + 0.5 * Math.sin(Date.now() / 800 + i * 1.7);
-    const starAlpha = starsAlpha * (0.4 + 0.5 * twinkle);
-    ctx.globalAlpha = starAlpha;
-    ctx.fillStyle = '#fffde0';
-    ctx.beginPath();
-    if (i % 8 === 0) {
-      const sr = 2;
-      ctx.fillRect(sx - sr, sy - 0.5, sr*2, 1);
-      ctx.fillRect(sx - 0.5, sy - sr, 1, sr*2);
-    } else {
-      ctx.arc(sx, sy, 0.8 + (i % 3) * 0.5, 0, Math.PI * 2);
-    }
-    ctx.fill();
+    const xSeed = (Math.sin((i + 1) * 12.9898) * 43758.5453) % 1;
+    const ySeed = (Math.sin((i + 7) * 78.233) * 24634.6345) % 1;
+    const sizeSeed = Math.abs((Math.sin((i + 13) * 41.711) * 12653.873) % 1);
+    const twinkleSeed = Math.abs((Math.sin((i + 19) * 19.19) * 9142.135) % 1);
+
+    const sx = ((i * 0.61803398875 + Math.abs(xSeed) * 0.28) % 1) * W;
+    const sy = skyTop + Math.pow(Math.abs(ySeed), 1.22) * skyHeight;
+    const horizonFade = 1 - smoothstep(groundY * 0.58, groundY * 0.72, sy) * 0.55;
+    const twinkle = 0.72 + 0.28 * Math.sin(now / (950 + twinkleSeed * 900) + i * 2.37);
+    const isBright = i % 17 === 0 || i % 29 === 0;
+    const isMedium = i % 7 === 0 || i % 11 === 0;
+    const radius = isBright ? 1.65 + sizeSeed * 0.75 : isMedium ? 1.05 + sizeSeed * 0.42 : 0.45 + sizeSeed * 0.45;
+    const alpha = starsAlpha * horizonFade * twinkle * (isBright ? 0.92 : isMedium ? 0.72 : 0.56);
+    const color = palette[i % palette.length];
+    const flare = isBright ? 1.35 + sizeSeed * 0.9 : isMedium ? 0.35 + sizeSeed * 0.35 : 0;
+
+    drawRealisticStar(ctx, sx, sy, radius, alpha, color, flare);
   }
-  ctx.globalAlpha = 1;
   ctx.restore();
 }
 
