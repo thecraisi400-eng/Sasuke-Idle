@@ -251,7 +251,7 @@ function lerpHex(c1, c2, t) {
 
 // Upgrade definitions
 const AXE_UPGRADES = [
-  { id:'edge', name:'FILO DEL HACHA', icon:'🪓', desc:'Sube el daño automático del hacha.', baseCost:60, level:0, type:'gold', effectStep:0.35 },
+  { id:'edge', name:'FILO DEL HACHA', icon:'🪓', desc:'Sube notablemente el daño automático del hacha.', baseCost:60, level:0, type:'gold', effectStep:1.25 },
   { id:'quality', name:'CALIDAD DEL FILO', icon:'⏱️', desc:'Aumenta la velocidad de golpe automático (+0.10/s).', baseCost:90, level:0, type:'gold', effectStep:0.10 },
   { id:'crit', name:'HACHA CRÍTICOS', icon:'🎯', desc:'Sube +0.05% la probabilidad de golpe crítico x2.', baseCost:120, level:0, type:'gold', effectStep:0.0005 },
   { id:'double', name:'HACHA DOBLE FILO', icon:'🪓', desc:'Sube +0.05% la probabilidad de doble golpe.', baseCost:150, level:0, type:'gold', effectStep:0.0005 },
@@ -424,9 +424,15 @@ let animFrame = 0;
 let chopAngle = 0;
 let chopDir = 1;
 
-const LOG_MAX_HP = 20;
-let logHP = LOG_MAX_HP;
-let logHPDisplay = LOG_MAX_HP;
+const BASE_LOG_HP = 10;
+const LOG_HP_MULTIPLIER = 1.40;
+const BASE_LOG_GOLD = 10;
+const LOG_GOLD_MULTIPLIER = 1.15;
+
+let currentLogMaxHP = BASE_LOG_HP;
+let currentLogGoldReward = BASE_LOG_GOLD;
+let logHP = currentLogMaxHP;
+let logHPDisplay = currentLogMaxHP;
 
 let shakeTimer = 0;
 let shakeIntensity = 0;
@@ -440,7 +446,7 @@ let logPileClickable = false;
 let pileClickEffect = null;
 
 function getGoldPerLog() {
-  return computeGPC() * 10;
+  return currentLogGoldReward;
 }
 
 function damageLog(amount) {
@@ -484,8 +490,10 @@ function triggerLogBreak() {
   };
 
   setTimeout(() => {
-    logHP = LOG_MAX_HP;
-    logHPDisplay = LOG_MAX_HP;
+    currentLogMaxHP *= LOG_HP_MULTIPLIER;
+    currentLogGoldReward *= LOG_GOLD_MULTIPLIER;
+    logHP = currentLogMaxHP;
+    logHPDisplay = currentLogMaxHP;
   }, 300);
 }
 
@@ -679,7 +687,7 @@ function drawHPBar(ctx, W, H) {
   const barX = logX;
   const barY = logY - barH - 6;
 
-  const hpFrac = Math.max(0, logHPDisplay / LOG_MAX_HP);
+  const hpFrac = Math.max(0, logHPDisplay / currentLogMaxHP);
 
   ctx.fillStyle = 'rgba(0,0,0,0.55)';
   ctx.beginPath();
@@ -710,7 +718,7 @@ function drawHPBar(ctx, W, H) {
   ctx.textBaseline = 'middle';
   ctx.shadowColor = 'rgba(0,0,0,0.9)';
   ctx.shadowBlur = 3;
-  ctx.fillText(`${Math.ceil(logHPDisplay)} / ${LOG_MAX_HP}`, barX + barW / 2, barY + barH / 2);
+  ctx.fillText(`${Math.ceil(logHPDisplay)} / ${Math.ceil(currentLogMaxHP)}`, barX + barW / 2, barY + barH / 2);
   ctx.shadowBlur = 0;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
