@@ -1118,7 +1118,7 @@ function drawRealisticGroundLog(ctx, logX, logY, logW, logH) {
 
 // =============================================
 // LUMBERJACK SPRITE
-// CAMBIO 1: hacha bajada un 27% más (pivote del brazo desplazado hacia abajo)
+// El hombro permanece fijo; solo la parte inferior del hacha se balancea.
 // =============================================
 function drawLumberjack(ctx, cx, groundY, chopAngle) {
   ctx.save();
@@ -1247,43 +1247,49 @@ function drawLumberjack(ctx, cx, groundY, chopAngle) {
   ctx.fill();
 
   // ===== BRAZO DERECHO + HACHA =====
-  // CAMBIO 1: pivot del hombro bajado un 27% en total
-  // Original era -52*s, ahora es -52*s + 14*s = -38*s (27% de 52 ≈ 14)
+  // El hombro y la mano superior se dibujan quietos.
+  // Solo la parte inferior del hacha rota desde la mano superior para evitar que el hombro se desplace.
   ctx.save();
-  ctx.translate(14*s, -21*s);   // CAMBIO 1: bajado de -42*s a -38*s (+7%)
-  ctx.rotate(chopAngle);
+  ctx.translate(14*s, -21*s);
 
-  // Brazo derecho (manga) — alargado para compensar el desplazamiento
+  // Brazo derecho (manga) fijo: no participa en la animación del golpe.
   ctx.fillStyle = '#c0392b';
   ctx.strokeStyle = '#8e1a10';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.roundRect(-4*s, -36*s, 9*s, 36*s, 3*s);   // más largo para llegar al hombro
+  ctx.roundRect(-4*s, -36*s, 9*s, 36*s, 3*s);
   ctx.fill(); ctx.stroke();
 
-  // Segunda mano izquierda a mitad del mango (dos manos sosteniendo)
-  // Mano superior (en -30*s del pivot)
+  const axeGripY = -30 * s;
+
+  // Mano superior fija: funciona como punto de anclaje del hacha.
   ctx.fillStyle = '#d4956a';
   ctx.strokeStyle = '#a06840';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.ellipse(0*s, -30*s, 5*s, 5*s, 0, 0, Math.PI*2);
+  ctx.ellipse(0, axeGripY, 5*s, 5*s, 0, 0, Math.PI*2);
   ctx.fill(); ctx.stroke();
 
-  // ===== MANGO DEL HACHA =====
+  // ===== PARTE INFERIOR DEL HACHA =====
+  // La rotación ocurre desde la mano superior, por lo que la parte de arriba queda inmóvil.
+  ctx.save();
+  ctx.translate(0, axeGripY);
+  ctx.rotate(chopAngle);
+
+  // Mango del hacha: comienza en el anclaje fijo y balancea hacia abajo.
   ctx.fillStyle = '#8B5E3C';
   ctx.strokeStyle = '#5D3A1A';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.roundRect(-2*s, -30*s, 5*s, 36*s, 2*s);
+  ctx.roundRect(-2*s, 0, 5*s, 36*s, 2*s);
   ctx.fill(); ctx.stroke();
 
-  // Segunda mano en la parte inferior del mango (mano baja)
+  // Mano baja acompaña el mango, sin arrastrar el hombro.
   ctx.fillStyle = '#d4956a';
   ctx.strokeStyle = '#a06840';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.ellipse(0*s, -2*s, 5*s, 5*s, 0, 0, Math.PI*2);
+  ctx.ellipse(0, 28*s, 5*s, 5*s, 0, 0, Math.PI*2);
   ctx.fill(); ctx.stroke();
 
   // ===== HOJA DEL HACHA — mirando a la DERECHA =====
@@ -1291,7 +1297,7 @@ function drawLumberjack(ctx, cx, groundY, chopAngle) {
   ctx.strokeStyle = '#444';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  const bladeY = 6 * s;
+  const bladeY = 36 * s;
   ctx.moveTo(2*s, bladeY);
   ctx.lineTo(18*s, bladeY - 10*s);
   ctx.lineTo(20*s, bladeY);
@@ -1319,6 +1325,7 @@ function drawLumberjack(ctx, cx, groundY, chopAngle) {
   ctx.closePath();
   ctx.fill(); ctx.stroke();
 
+  ctx.restore();
   ctx.restore();
   ctx.restore();
 }
