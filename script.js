@@ -1126,195 +1126,235 @@ function drawLumberjack(ctx, cx, groundY, chopAngle) {
 
   const s = 0.72;
 
-  // Sombra
+  // Sombra orientada hacia el tronco.
   ctx.fillStyle = 'rgba(0,0,0,0.18)';
   ctx.beginPath();
-  ctx.ellipse(0, -2, 16*s, 5*s, 0, 0, Math.PI*2);
+  ctx.ellipse(6*s, -2, 20*s, 5*s, 0, 0, Math.PI*2);
   ctx.fill();
 
-  // Botas
+  // ===== CUERPO COMPLETO DE PERFIL: mirando a la DERECHA =====
+  // Pierna trasera, ligeramente retirada para que el sprite deje de verse frontal.
+  ctx.fillStyle = '#20324f';
+  ctx.strokeStyle = '#142038';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(-9*s, -31*s, 9*s, 21*s, 2*s);
+  ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle = '#2b3f63';
+  ctx.strokeStyle = '#1a2540';
+  ctx.beginPath();
+  ctx.roundRect(1*s, -32*s, 10*s, 23*s, 2*s);
+  ctx.fill(); ctx.stroke();
+
+  // Botas de perfil, con las puntas apuntando hacia la derecha.
   ctx.fillStyle = '#3a2510';
   ctx.strokeStyle = '#1e1208';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.roundRect(-13*s, -12*s, 11*s, 8*s, 2*s);
+  ctx.roundRect(-10*s, -12*s, 16*s, 8*s, 2*s);
   ctx.fill(); ctx.stroke();
   ctx.beginPath();
-  ctx.roundRect(2*s, -12*s, 11*s, 8*s, 2*s);
+  ctx.roundRect(1*s, -12*s, 17*s, 8*s, 2*s);
   ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#251608';
+  ctx.beginPath();
+  ctx.ellipse(6*s, -8*s, 4*s, 3*s, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(18*s, -8*s, 4*s, 3*s, 0, 0, Math.PI*2);
+  ctx.fill();
 
-  // Pantalones
-  ctx.fillStyle = '#2c3e60';
-  ctx.strokeStyle = '#1a2540';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.roundRect(-12*s, -30*s, 10*s, 20*s, 2*s);
-  ctx.fill(); ctx.stroke();
-  ctx.beginPath();
-  ctx.roundRect(2*s, -30*s, 10*s, 20*s, 2*s);
-  ctx.fill(); ctx.stroke();
-
-  // Camisa a cuadros
-  ctx.fillStyle = '#c0392b';
+  // Torso de perfil: espalda a la izquierda y pecho/hombro girados a la derecha.
+  const shirtGrad = ctx.createLinearGradient(-13*s, -54*s, 18*s, -30*s);
+  shirtGrad.addColorStop(0, '#8e1a10');
+  shirtGrad.addColorStop(0.45, '#c0392b');
+  shirtGrad.addColorStop(1, '#e04b3a');
+  ctx.fillStyle = shirtGrad;
   ctx.strokeStyle = '#8e1a10';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.roundRect(-14*s, -54*s, 28*s, 26*s, [3*s, 3*s, 0, 0]);
+  ctx.moveTo(-12*s, -54*s);
+  ctx.quadraticCurveTo(3*s, -61*s, 16*s, -51*s);
+  ctx.lineTo(13*s, -30*s);
+  ctx.quadraticCurveTo(2*s, -25*s, -8*s, -29*s);
+  ctx.lineTo(-14*s, -47*s);
+  ctx.quadraticCurveTo(-15*s, -51*s, -12*s, -54*s);
+  ctx.closePath();
   ctx.fill(); ctx.stroke();
 
+  // Cuadros de la camisa siguiendo la silueta lateral.
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(-12*s, -54*s);
+  ctx.quadraticCurveTo(3*s, -61*s, 16*s, -51*s);
+  ctx.lineTo(13*s, -30*s);
+  ctx.quadraticCurveTo(2*s, -25*s, -8*s, -29*s);
+  ctx.lineTo(-14*s, -47*s);
+  ctx.closePath();
+  ctx.clip();
   ctx.strokeStyle = 'rgba(255,255,255,0.18)';
   ctx.lineWidth = 1.5*s;
   for (let i = 0; i < 3; i++) {
-    const ly = -48*s + i * 8*s;
+    const ly = -49*s + i * 8*s;
     ctx.beginPath();
-    ctx.moveTo(-14*s, ly); ctx.lineTo(14*s, ly);
+    ctx.moveTo(-15*s, ly); ctx.lineTo(17*s, ly - 2*s);
     ctx.stroke();
   }
   for (let i = 0; i < 3; i++) {
-    const lx = -8*s + i * 8*s;
+    const lx = -8*s + i * 9*s;
     ctx.beginPath();
-    ctx.moveTo(lx, -54*s); ctx.lineTo(lx, -28*s);
+    ctx.moveTo(lx, -58*s); ctx.lineTo(lx + 2*s, -28*s);
     ctx.stroke();
   }
+  ctx.restore();
 
-  // Tirantes
+  // Tirante visible en el costado derecho.
   ctx.fillStyle = '#8B5E3C';
   ctx.strokeStyle = '#5D3A1A';
   ctx.lineWidth = 0.8;
   ctx.beginPath();
-  ctx.roundRect(-10*s, -54*s, 4*s, 28*s, 1*s);
-  ctx.fill(); ctx.stroke();
-  ctx.beginPath();
-  ctx.roundRect(6*s, -54*s, 4*s, 28*s, 1*s);
+  ctx.roundRect(5*s, -56*s, 4*s, 29*s, 1*s);
   ctx.fill(); ctx.stroke();
 
-  // Brazo izquierdo (quieto, colgando levemente)
-  ctx.fillStyle = '#c0392b';
-  ctx.strokeStyle = '#8e1a10';
+  // Brazo trasero recogido detrás del cuerpo.
+  ctx.fillStyle = '#9f241b';
+  ctx.strokeStyle = '#74130c';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.roundRect(-22*s, -52*s, 9*s, 22*s, 3*s);
+  ctx.roundRect(-14*s, -51*s, 9*s, 22*s, 3*s);
   ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#d4956a';
-  ctx.strokeStyle = '#a06840';
+  ctx.fillStyle = '#c27c55';
+  ctx.strokeStyle = '#8c5735';
   ctx.beginPath();
-  ctx.ellipse(-17*s, -31*s, 5*s, 5*s, 0, 0, Math.PI*2);
+  ctx.ellipse(-9*s, -30*s, 5*s, 5*s, 0, 0, Math.PI*2);
   ctx.fill(); ctx.stroke();
 
-  // Cabeza
+  // Cuello.
+  ctx.fillStyle = '#c27c55';
+  ctx.strokeStyle = '#8c5735';
+  ctx.beginPath();
+  ctx.roundRect(4*s, -62*s, 7*s, 10*s, 2*s);
+  ctx.fill(); ctx.stroke();
+
+  // Cabeza de perfil: nariz, ojo y rostro apuntan a la derecha.
   ctx.fillStyle = '#d4956a';
   ctx.strokeStyle = '#a06840';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.ellipse(0, -66*s, 12*s, 12*s, 0, 0, Math.PI*2);
+  ctx.ellipse(8*s, -68*s, 11*s, 12*s, -0.08, 0, Math.PI*2);
   ctx.fill(); ctx.stroke();
 
-  // Pelo
-  ctx.fillStyle = '#6b3e20';
+  ctx.fillStyle = '#d4956a';
   ctx.beginPath();
-  ctx.ellipse(0, -59*s, 9*s, 5*s, 0, 0, Math.PI);
+  ctx.moveTo(18*s, -68*s);
+  ctx.lineTo(25*s, -65*s);
+  ctx.lineTo(18*s, -62*s);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#a06840';
+  ctx.stroke();
+
+  ctx.fillStyle = '#b87852';
+  ctx.beginPath();
+  ctx.ellipse(-2*s, -67*s, 3*s, 4*s, 0, 0, Math.PI*2);
   ctx.fill();
 
-  // Ojos
-  ctx.fillStyle = '#1a1a1a';
-  ctx.beginPath(); ctx.arc(-4*s, -67*s, 1.5*s, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(4*s, -67*s, 1.5*s, 0, Math.PI*2); ctx.fill();
+  // Pelo lateral y nuca.
+  ctx.fillStyle = '#6b3e20';
+  ctx.beginPath();
+  ctx.ellipse(3*s, -75*s, 10*s, 6*s, -0.18, Math.PI, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(-2*s, -68*s, 4*s, 9*s, 0.15, Math.PI/2, Math.PI*1.5);
+  ctx.fill();
 
-  // Cejas
+  // Ojo y ceja visibles de perfil.
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath(); ctx.arc(14*s, -69*s, 1.5*s, 0, Math.PI*2); ctx.fill();
   ctx.strokeStyle = '#4a2c10';
   ctx.lineWidth = 2*s;
   ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(-6*s, -71*s); ctx.lineTo(-2*s, -72*s); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(6*s, -71*s); ctx.lineTo(2*s, -72*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(11*s, -73*s); ctx.lineTo(17*s, -74*s); ctx.stroke();
 
-  // Sombrero (ala)
+  // Sombrero girado hacia la derecha.
   ctx.fillStyle = '#3d2a0f';
   ctx.strokeStyle = '#1e1208';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.ellipse(0, -76*s, 18*s, 5*s, 0, 0, Math.PI*2);
+  ctx.ellipse(7*s, -78*s, 20*s, 5*s, -0.06, 0, Math.PI*2);
   ctx.fill(); ctx.stroke();
-  // Sombrero (copa)
   ctx.fillStyle = '#4a3315';
   ctx.strokeStyle = '#1e1208';
-  ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.roundRect(-11*s, -92*s, 22*s, 17*s, [4*s, 4*s, 0, 0]);
+  ctx.roundRect(-2*s, -94*s, 20*s, 17*s, [4*s, 4*s, 0, 0]);
   ctx.fill(); ctx.stroke();
   ctx.fillStyle = '#1a1208';
   ctx.beginPath();
-  ctx.roundRect(-11*s, -80*s, 22*s, 4*s, 0);
+  ctx.roundRect(-2*s, -82*s, 20*s, 4*s, 0);
   ctx.fill();
 
-  // ===== BRAZO DERECHO + HACHA =====
-  // El hombro y la mano superior se dibujan quietos.
-  // Solo la parte inferior del hacha rota desde la mano superior para evitar que el hombro se desplace.
+  // ===== BRAZO DELANTERO + HACHA A LA DERECHA =====
+  // Hombro, brazo y manos quedan al frente del pecho para reforzar que todo el cuerpo mira al tronco.
   ctx.save();
-  ctx.translate(14*s, -21*s);
+  ctx.translate(15*s, -53*s);
 
-  // Brazo derecho (manga) fijo: no participa en la animación del golpe.
   ctx.fillStyle = '#c0392b';
   ctx.strokeStyle = '#8e1a10';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.roundRect(-4*s, -36*s, 9*s, 36*s, 3*s);
+  ctx.roundRect(-3*s, 0, 9*s, 33*s, 3*s);
   ctx.fill(); ctx.stroke();
 
-  const axeGripY = -30 * s;
+  const axeGripY = 7 * s;
 
-  // Mano superior fija: funciona como punto de anclaje del hacha.
   ctx.fillStyle = '#d4956a';
   ctx.strokeStyle = '#a06840';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.ellipse(0, axeGripY, 5*s, 5*s, 0, 0, Math.PI*2);
+  ctx.ellipse(2*s, axeGripY, 5*s, 5*s, 0, 0, Math.PI*2);
   ctx.fill(); ctx.stroke();
 
-  // ===== PARTE INFERIOR DEL HACHA =====
-  // La rotación ocurre desde la mano superior, por lo que la parte de arriba queda inmóvil.
+  // La parte inferior del hacha balancea hacia la derecha desde la mano superior.
   ctx.save();
-  ctx.translate(0, axeGripY);
+  ctx.translate(2*s, axeGripY);
   ctx.rotate(chopAngle);
 
-  // Mango del hacha: comienza en el anclaje fijo y balancea hacia abajo.
   ctx.fillStyle = '#8B5E3C';
   ctx.strokeStyle = '#5D3A1A';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.roundRect(-2*s, 0, 5*s, 36*s, 2*s);
+  ctx.roundRect(-2*s, 0, 5*s, 39*s, 2*s);
   ctx.fill(); ctx.stroke();
 
-  // Mano baja acompaña el mango, sin arrastrar el hombro.
   ctx.fillStyle = '#d4956a';
   ctx.strokeStyle = '#a06840';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.ellipse(0, 28*s, 5*s, 5*s, 0, 0, Math.PI*2);
+  ctx.ellipse(0, 29*s, 5*s, 5*s, 0, 0, Math.PI*2);
   ctx.fill(); ctx.stroke();
 
-  // ===== HOJA DEL HACHA — mirando a la DERECHA =====
+  // Hoja del hacha orientada hacia el tronco, a la derecha del personaje.
   ctx.fillStyle = '#9e9e9e';
   ctx.strokeStyle = '#444';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  const bladeY = 36 * s;
+  const bladeY = 39 * s;
   ctx.moveTo(2*s, bladeY);
-  ctx.lineTo(18*s, bladeY - 10*s);
-  ctx.lineTo(20*s, bladeY);
-  ctx.lineTo(18*s, bladeY + 14*s);
-  ctx.lineTo(2*s, bladeY + 4*s);
+  ctx.lineTo(19*s, bladeY - 10*s);
+  ctx.lineTo(22*s, bladeY + 1*s);
+  ctx.lineTo(18*s, bladeY + 15*s);
+  ctx.lineTo(2*s, bladeY + 5*s);
   ctx.closePath();
   ctx.fill(); ctx.stroke();
 
-  // Brillo en la hoja
   ctx.strokeStyle = 'rgba(255,255,255,0.55)';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.moveTo(4*s, bladeY - 2*s);
-  ctx.lineTo(16*s, bladeY + 4*s);
+  ctx.moveTo(5*s, bladeY - 1*s);
+  ctx.lineTo(17*s, bladeY + 5*s);
   ctx.stroke();
 
-  // Contrafilo
   ctx.fillStyle = '#777';
   ctx.strokeStyle = '#333';
   ctx.lineWidth = 1;
