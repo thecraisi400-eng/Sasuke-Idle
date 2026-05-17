@@ -462,3 +462,6 @@
     .status-label { display: none; }
     .menu-btn span { font-size: 9px; }
   }
+
+.menu-emoji-icon{font-size:30px;line-height:1;}
+#modal-title.centered-title{text-align:center;display:block;width:100%;}

@@ -14,6 +14,12 @@ const G = {
   axeLevel: 1,
   axeGoldPerClick: 1,
   axeGoldPerSec: 0.5,
+  axeDamage: 0.5,
+  axeAttackSpeed: 1,
+  axeCritChance: 0,
+  axeDoubleChance: 0,
+  whetstones: 0,
+  whetstoneBoostUntil: 0,
 
   lumberLevel: 1,
   lumberBonus: 0,
@@ -245,11 +251,11 @@ function lerpHex(c1, c2, t) {
 
 // Upgrade definitions
 const AXE_UPGRADES = [
-  { id:'ax1', name:'Hacha de Hierro',     desc:'+2 Oro/click, +1 Oro/seg',  cost:50,   costCurrency:'gold',    gpc:2,  gps:1,   owned:false },
-  { id:'ax2', name:'Hacha de Acero',      desc:'+5 Oro/click, +3 Oro/seg',  cost:200,  costCurrency:'gold',    gpc:5,  gps:3,   owned:false },
-  { id:'ax3', name:'Hacha de Titanio',    desc:'+15 Oro/click, +8 Oro/seg', cost:800,  costCurrency:'gold',    gpc:15, gps:8,   owned:false },
-  { id:'ax4', name:'Hacha Encantada',     desc:'+40 Oro/click, +20 Oro/seg',cost:50,   costCurrency:'crystal', gpc:40, gps:20,  owned:false },
-  { id:'ax5', name:'Hacha Legendaria',    desc:'+100 Oro/click, +60 Oro/seg',cost:150, costCurrency:'crystal', gpc:100,gps:60,  owned:false },
+  { id:'edge', name:'FILO DEL HACHA', icon:'🪓', desc:'Sube el daño automático del hacha.', baseCost:60, level:0, type:'gold', effectStep:0.35 },
+  { id:'quality', name:'CALIDAD DEL FILO', icon:'⏱️', desc:'Aumenta la velocidad de golpe automático (+0.10/s).', baseCost:90, level:0, type:'gold', effectStep:0.10 },
+  { id:'crit', name:'HACHA CRÍTICOS', icon:'🎯', desc:'Sube +0.05% la probabilidad de golpe crítico x2.', baseCost:120, level:0, type:'gold', effectStep:0.0005 },
+  { id:'double', name:'HACHA DOBLE FILO', icon:'🪓', desc:'Sube +0.05% la probabilidad de doble golpe.', baseCost:150, level:0, type:'gold', effectStep:0.0005 },
+  { id:'stone', name:'PIEDRA DE AFILAR', icon:'☢️', desc:'Consumible: duplica el daño automático por 5 minutos.', baseCost:1, level:0, type:'item', effectStep:1 },
 ];
 
 const ATTR_UPGRADES = [
@@ -289,7 +295,10 @@ const SKILLS_TREE = [
 // COMPUTED VALUES
 // =============================================
 function computeGPS() {
-  let base = G.axeGoldPerSec;
+  let baseDamage = G.axeDamage;
+  if (Date.now() < G.whetstoneBoostUntil) baseDamage *= 2;
+  const perHitExpected = baseDamage * (1 + G.axeCritChance) * (1 + G.axeDoubleChance);
+  let base = perHitExpected * G.axeAttackSpeed;
   if (ATTR_UPGRADES[0].owned) base *= 1.10;
   if (ATTR_UPGRADES[1].owned) base *= 1.25;
   if (ATTR_UPGRADES[3].owned) base += 0.5;
@@ -1702,6 +1711,7 @@ function openModal(type) {
     settings: '⚙️ Ajustes',
   };
   title.textContent = titles[type] || type;
+  title.classList.toggle('centered-title', type === 'axe');
   body.innerHTML = renderModal(type);
   overlay.classList.add('active');
 }
@@ -1729,24 +1739,39 @@ function renderModal(type) {
   }
 }
 
+function axeUpgradeCost(u) { return Math.floor(u.baseCost * Math.pow(1.85, u.level)); }
+
 function renderAxeModal() {
-  let html = `<p class="modal-section-title">Mejoras de Hacha</p>
-  <div class="stat-row"><span class="label">Oro/Click actual</span><span class="value">${computeGPC()} 🪙</span></div>
-  <div class="stat-row"><span class="label">Oro/Seg actual</span><span class="value">${computeGPS().toFixed(1)} 🪙</span></div>
-  <br>`;
+  let html = ``;
   AXE_UPGRADES.forEach((u, i) => {
-    const canAfford = u.costCurrency === 'gold' ? G.gold >= u.cost : G.crystals >= u.cost;
-    const icon = u.costCurrency === 'gold' ? '🪙' : '💎';
+    if (u.type === 'item') {
+      html += `<div class="upgrade-item">
+        <div class="upgrade-icon">${u.icon}</div>
+        <div class="upgrade-info">
+          <div class="upgrade-name">${u.name}</div>
+          <div class="upgrade-desc">${u.desc}</div>
+          <div class="upgrade-cost">Disponibles: ${G.whetstones} ${u.icon}</div>
+        </div>
+        <button class="upgrade-btn" ${G.whetstones <= 0 ? 'disabled' : ''} onclick="useWhetstone()">Usar</button>
+      </div>`;
+      return;
+    }
+    const cost = axeUpgradeCost(u);
+    const canAfford = G.gold >= cost;
+    const levelText = `Nivel ${u.level}`;
+    let effectText = '';
+    if (u.id === 'edge') effectText = `Daño auto: +${u.effectStep.toFixed(2)}`;
+    if (u.id === 'quality') effectText = `Velocidad: +${u.effectStep.toFixed(2)} golpes/s`;
+    if (u.id === 'crit') effectText = `Crítico: +0.05%`;
+    if (u.id === 'double') effectText = `Doble golpe: +0.05%`;
     html += `<div class="upgrade-item">
-      <div class="upgrade-icon">🪓</div>
+      <div class="upgrade-icon">${u.icon}</div>
       <div class="upgrade-info">
-        <div class="upgrade-name">${u.name} ${u.owned ? '✅' : ''}</div>
-        <div class="upgrade-desc">${u.desc}</div>
-        <div class="upgrade-cost">${u.owned ? 'Comprado' : `Costo: ${u.cost} ${icon}`}</div>
+        <div class="upgrade-name">${u.name}</div>
+        <div class="upgrade-desc">${levelText} · ${effectText}</div>
+        <div class="upgrade-cost">Costo: ${fmtNum(cost)} 🪙</div>
       </div>
-      ${!u.owned ? `<button class="upgrade-btn" ${!canAfford ? 'disabled' : ''} onclick="buyAxeUpgrade(${i})">
-        ${canAfford ? 'Comprar' : 'Insuf.'}
-      </button>` : ''}
+      <button class="upgrade-btn" ${!canAfford ? 'disabled' : ''} onclick="buyAxeUpgrade(${i})">${canAfford ? 'Mejorar' : 'Insuf.'}</button>
     </div>`;
   });
   return html;
@@ -1754,15 +1779,25 @@ function renderAxeModal() {
 
 function buyAxeUpgrade(i) {
   const u = AXE_UPGRADES[i];
-  if (u.owned) return;
-  if (u.costCurrency === 'gold' && G.gold < u.cost) { showToast('💰 Oro insuficiente'); return; }
-  if (u.costCurrency === 'crystal' && G.crystals < u.cost) { showToast('💎 Cristales insuficientes'); return; }
-  if (u.costCurrency === 'gold') G.gold -= u.cost;
-  else G.crystals -= u.cost;
-  u.owned = true;
-  G.axeGoldPerClick += u.gpc;
-  G.axeGoldPerSec += u.gps;
-  showToast(`✅ ¡${u.name} comprada!`);
+  if (!u || u.type === 'item') return;
+  const cost = axeUpgradeCost(u);
+  if (G.gold < cost) { showToast('💰 Oro insuficiente'); return; }
+  G.gold -= cost;
+  u.level += 1;
+  if (u.id === 'edge') G.axeDamage += u.effectStep;
+  if (u.id === 'quality') G.axeAttackSpeed += u.effectStep;
+  if (u.id === 'crit') G.axeCritChance = Math.min(1, G.axeCritChance + u.effectStep);
+  if (u.id === 'double') G.axeDoubleChance = Math.min(1, G.axeDoubleChance + u.effectStep);
+  showToast(`✅ ${u.name} subió a nivel ${u.level}`);
+  updateUI();
+  openModal('axe');
+}
+
+function useWhetstone() {
+  if (G.whetstones <= 0) { showToast('☢️ Sin piedra de afilar'); return; }
+  G.whetstones -= 1;
+  G.whetstoneBoostUntil = Date.now() + (5 * 60 * 1000);
+  showToast('☢️ Daño automático x2 por 5 minutos');
   updateUI();
   openModal('axe');
 }
@@ -1952,6 +1987,12 @@ function doPrestige(reward) {
   G.totalPrestige++;
   G.axeGoldPerClick = 1;
   G.axeGoldPerSec = 0.5;
+  G.axeDamage = 0.5;
+  G.axeAttackSpeed = 1;
+  G.axeCritChance = 0;
+  G.axeDoubleChance = 0;
+  G.whetstones = 0;
+  G.whetstoneBoostUntil = 0;
   AXE_UPGRADES.forEach(u => u.owned = false);
   ATTR_UPGRADES.forEach(u => u.owned = false);
   showToast(`🌟 ¡Prestigio! +${reward} 💎 Cristales. Multiplicador: x${G.prestigeMultiplier.toFixed(2)}`);
