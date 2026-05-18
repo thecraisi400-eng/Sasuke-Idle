@@ -73,3 +73,17 @@
   grid-template-rows: repeat(3, 1fr);
   gap: 6px;
 }
+
+/* ═══════════════════════════════════════════
+   PANEL HÉROE  –  OCUPAR TODO EL BLOQUE CENTRAL
+   ═══════════════════════════════════════════ */
+#hud-center.hero-panel-active {
+  padding: 0;
+}
+
+#hud-center.hero-panel-active .botonhero1-sheet {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+}

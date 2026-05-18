@@ -1,3 +1,4 @@
+import '../botonheroe.js';
 import { state } from '../core/state.js';
 import { sections } from '../data/sections.js';
 import { renderBars } from './renderBars.js';
@@ -9,10 +10,44 @@ import { spawnParticles, spawnFloatText } from './effects.js';
 export function initUI() {
   renderBars();
 
+  const centerPanel   = document.getElementById('hud-center');
   const overlay      = document.getElementById('section-overlay');
   const overlayTitle = document.getElementById('overlayTitle');
   const overlayDesc  = document.getElementById('overlayDesc');
   const overlayClose = document.getElementById('overlayClose');
+
+  let heroWidgetInstance = null;
+
+  function showHeroPanel() {
+    overlay.classList.remove('visible');
+    centerPanel.innerHTML = '';
+    centerPanel.classList.add('hero-panel-active');
+
+    if (typeof window.botonhero1Mount !== 'function') {
+      console.warn('[botonhero1] Función botonhero1Mount no disponible');
+      return;
+    }
+
+    heroWidgetInstance = window.botonhero1Mount(centerPanel, { gold: 24850 });
+  }
+
+  function showSectionOverlay(sec) {
+    centerPanel.classList.remove('hero-panel-active');
+
+    if (heroWidgetInstance?.destroy) {
+      heroWidgetInstance.destroy();
+      heroWidgetInstance = null;
+    } else {
+      centerPanel.innerHTML = '';
+    }
+
+    const info = sections[sec];
+    if (!info) return;
+
+    overlayTitle.innerHTML = `${info.icon} ${info.title}`;
+    overlayDesc.textContent = info.desc;
+    overlay.classList.add('visible');
+  }
 
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -37,13 +72,12 @@ export function initUI() {
       btn.classList.add('active');
       state.activeSection = sec;
 
-      // Abrir overlay
-      const info = sections[sec];
-      if (info) {
-        overlayTitle.innerHTML = `${info.icon} ${info.title}`;
-        overlayDesc.textContent = info.desc;
-        overlay.classList.add('visible');
+      if (sec === 'heroe') {
+        showHeroPanel();
+        return;
       }
+
+      showSectionOverlay(sec);
     });
   });
 
