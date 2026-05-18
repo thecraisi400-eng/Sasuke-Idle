@@ -1,5 +1,6 @@
 import '../botonheroe.js';
 import { getHeroStats, setEquipmentSlotLevel, state, syncDerivedStateFromHero } from '../core/state.js';
+import '../misionesderango.js';
 import { sections } from '../data/sections.js';
 import { renderBars } from './renderBars.js';
 import { spawnParticles, spawnFloatText } from './effects.js';
@@ -58,6 +59,45 @@ export function initUI() {
     });
   }
 
+
+
+  function getMissionPlayerStats() {
+    return {
+      hp: state.hpMax,
+      maxHp: state.hpMax,
+      mp: state.mpMax,
+      maxMp: state.mpMax,
+      atk: state.atk,
+      def: state.def,
+      lvl: state.level,
+    };
+  }
+
+  function showMissionsPanel() {
+    overlay.classList.remove('visible');
+    centerPanel.classList.remove('hero-panel-active');
+
+    if (heroWidgetInstance?.destroy) {
+      heroWidgetInstance.destroy();
+      heroWidgetInstance = null;
+    }
+
+    centerPanel.innerHTML = '';
+
+    if (typeof window.misionesderango2Init !== 'function') {
+      console.warn('[misionesderango2] Función misionesderango2Init no disponible');
+      return;
+    }
+
+    syncDerivedStateFromHero();
+    window.misionesderango2Init(centerPanel, {
+      width: '100%',
+      height: '100%',
+      borderRadius: '0',
+      boxShadow: 'none',
+      playerStats: getMissionPlayerStats(),
+    });
+  }
   function showSectionOverlay(sec) {
     centerPanel.classList.remove('hero-panel-active');
 
@@ -100,10 +140,17 @@ export function initUI() {
       state.activeSection = sec;
 
       if (sec === 'heroe') {
+        if (typeof window.misionesderango2Destroy === 'function') window.misionesderango2Destroy();
         showHeroPanel();
         return;
       }
 
+      if (sec === 'misiones') {
+        showMissionsPanel();
+        return;
+      }
+
+      if (typeof window.misionesderango2Destroy === 'function') window.misionesderango2Destroy();
       showSectionOverlay(sec);
     });
   });
