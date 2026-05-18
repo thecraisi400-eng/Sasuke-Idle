@@ -32,7 +32,20 @@ export function initUI() {
     };
   }
 
-  function showMisionesPanel() {
+  async function ensureMisionesScriptLoaded() {
+    if (typeof window.misionesderango2Init === "function") return true;
+
+    try {
+      await import('../misionesderango.js');
+    } catch (error) {
+      console.error('[misionesderango.js] Error al cargar el script de misiones:', error);
+      return false;
+    }
+
+    return typeof window.misionesderango2Init === "function";
+  }
+
+  async function showMisionesPanel() {
     overlay.classList.remove('visible');
     centerPanel.innerHTML = '';
     centerPanel.classList.remove('hero-panel-active');
@@ -47,7 +60,8 @@ export function initUI() {
     root.id = 'misionesderango2-root';
     centerPanel.appendChild(root);
 
-    if (typeof window.misionesderango2Init !== 'function') {
+    const loaded = await ensureMisionesScriptLoaded();
+    if (!loaded) {
       console.warn('[misionesderango.js] Función misionesderango2Init no disponible');
       return;
     }
@@ -115,7 +129,7 @@ export function initUI() {
   }
 
   document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const rect = btn.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top  + rect.height / 2;
