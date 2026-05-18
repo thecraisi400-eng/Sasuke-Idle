@@ -1,4 +1,5 @@
 import '../botonheroe.js';
+import '../misionesderango.js';
 import { getHeroStats, setEquipmentSlotLevel, state, syncDerivedStateFromHero } from '../core/state.js';
 import { sections } from '../data/sections.js';
 import { renderBars } from './renderBars.js';
@@ -17,6 +18,42 @@ export function initUI() {
   const overlayClose = document.getElementById('overlayClose');
 
   let heroWidgetInstance = null;
+
+  function getMissionPlayerConfig() {
+    const hero = getHeroStats();
+    return {
+      lvl: state.level,
+      hp: Math.round(hero.hp),
+      maxHp: Math.round(hero.hp),
+      mp: Math.round(hero.mp),
+      maxMp: Math.round(hero.mp),
+      atk: Math.round(hero.str),
+      def: Math.round(hero.def),
+    };
+  }
+
+  function showMisionesPanel() {
+    overlay.classList.remove('visible');
+    centerPanel.innerHTML = '';
+    centerPanel.classList.remove('hero-panel-active');
+    centerPanel.classList.add('misiones-panel-active');
+
+    if (heroWidgetInstance?.destroy) {
+      heroWidgetInstance.destroy();
+      heroWidgetInstance = null;
+    }
+
+    const root = document.createElement('div');
+    root.id = 'misionesderango2-root';
+    centerPanel.appendChild(root);
+
+    if (typeof window.misionesderango2Init !== 'function') {
+      console.warn('[misionesderango.js] Función misionesderango2Init no disponible');
+      return;
+    }
+
+    window.misionesderango2Init(getMissionPlayerConfig());
+  }
 
   function buildHeroStatsRows() {
     const s = getHeroStats();
@@ -37,6 +74,7 @@ export function initUI() {
   function showHeroPanel() {
     overlay.classList.remove('visible');
     centerPanel.innerHTML = '';
+    centerPanel.classList.remove('misiones-panel-active');
     centerPanel.classList.add('hero-panel-active');
 
     if (typeof window.botonhero1Mount !== 'function') {
@@ -59,7 +97,7 @@ export function initUI() {
   }
 
   function showSectionOverlay(sec) {
-    centerPanel.classList.remove('hero-panel-active');
+    centerPanel.classList.remove('hero-panel-active', 'misiones-panel-active');
 
     if (heroWidgetInstance?.destroy) {
       heroWidgetInstance.destroy();
@@ -101,6 +139,10 @@ export function initUI() {
 
       if (sec === 'heroe') {
         showHeroPanel();
+        return;
+      }
+      if (sec === 'misiones') {
+        showMisionesPanel();
         return;
       }
 

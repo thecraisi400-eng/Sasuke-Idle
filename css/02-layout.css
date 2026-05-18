@@ -87,3 +87,21 @@
   border: none;
   border-radius: 0;
 }
+
+/* ═══════════════════════════════════════════
+   PANEL MISIONES  –  OCUPAR TODO EL BLOQUE CENTRAL
+   ═══════════════════════════════════════════ */
+#hud-center.misiones-panel-active {
+  padding: 0;
+}
+
+#hud-center.misiones-panel-active #misionesderango2-root,
+#hud-center.misiones-panel-active #misionesderango2-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#hud-center.misiones-panel-active #misionesderango2-container {
+  border-radius: 0;
+  box-shadow: none;
+}
