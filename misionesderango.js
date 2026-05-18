@@ -105,9 +105,13 @@
 
 #misionesderango2-game-container .mdr2-menu-button {
   background: #1e2a45;
-  border-color: #1e2a45;
-  color: #1e2a45;
-  box-shadow: 0 4px 0 #151f35;
+  border-color: #ffffff;
+  color: #ffffff;
+  box-shadow:
+    0 4px 0 #151f35,
+    0 0 0 2px rgba(255, 255, 255, 0.12) inset,
+    0 0 18px rgba(255, 255, 255, 0.16);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 
 #misionesderango2-game-container .mdr2-menu-button:active,
