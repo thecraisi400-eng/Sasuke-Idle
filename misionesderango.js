@@ -48,11 +48,13 @@
   --mdr2-accent-gold: #FFD600;
   --mdr2-dark-overlay: rgba(0, 0, 0, 0.65);
 
-  width: 355px;
-  height: 500px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
   background-color: white;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  border-radius: 0;
+  box-shadow: none;
   overflow: hidden;
   position: relative;
   box-sizing: border-box;
@@ -70,7 +72,7 @@
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 10px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -809,7 +811,7 @@
   // ============================================
   // LÓGICA DEL JUEGO (todo renombrado)
   // ============================================
-  function misionesderango2InitLogic() {
+  function misionesderango2InitLogic(options = {}) {
 
     // Datos de misiones
     const misionesderango2MissionsData = {
@@ -859,6 +861,36 @@
     let misionesderango2CurrentScreen = 'main';
     let misionesderango2BattleActive = false;
     let misionesderango2PlayerStats = { hp: 200, maxHp: 200, mp: 100, maxMp: 100, atk: 25, def: 18, lvl: 1 };
+    let misionesderango2AnimationFrameId = null;
+
+    function misionesderango2SyncPlayerStats(resetVitals = false) {
+      if (typeof options.getPlayerStats !== 'function') return;
+      const gameStats = options.getPlayerStats() || {};
+      misionesderango2PlayerStats.maxHp = Math.max(1, Math.round(gameStats.hpMax ?? gameStats.maxHp ?? misionesderango2PlayerStats.maxHp));
+      misionesderango2PlayerStats.maxMp = Math.max(1, Math.round(gameStats.mpMax ?? gameStats.maxMp ?? misionesderango2PlayerStats.maxMp));
+      misionesderango2PlayerStats.atk = Math.max(1, Math.round(gameStats.atk ?? misionesderango2PlayerStats.atk));
+      misionesderango2PlayerStats.def = Math.max(0, Math.round(gameStats.def ?? misionesderango2PlayerStats.def));
+      misionesderango2PlayerStats.lvl = Math.max(1, Math.round(gameStats.level ?? gameStats.lvl ?? misionesderango2PlayerStats.lvl));
+      if (resetVitals) {
+        misionesderango2PlayerStats.hp = misionesderango2PlayerStats.maxHp;
+        misionesderango2PlayerStats.mp = misionesderango2PlayerStats.maxMp;
+      } else {
+        misionesderango2PlayerStats.hp = Math.max(0, Math.min(misionesderango2PlayerStats.maxHp, Math.round(gameStats.hp ?? misionesderango2PlayerStats.hp)));
+        misionesderango2PlayerStats.mp = Math.max(0, Math.min(misionesderango2PlayerStats.maxMp, Math.round(gameStats.mp ?? misionesderango2PlayerStats.mp)));
+      }
+    }
+
+    function misionesderango2NotifyVitalsChanged() {
+      if (typeof options.onPlayerStatsChange === 'function') {
+        options.onPlayerStatsChange({ hp: Math.round(misionesderango2PlayerStats.hp), mp: Math.round(misionesderango2PlayerStats.mp) });
+      }
+    }
+
+    function misionesderango2AwardMissionReward(mission) {
+      if (!mission || typeof options.onReward !== 'function') return;
+      options.onReward({ xp: mission.xp, gold: mission.gold, mission });
+      misionesderango2SyncPlayerStats(false);
+    }
     let misionesderango2CurrentEnemyMission = null;
     let misionesderango2CurrentMissionList = [];
     let misionesderango2EnemyIndex = 0;
@@ -908,6 +940,7 @@
 
     // ---- Mostrar misiones ----
     function misionesderango2ShowMissions(rank) {
+      misionesderango2SyncPlayerStats(false);
       misionesderango2CurrentRank = rank;
       const missions = misionesderango2MissionsData[rank];
       const backBtn = document.getElementById('misionesderango2-back-to-ranks-from-missions');
@@ -954,9 +987,10 @@
       misionesderango2CurrentMissionList = misionesderango2MissionsData[rank];
       misionesderango2EnemyIndex = missionIndex;
       misionesderango2CurrentEnemyMission = { ...misionesderango2CurrentMissionList[misionesderango2EnemyIndex] };
+      misionesderango2CurrentEnemyMission.maxHp = misionesderango2CurrentEnemyMission.hp;
 
-      misionesderango2PlayerStats.hp = misionesderango2PlayerStats.maxHp;
-      misionesderango2PlayerStats.mp = misionesderango2PlayerStats.maxMp;
+      misionesderango2SyncPlayerStats(true);
+      misionesderango2NotifyVitalsChanged();
 
       document.getElementById('misionesderango2-enemy-name').textContent = misionesderango2CurrentEnemyMission.name;
       document.getElementById('misionesderango2-hero-hp-text').textContent = `${misionesderango2PlayerStats.hp}/${misionesderango2PlayerStats.maxHp}`;
@@ -977,7 +1011,7 @@
       misionesderango2HeroAttackTimer = 0;
       misionesderango2EnemyAttackTimer = 0;
       misionesderango2LastTimestamp = 0;
-      requestAnimationFrame(misionesderango2BattleLoop);
+      misionesderango2AnimationFrameId = requestAnimationFrame(misionesderango2BattleLoop);
     }
 
     function misionesderango2UpdateBars() {
@@ -1103,6 +1137,10 @@
       const enemy = document.getElementById('misionesderango2-enemy');
       hero.style.transform = `translateX(80px)`;
       await new Promise(r => setTimeout(r, 100));
+      if (!misionesderango2BattleActive) {
+        misionesderango2IsHeroAttacking = false;
+        return;
+      }
 
       const isCrit = Math.random() < 0.15;
       const dmg = misionesderango2CalculateDamage(misionesderango2PlayerStats.atk, misionesderango2CurrentEnemyMission.def, isCrit);
@@ -1122,7 +1160,10 @@
       await new Promise(r => setTimeout(r, 150));
       misionesderango2IsHeroAttacking = false;
 
-      if (misionesderango2CurrentEnemyMission.hp <= 0) misionesderango2NextEnemy();
+      if (misionesderango2CurrentEnemyMission.hp <= 0) {
+        misionesderango2AwardMissionReward(misionesderango2CurrentEnemyMission);
+        misionesderango2NextEnemy();
+      }
     }
 
     async function misionesderango2EnemyAttack() {
@@ -1132,10 +1173,15 @@
       const enemy = document.getElementById('misionesderango2-enemy');
       enemy.style.transform = `translateX(-70px)`;
       await new Promise(r => setTimeout(r, 100));
+      if (!misionesderango2BattleActive) {
+        misionesderango2IsEnemyAttacking = false;
+        return;
+      }
 
       const dmg = misionesderango2CalculateDamage(misionesderango2CurrentEnemyMission.atk, misionesderango2PlayerStats.def);
       misionesderango2PlayerStats.hp = Math.max(0, misionesderango2PlayerStats.hp - dmg);
       misionesderango2UpdateBars();
+      misionesderango2NotifyVitalsChanged();
 
       misionesderango2HitFlash('hero');
       misionesderango2SpawnCombatText('hero', dmg, 'normal');
@@ -1169,11 +1215,19 @@
       const jutsu = jutsuList[Math.floor(Math.random() * jutsuList.length)];
 
       await misionesderango2ShowJutsuOverlay(jutsu);
+      if (!misionesderango2BattleActive) {
+        misionesderango2IsJutsuActive = false;
+        return;
+      }
       await misionesderango2AnimateProjectile(
         document.getElementById('misionesderango2-hero'),
         document.getElementById('misionesderango2-enemy'),
         jutsu.type
       );
+      if (!misionesderango2BattleActive) {
+        misionesderango2IsJutsuActive = false;
+        return;
+      }
 
       const dmg = misionesderango2CalculateDamage(misionesderango2PlayerStats.atk, misionesderango2CurrentEnemyMission.def, false, jutsu.dmgMulti);
       misionesderango2CurrentEnemyMission.hp = Math.max(0, misionesderango2CurrentEnemyMission.hp - dmg);
@@ -1190,16 +1244,21 @@
 
       misionesderango2PlayerStats.mp = 0;
       misionesderango2UpdateBars();
+      misionesderango2NotifyVitalsChanged();
       await new Promise(r => setTimeout(r, 400));
       misionesderango2IsJutsuActive = false;
 
-      if (misionesderango2CurrentEnemyMission.hp <= 0) misionesderango2NextEnemy();
+      if (misionesderango2CurrentEnemyMission.hp <= 0) {
+        misionesderango2AwardMissionReward(misionesderango2CurrentEnemyMission);
+        misionesderango2NextEnemy();
+      }
     }
 
     function misionesderango2NextEnemy() {
       if (!misionesderango2BattleActive) return;
       misionesderango2EnemyIndex = (misionesderango2EnemyIndex + 1) % misionesderango2CurrentMissionList.length;
       misionesderango2CurrentEnemyMission = { ...misionesderango2CurrentMissionList[misionesderango2EnemyIndex] };
+      misionesderango2CurrentEnemyMission.maxHp = misionesderango2CurrentEnemyMission.hp;
       document.getElementById('misionesderango2-enemy-name').textContent = misionesderango2CurrentEnemyMission.name;
       document.getElementById('misionesderango2-enemy-hp-text').textContent = `${misionesderango2CurrentEnemyMission.hp}/${misionesderango2CurrentEnemyMission.maxHp}`;
       misionesderango2UpdateBars();
@@ -1224,6 +1283,7 @@
           }
           misionesderango2PlayerStats.mp = Math.min(misionesderango2PlayerStats.maxMp, misionesderango2PlayerStats.mp + 5);
           misionesderango2UpdateBars();
+          misionesderango2NotifyVitalsChanged();
         }
 
         misionesderango2EnemyAttackTimer += delta;
@@ -1233,11 +1293,15 @@
         }
       }
 
-      requestAnimationFrame(misionesderango2BattleLoop);
+      misionesderango2AnimationFrameId = requestAnimationFrame(misionesderango2BattleLoop);
     }
 
     function misionesderango2StopBattle() {
       misionesderango2BattleActive = false;
+      if (misionesderango2AnimationFrameId) {
+        cancelAnimationFrame(misionesderango2AnimationFrameId);
+        misionesderango2AnimationFrameId = null;
+      }
       misionesderango2IsHeroAttacking = false;
       misionesderango2IsEnemyAttacking = false;
       misionesderango2IsJutsuActive = false;
@@ -1253,7 +1317,16 @@
     }
 
     // Iniciar en pantalla principal
+    misionesderango2SyncPlayerStats(false);
     mdr2MainScreen.classList.remove('mdr2-hidden');
+
+    return {
+      stop: misionesderango2StopBattle,
+      destroy() {
+        misionesderango2StopBattle();
+        if (mdr2GameContainer) mdr2GameContainer.remove();
+      },
+    };
   }
 
   // ============================================
@@ -1264,11 +1337,11 @@
    * Inicializa el sistema completo en el elemento indicado.
    * Si no se pasa ninguno, lo añade al body.
    */
-  window.misionesderango2Init = function (targetElement) {
+  window.misionesderango2Init = function (targetElement, options = {}) {
     const container = targetElement || document.body;
     misionesderango2InjectStyles();
     misionesderango2InjectHTML(container);
-    misionesderango2InitLogic();
+    return misionesderango2InitLogic(options);
   };
 
 })();

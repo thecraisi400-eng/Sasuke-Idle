@@ -87,3 +87,17 @@
   border: none;
   border-radius: 0;
 }
+
+/* ═══════════════════════════════════════════
+   PANEL MISIONES  –  OCUPAR TODO EL BLOQUE CENTRAL
+   ═══════════════════════════════════════════ */
+#hud-center.missions-panel-active {
+  padding: 0;
+}
+
+#hud-center.missions-panel-active #misionesderango2-game-container {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+}
