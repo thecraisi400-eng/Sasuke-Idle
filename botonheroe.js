@@ -449,7 +449,7 @@
     botonhero1InjectStyles();
 
     /* opciones */
-    const opts = Object.assign({ gold: 24850 }, options);
+    const opts = Object.assign({ gold: 24850, initialSlotLevels: {}, stats: null, onSlotLevelChange: null }, options);
 
     /* estado local de la instancia */
     let instanceGold = opts.gold;
@@ -457,7 +457,8 @@
     const slots = BOTONHERO1_SLOT_DEFS.map(def => {
       const baseCost   = Math.floor(Math.random() * 21) + 20;
       const multiplier = BOTONHERO1_MULTIPLIERS[Math.floor(Math.random() * BOTONHERO1_MULTIPLIERS.length)];
-      return { ...def, stats: def.stats.map(s => ({ ...s })), level: 1, baseCost, multiplier };
+      const initialLevel = Number(opts.initialSlotLevels?.[def.id] ?? 1);
+      return { ...def, stats: def.stats.map(s => ({ ...s })), level: Math.max(1, Math.floor(initialLevel)), baseCost, multiplier };
     });
 
     /* montar HTML */
@@ -485,7 +486,8 @@
     const modalClose   = q('modalClose');
 
     /* poblar stats */
-    BOTONHERO1_STATS_DEF.forEach(s => {
+    const statRows = Array.isArray(opts.stats) && opts.stats.length === 10 ? opts.stats : BOTONHERO1_STATS_DEF;
+    statRows.forEach(s => {
       const d = document.createElement('div');
       d.className = 'botonhero1-stat-row';
       d.innerHTML = `
@@ -574,6 +576,9 @@
 
       instanceGold -= cost;
       activeSlot.level++;
+      if (typeof opts.onSlotLevelChange === 'function') {
+        opts.onSlotLevelChange({ id: activeSlot.id, level: activeSlot.level, slots });
+      }
 
       const rar = botonhero1GetRar(activeSlot.level);
       const el  = activeSlot._el;
