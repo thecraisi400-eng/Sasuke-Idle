@@ -59,6 +59,17 @@
   font-family: 'Segoe UI', 'Arial Black', sans-serif;
 }
 
+#misionesderango2-game-container.mdr2-full-panel {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+#misionesderango2-game-container.mdr2-full-panel .mdr2-screen {
+  padding: 0;
+}
+
 #misionesderango2-game-container .mdr2-screen {
   width: 100%;
   height: 100%;
@@ -809,7 +820,7 @@
   // ============================================
   // LÓGICA DEL JUEGO (todo renombrado)
   // ============================================
-  function misionesderango2InitLogic() {
+  function misionesderango2InitLogic(options = {}) {
 
     // Datos de misiones
     const misionesderango2MissionsData = {
@@ -859,6 +870,33 @@
     let misionesderango2CurrentScreen = 'main';
     let misionesderango2BattleActive = false;
     let misionesderango2PlayerStats = { hp: 200, maxHp: 200, mp: 100, maxMp: 100, atk: 25, def: 18, lvl: 1 };
+    const misionesderango2GetPlayerStats = typeof options.getPlayerStats === 'function' ? options.getPlayerStats : null;
+    const misionesderango2OnMissionComplete = typeof options.onMissionComplete === 'function' ? options.onMissionComplete : null;
+
+    function misionesderango2SyncPlayerStats() {
+      if (!misionesderango2GetPlayerStats) return misionesderango2PlayerStats;
+      const syncedStats = misionesderango2GetPlayerStats() || {};
+      misionesderango2PlayerStats = {
+        hp: Number(syncedStats.hp ?? misionesderango2PlayerStats.hp),
+        maxHp: Number(syncedStats.maxHp ?? syncedStats.hpMax ?? syncedStats.hp ?? misionesderango2PlayerStats.maxHp),
+        mp: Number(syncedStats.mp ?? misionesderango2PlayerStats.mp),
+        maxMp: Number(syncedStats.maxMp ?? syncedStats.mpMax ?? syncedStats.mp ?? misionesderango2PlayerStats.maxMp),
+        atk: Number(syncedStats.atk ?? misionesderango2PlayerStats.atk),
+        def: Number(syncedStats.def ?? misionesderango2PlayerStats.def),
+        lvl: Number(syncedStats.lvl ?? syncedStats.level ?? misionesderango2PlayerStats.lvl),
+      };
+      return misionesderango2PlayerStats;
+    }
+
+    function misionesderango2CloneMission(mission) {
+      return { ...mission, maxHp: mission.maxHp ?? mission.hp };
+    }
+
+    function misionesderango2CompleteMission(mission) {
+      if (misionesderango2OnMissionComplete) {
+        misionesderango2OnMissionComplete({ xp: mission.xp, gold: mission.gold, mission, rank: misionesderango2CurrentRank });
+      }
+    }
     let misionesderango2CurrentEnemyMission = null;
     let misionesderango2CurrentMissionList = [];
     let misionesderango2EnemyIndex = 0;
@@ -876,6 +914,8 @@
     const mdr2MissionsScreen = document.getElementById('misionesderango2-missions-screen');
     const mdr2BattleScreen   = document.getElementById('misionesderango2-battle-screen');
     const mdr2GameContainer  = document.getElementById('misionesderango2-game-container');
+    if (options.fullPanel !== false) mdr2GameContainer.classList.add('mdr2-full-panel');
+    misionesderango2SyncPlayerStats();
 
     // Navegación
     document.getElementById('misionesderango2-main-misiones').addEventListener('click', () => {
@@ -908,6 +948,7 @@
 
     // ---- Mostrar misiones ----
     function misionesderango2ShowMissions(rank) {
+      misionesderango2SyncPlayerStats();
       misionesderango2CurrentRank = rank;
       const missions = misionesderango2MissionsData[rank];
       const backBtn = document.getElementById('misionesderango2-back-to-ranks-from-missions');
@@ -953,7 +994,8 @@
       misionesderango2StopBattle();
       misionesderango2CurrentMissionList = misionesderango2MissionsData[rank];
       misionesderango2EnemyIndex = missionIndex;
-      misionesderango2CurrentEnemyMission = { ...misionesderango2CurrentMissionList[misionesderango2EnemyIndex] };
+      misionesderango2SyncPlayerStats();
+      misionesderango2CurrentEnemyMission = misionesderango2CloneMission(misionesderango2CurrentMissionList[misionesderango2EnemyIndex]);
 
       misionesderango2PlayerStats.hp = misionesderango2PlayerStats.maxHp;
       misionesderango2PlayerStats.mp = misionesderango2PlayerStats.maxMp;
@@ -1198,8 +1240,10 @@
 
     function misionesderango2NextEnemy() {
       if (!misionesderango2BattleActive) return;
+      misionesderango2CompleteMission(misionesderango2CurrentEnemyMission);
+      misionesderango2SyncPlayerStats();
       misionesderango2EnemyIndex = (misionesderango2EnemyIndex + 1) % misionesderango2CurrentMissionList.length;
-      misionesderango2CurrentEnemyMission = { ...misionesderango2CurrentMissionList[misionesderango2EnemyIndex] };
+      misionesderango2CurrentEnemyMission = misionesderango2CloneMission(misionesderango2CurrentMissionList[misionesderango2EnemyIndex]);
       document.getElementById('misionesderango2-enemy-name').textContent = misionesderango2CurrentEnemyMission.name;
       document.getElementById('misionesderango2-enemy-hp-text').textContent = `${misionesderango2CurrentEnemyMission.hp}/${misionesderango2CurrentEnemyMission.maxHp}`;
       misionesderango2UpdateBars();
@@ -1252,8 +1296,14 @@
       misionesderango2CurrentScreen = 'main';
     }
 
+    function misionesderango2Destroy() {
+      misionesderango2StopBattle();
+      mdr2GameContainer.remove();
+    }
+
     // Iniciar en pantalla principal
     mdr2MainScreen.classList.remove('mdr2-hidden');
+    return { destroy: misionesderango2Destroy, stopBattle: misionesderango2StopBattle };
   }
 
   // ============================================
@@ -1264,11 +1314,11 @@
    * Inicializa el sistema completo en el elemento indicado.
    * Si no se pasa ninguno, lo añade al body.
    */
-  window.misionesderango2Init = function (targetElement) {
+  window.misionesderango2Init = function (targetElement, options = {}) {
     const container = targetElement || document.body;
     misionesderango2InjectStyles();
     misionesderango2InjectHTML(container);
-    misionesderango2InitLogic();
+    return misionesderango2InitLogic(options);
   };
 
 })();

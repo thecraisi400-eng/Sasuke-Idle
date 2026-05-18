@@ -1,5 +1,6 @@
 import '../botonheroe.js';
-import { getHeroStats, setEquipmentSlotLevel, state, syncDerivedStateFromHero } from '../core/state.js';
+import '../misionesderango.js';
+import { addMissionRewards, getHeroStats, setEquipmentSlotLevel, state, syncDerivedStateFromHero } from '../core/state.js';
 import { sections } from '../data/sections.js';
 import { renderBars } from './renderBars.js';
 import { spawnParticles, spawnFloatText } from './effects.js';
@@ -17,6 +18,7 @@ export function initUI() {
   const overlayClose = document.getElementById('overlayClose');
 
   let heroWidgetInstance = null;
+  let missionsWidgetInstance = null;
 
   function buildHeroStatsRows() {
     const s = getHeroStats();
@@ -34,8 +36,58 @@ export function initUI() {
     ];
   }
 
+
+  function destroyActiveCenterWidget() {
+    if (heroWidgetInstance?.destroy) {
+      heroWidgetInstance.destroy();
+      heroWidgetInstance = null;
+    }
+
+    if (missionsWidgetInstance?.destroy) {
+      missionsWidgetInstance.destroy();
+      missionsWidgetInstance = null;
+    }
+
+    centerPanel.classList.remove('hero-panel-active', 'missions-panel-active');
+  }
+
+  function buildMissionPlayerStats() {
+    syncDerivedStateFromHero();
+    return {
+      hp: state.hp,
+      maxHp: state.hpMax,
+      mp: state.mp,
+      maxMp: state.mpMax,
+      atk: state.atk,
+      def: state.def,
+      lvl: state.level,
+    };
+  }
+
+  function showMissionsPanel() {
+    overlay.classList.remove('visible');
+    destroyActiveCenterWidget();
+    centerPanel.innerHTML = '';
+    centerPanel.classList.add('missions-panel-active');
+
+    if (typeof window.misionesderango2Init !== 'function') {
+      console.warn('[misionesderango2] Función misionesderango2Init no disponible');
+      return;
+    }
+
+    missionsWidgetInstance = window.misionesderango2Init(centerPanel, {
+      fullPanel: true,
+      getPlayerStats: buildMissionPlayerStats,
+      onMissionComplete: ({ xp, gold }) => {
+        addMissionRewards({ xp, gold });
+        renderBars();
+      },
+    });
+  }
+
   function showHeroPanel() {
     overlay.classList.remove('visible');
+    destroyActiveCenterWidget();
     centerPanel.innerHTML = '';
     centerPanel.classList.add('hero-panel-active');
 
@@ -59,14 +111,8 @@ export function initUI() {
   }
 
   function showSectionOverlay(sec) {
-    centerPanel.classList.remove('hero-panel-active');
-
-    if (heroWidgetInstance?.destroy) {
-      heroWidgetInstance.destroy();
-      heroWidgetInstance = null;
-    } else {
-      centerPanel.innerHTML = '';
-    }
+    destroyActiveCenterWidget();
+    centerPanel.innerHTML = '';
 
     const info = sections[sec];
     if (!info) return;
@@ -101,6 +147,11 @@ export function initUI() {
 
       if (sec === 'heroe') {
         showHeroPanel();
+        return;
+      }
+
+      if (sec === 'misiones') {
+        showMissionsPanel();
         return;
       }
 

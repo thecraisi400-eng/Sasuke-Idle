@@ -78,6 +78,25 @@ export function syncDerivedStateFromHero() {
   state.def = Math.round(hero.def);
 }
 
+
+export function addMissionRewards({ xp = 0, gold = 0 } = {}) {
+  state.gold += Math.max(0, Math.floor(gold));
+  state.exp += Math.max(0, Math.floor(xp));
+
+  while (state.exp >= state.expMax) {
+    state.exp -= state.expMax;
+    state.level += 1;
+    const nextStats = calcStats(state.level);
+    state.expMax = nextStats.xpReq;
+    state.hp = nextStats.hp;
+    state.mp = nextStats.mp;
+  }
+
+  syncDerivedStateFromHero();
+  state.hp = state.hpMax;
+  state.mp = state.mpMax;
+}
+
 export function setEquipmentSlotLevel(slotId, level) {
   if (!(slotId in state.equipmentSlots)) return;
   state.equipmentSlots[slotId] = level;
