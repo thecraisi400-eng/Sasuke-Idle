@@ -1,4 +1,5 @@
 import '../botonheroe.js';
+import '../misionesderango.js';
 import { getHeroStats, setEquipmentSlotLevel, state, syncDerivedStateFromHero } from '../core/state.js';
 import { sections } from '../data/sections.js';
 import { renderBars } from './renderBars.js';
@@ -58,6 +59,49 @@ export function initUI() {
     });
   }
 
+
+  let missionsInitialized = false;
+
+  function showMissionsPanel() {
+    overlay.classList.remove('visible');
+    centerPanel.classList.remove('hero-panel-active');
+
+    if (heroWidgetInstance?.destroy) {
+      heroWidgetInstance.destroy();
+      heroWidgetInstance = null;
+    }
+
+    if (typeof window.misionesderango2StopBattle === 'function') {
+      window.misionesderango2StopBattle();
+    }
+
+    centerPanel.innerHTML = '';
+
+    if (typeof window.misionesderango2Init !== 'function') {
+      console.warn('[misionesderango2] Función misionesderango2Init no disponible');
+      return;
+    }
+
+    if (!missionsInitialized) {
+      window.misionesderango2Init(centerPanel);
+      missionsInitialized = true;
+    } else {
+      window.misionesderango2Init(centerPanel);
+    }
+
+    if (typeof window.misionesderango2SyncStats === 'function') {
+      syncDerivedStateFromHero();
+      window.misionesderango2SyncStats({
+        hp: state.hp,
+        maxHp: state.hpMax,
+        mp: state.mp,
+        maxMp: state.mpMax,
+        atk: state.atk,
+        def: state.def,
+        lvl: state.level,
+      });
+    }
+  }
   function showSectionOverlay(sec) {
     centerPanel.classList.remove('hero-panel-active');
 
@@ -101,6 +145,11 @@ export function initUI() {
 
       if (sec === 'heroe') {
         showHeroPanel();
+        return;
+      }
+
+      if (sec === 'misiones') {
+        showMissionsPanel();
         return;
       }
 

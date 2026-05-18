@@ -48,11 +48,11 @@
   --mdr2-accent-gold: #FFD600;
   --mdr2-dark-overlay: rgba(0, 0, 0, 0.65);
 
-  width: 355px;
-  height: 500px;
+  width: 100%;
+  height: 100%;
   background-color: white;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  border-radius: 0;
+  box-shadow: none;
   overflow: hidden;
   position: relative;
   box-sizing: border-box;
@@ -870,6 +870,19 @@
     let misionesderango2EnemyAttackTimer = 0;
     let misionesderango2LastTimestamp = 0;
 
+    function misionesderango2ApplyExternalStats(nextStats) {
+      if (!nextStats || typeof nextStats !== 'object') return;
+      misionesderango2PlayerStats = {
+        ...misionesderango2PlayerStats,
+        ...nextStats,
+      };
+      misionesderango2PlayerStats.hp = Math.min(misionesderango2PlayerStats.hp, misionesderango2PlayerStats.maxHp);
+      misionesderango2PlayerStats.mp = Math.min(misionesderango2PlayerStats.mp, misionesderango2PlayerStats.maxMp);
+      if (typeof document !== 'undefined' && document.getElementById('misionesderango2-hero-hp-text')) {
+        misionesderango2UpdateBars();
+      }
+    }
+
     // Referencias DOM
     const mdr2MainScreen     = document.getElementById('misionesderango2-main-menu-screen');
     const mdr2RankScreen     = document.getElementById('misionesderango2-rank-list-screen');
@@ -1251,6 +1264,9 @@
       mdr2MissionsScreen.classList.add('mdr2-hidden');
       misionesderango2CurrentScreen = 'main';
     }
+
+    window.misionesderango2SyncStats = misionesderango2ApplyExternalStats;
+    window.misionesderango2StopBattle = misionesderango2StopBattle;
 
     // Iniciar en pantalla principal
     mdr2MainScreen.classList.remove('mdr2-hidden');
