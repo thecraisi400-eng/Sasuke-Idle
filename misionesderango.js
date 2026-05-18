@@ -87,11 +87,11 @@
       box-shadow: none;
     }
 
-    .misionesderango2-rank-d { background: #a5d6a5; border-color: #2e7d32; color: #1b5e20; }
-    .misionesderango2-rank-c { background: #b3e5fc; border-color: #0277bd; color: #01579b; }
-    .misionesderango2-rank-b { background: #ffcc80; border-color: #ef6c00; color: #e65100; }
-    .misionesderango2-rank-a { background: #ef9a9a; border-color: #b71c1c; color: #710000; }
-    .misionesderango2-rank-s { background: #ce93d8; border-color: #4a148c; color: #2a0a4a; }
+    .misionesderango2-rank-d { background: linear-gradient(180deg, #9adf75 0%, #5aaf36 100%); border-color: #2f7d1f; color: #f5ffe9; }
+    .misionesderango2-rank-c { background: linear-gradient(180deg, #6bd4ff 0%, #188bc4 100%); border-color: #0b5f8f; color: #f2fbff; }
+    .misionesderango2-rank-b { background: linear-gradient(180deg, #ffd35f 0%, #ff9800 100%); border-color: #cc6c00; color: #fff8eb; }
+    .misionesderango2-rank-a { background: linear-gradient(180deg, #ff8d8d 0%, #e53935 100%); border-color: #a81f1c; color: #fff1f1; }
+    .misionesderango2-rank-s { background: linear-gradient(180deg, #d498ff 0%, #7b2cbf 100%); border-color: #4b1974; color: #f8f2ff; }
 
     .misionesderango2-mission-item {
       display: flex;
