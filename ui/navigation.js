@@ -17,6 +17,69 @@ export function initUI() {
   const overlayClose = document.getElementById('overlayClose');
 
   let heroWidgetInstance = null;
+  let misionesScriptPromise = null;
+
+  function ensureMisionesScriptLoaded() {
+    if (typeof window.misionesderango2Init === 'function') return Promise.resolve();
+    if (misionesScriptPromise) return misionesScriptPromise;
+
+    misionesScriptPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-misionesderango2="true"]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', () => reject(new Error('No se pudo cargar misionesderango.js')), { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = './misionesderango.js';
+      script.defer = true;
+      script.dataset.misionesderango2 = 'true';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('No se pudo cargar misionesderango.js'));
+      document.head.appendChild(script);
+    });
+
+    return misionesScriptPromise;
+  }
+
+  function getMissionPlayerConfig() {
+    const hero = getHeroStats();
+    return {
+      lvl: state.level,
+      hp: Math.round(hero.hp),
+      maxHp: Math.round(hero.hp),
+      mp: Math.round(hero.mp),
+      maxMp: Math.round(hero.mp),
+      atk: Math.round(hero.str),
+      def: Math.round(hero.def),
+    };
+  }
+
+  async function showMisionesPanel() {
+    overlay.classList.remove('visible');
+    centerPanel.innerHTML = '';
+    centerPanel.classList.remove('hero-panel-active');
+    centerPanel.classList.add('misiones-panel-active');
+
+    if (heroWidgetInstance?.destroy) {
+      heroWidgetInstance.destroy();
+      heroWidgetInstance = null;
+    }
+
+    const root = document.createElement('div');
+    root.id = 'misionesderango2-root';
+    centerPanel.appendChild(root);
+
+    await ensureMisionesScriptLoaded();
+
+    if (typeof window.misionesderango2Init !== 'function') {
+      console.warn('[misionesderango.js] Función misionesderango2Init no disponible');
+      return;
+    }
+
+    window.misionesderango2Init(getMissionPlayerConfig());
+  }
 
   function buildHeroStatsRows() {
     const s = getHeroStats();
@@ -37,6 +100,7 @@ export function initUI() {
   function showHeroPanel() {
     overlay.classList.remove('visible');
     centerPanel.innerHTML = '';
+    centerPanel.classList.remove('misiones-panel-active');
     centerPanel.classList.add('hero-panel-active');
 
     if (typeof window.botonhero1Mount !== 'function') {
@@ -59,7 +123,7 @@ export function initUI() {
   }
 
   function showSectionOverlay(sec) {
-    centerPanel.classList.remove('hero-panel-active');
+    centerPanel.classList.remove('hero-panel-active', 'misiones-panel-active');
 
     if (heroWidgetInstance?.destroy) {
       heroWidgetInstance.destroy();
@@ -101,6 +165,12 @@ export function initUI() {
 
       if (sec === 'heroe') {
         showHeroPanel();
+        return;
+      }
+      if (sec === 'misiones') {
+        showMisionesPanel().catch((err) => {
+          console.error('[misionesderango.js] Error al abrir panel de misiones:', err);
+        });
         return;
       }
 
