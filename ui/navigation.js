@@ -1,5 +1,5 @@
 import '../botonheroe.js';
-import { state } from '../core/state.js';
+import { getHeroStats, setEquipmentSlotLevel, state, syncDerivedStateFromHero } from '../core/state.js';
 import { sections } from '../data/sections.js';
 import { renderBars } from './renderBars.js';
 import { spawnParticles, spawnFloatText } from './effects.js';
@@ -18,6 +18,22 @@ export function initUI() {
 
   let heroWidgetInstance = null;
 
+  function buildHeroStatsRows() {
+    const s = getHeroStats();
+    return [
+      { icon:'⚔️', key:'STR',   val:Math.round(s.str), cls:'' },
+      { icon:'💨', key:'AGI',   val:Math.round(s.agi), cls:'bh1-speed' },
+      { icon:'🧠', key:'INT',   val:Math.round(s.int), cls:'' },
+      { icon:'✦',  key:'LUK',   val:s.luk.toFixed(1), cls:'' },
+      { icon:'🛡️', key:'DEF',   val:Math.round(s.def), cls:'bh1-good' },
+      { icon:'♾️',  key:'RES',   val:`${s.res.toFixed(2)}%`, cls:'' },
+      { icon:'◎',  key:'CRI',   val:`${s.cri.toFixed(2)}%`, cls:'bh1-crit' },
+      { icon:'💥', key:'C.DMG', val:`${s.cdmg.toFixed(1)}%`, cls:'bh1-crit' },
+      { icon:'〇', key:'EVA',   val:`${s.eva.toFixed(2)}%`, cls:'bh1-speed' },
+      { icon:'♥️', key:'Rg HP', val:`+${s.rgHp}`, cls:'bh1-good' },
+    ];
+  }
+
   function showHeroPanel() {
     overlay.classList.remove('visible');
     centerPanel.innerHTML = '';
@@ -28,7 +44,16 @@ export function initUI() {
       return;
     }
 
-    heroWidgetInstance = window.botonhero1Mount(centerPanel, { gold: 24850 });
+    syncDerivedStateFromHero();
+    heroWidgetInstance = window.botonhero1Mount(centerPanel, {
+      gold: state.gold,
+      initialSlotLevels: state.equipmentSlots,
+      stats: buildHeroStatsRows(),
+      onSlotLevelChange: ({ id, level }) => {
+        setEquipmentSlotLevel(id, level);
+        renderBars();
+      },
+    });
   }
 
   function showSectionOverlay(sec) {
