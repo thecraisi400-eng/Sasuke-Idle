@@ -103,6 +103,13 @@
   flex-shrink: 0;
 }
 
+#misionesderango2-game-container .mdr2-menu-button {
+  background: #1e2a45;
+  border-color: #1e2a45;
+  color: #1e2a45;
+  box-shadow: 0 4px 0 #151f35;
+}
+
 #misionesderango2-game-container .mdr2-menu-button:active,
 #misionesderango2-game-container .mdr2-rank-button:active,
 #misionesderango2-game-container .mdr2-mission-item:active,
@@ -111,11 +118,45 @@
   box-shadow: none;
 }
 
-#misionesderango2-game-container .mdr2-rank-d { background: #a5d6a5; border-color: #2e7d32; color: #1b5e20; }
-#misionesderango2-game-container .mdr2-rank-c { background: #b3e5fc; border-color: #0277bd; color: #01579b; }
-#misionesderango2-game-container .mdr2-rank-b { background: #ffcc80; border-color: #ef6c00; color: #e65100; }
-#misionesderango2-game-container .mdr2-rank-a { background: #ef9a9a; border-color: #b71c1c; color: #710000; }
-#misionesderango2-game-container .mdr2-rank-s { background: #ce93d8; border-color: #4a148c; color: #2a0a4a; }
+#misionesderango2-game-container .mdr2-rank-d,
+#misionesderango2-game-container .mdr2-rank-c,
+#misionesderango2-game-container .mdr2-rank-b,
+#misionesderango2-game-container .mdr2-rank-a,
+#misionesderango2-game-container .mdr2-rank-s {
+  border-width: 2px;
+  border-style: solid;
+  box-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.45),
+    0 0 0 2px rgba(255, 255, 255, 0.12) inset,
+    0 0 18px rgba(255, 255, 255, 0.16);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+#misionesderango2-game-container .mdr2-rank-d {
+  background: linear-gradient(135deg, #2c6e49 0%, #4fa36f 52%, #8adfb0 100%);
+  border-color: #9ff3c5;
+  color: #f4fff8;
+}
+#misionesderango2-game-container .mdr2-rank-c {
+  background: linear-gradient(135deg, #005f8f 0%, #1f8ecf 52%, #7cd8ff 100%);
+  border-color: #a5eaff;
+  color: #f5fcff;
+}
+#misionesderango2-game-container .mdr2-rank-b {
+  background: linear-gradient(135deg, #8a4f00 0%, #d47a00 52%, #ffb347 100%);
+  border-color: #ffd08c;
+  color: #fff8ef;
+}
+#misionesderango2-game-container .mdr2-rank-a {
+  background: linear-gradient(135deg, #801313 0%, #bf2a2a 52%, #ff7676 100%);
+  border-color: #ffb0b0;
+  color: #fff4f4;
+}
+#misionesderango2-game-container .mdr2-rank-s {
+  background: linear-gradient(135deg, #4c1d7a 0%, #7a34b2 52%, #c48bff 100%);
+  border-color: #dec0ff;
+  color: #fbf7ff;
+}
 
 #misionesderango2-game-container .mdr2-mission-item {
   display: flex;
