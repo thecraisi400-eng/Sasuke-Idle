@@ -48,8 +48,8 @@
   --mdr2-accent-gold: #FFD600;
   --mdr2-dark-overlay: rgba(0, 0, 0, 0.65);
 
-  width: 355px;
-  height: 500px;
+  width: var(--mdr2-game-w);
+  height: var(--mdr2-game-h);
   background-color: white;
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
@@ -809,7 +809,7 @@
   // ============================================
   // LÓGICA DEL JUEGO (todo renombrado)
   // ============================================
-  function misionesderango2InitLogic() {
+  function misionesderango2InitLogic(options = {}) {
 
     // Datos de misiones
     const misionesderango2MissionsData = {
@@ -858,7 +858,7 @@
     // Estado
     let misionesderango2CurrentScreen = 'main';
     let misionesderango2BattleActive = false;
-    let misionesderango2PlayerStats = { hp: 200, maxHp: 200, mp: 100, maxMp: 100, atk: 25, def: 18, lvl: 1 };
+    let misionesderango2PlayerStats = { hp: 200, maxHp: 200, mp: 100, maxMp: 100, atk: 25, def: 18, lvl: 1, ...options.playerStats };
     let misionesderango2CurrentEnemyMission = null;
     let misionesderango2CurrentMissionList = [];
     let misionesderango2EnemyIndex = 0;
@@ -905,6 +905,21 @@
 
     document.getElementById('misionesderango2-back-from-battle').addEventListener('click', () => misionesderango2StopBattleAndGoToMain());
     document.getElementById('misionesderango2-stop-battle-btn').addEventListener('click', () => misionesderango2StopBattleAndGoToMain());
+
+
+    function misionesderango2SyncPlayerStats(nextStats = {}) {
+      misionesderango2PlayerStats = { ...misionesderango2PlayerStats, ...nextStats };
+      if (misionesderango2CurrentEnemyMission) misionesderango2UpdateBars();
+    }
+
+    function misionesderango2Destroy() {
+      misionesderango2StopBattle();
+      const root = document.getElementById('misionesderango2-game-container');
+      if (root && root.parentNode) root.parentNode.removeChild(root);
+    }
+
+    window.misionesderango2SyncPlayerStats = misionesderango2SyncPlayerStats;
+    window.misionesderango2Destroy = misionesderango2Destroy;
 
     // ---- Mostrar misiones ----
     function misionesderango2ShowMissions(rank) {
@@ -1264,11 +1279,26 @@
    * Inicializa el sistema completo en el elemento indicado.
    * Si no se pasa ninguno, lo añade al body.
    */
-  window.misionesderango2Init = function (targetElement) {
+  window.misionesderango2Init = function (targetElement, options = {}) {
     const container = targetElement || document.body;
+    const existing = document.getElementById('misionesderango2-game-container');
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
     misionesderango2InjectStyles();
     misionesderango2InjectHTML(container);
-    misionesderango2InitLogic();
+
+    const root = document.getElementById('misionesderango2-game-container');
+    if (root) {
+      const width = options.width || '100%';
+      const height = options.height || '100%';
+      root.style.setProperty('--mdr2-game-w', width);
+      root.style.setProperty('--mdr2-game-h', height);
+      root.style.width = width;
+      root.style.height = height;
+      root.style.borderRadius = options.borderRadius || '0';
+      root.style.boxShadow = options.boxShadow || 'none';
+    }
+
+    misionesderango2InitLogic(options);
   };
 
 })();
