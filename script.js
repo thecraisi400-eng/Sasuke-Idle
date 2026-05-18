@@ -80,8 +80,7 @@ function renderBars() {
   document.getElementById('statDef').textContent  = state.def;
 }
 
-// Render inicial
-renderBars();
+
 
 /* ─────────────────────────────────────────────
    PARTÍCULAS
@@ -126,49 +125,69 @@ function spawnFloatText(x, y, text, color = '#2ecfcf') {
   el.addEventListener('animationend', () => el.remove());
 }
 
+async function loadPartials() {
+  const placeholders = [...document.querySelectorAll('[data-partial]')];
+
+  await Promise.all(placeholders.map(async (node) => {
+    const path = node.dataset.partial;
+    const res = await fetch(path);
+    if (!res.ok) throw new Error(`No se pudo cargar partial: ${path}`);
+    node.outerHTML = await res.text();
+  }));
+}
+
 /* ─────────────────────────────────────────────
    NAVEGACIÓN DE BOTONES
 ───────────────────────────────────────────── */
-const overlay      = document.getElementById('section-overlay');
-const overlayTitle = document.getElementById('overlayTitle');
-const overlayDesc  = document.getElementById('overlayDesc');
-const overlayClose = document.getElementById('overlayClose');
+function initUI() {
+  renderBars();
 
-document.querySelectorAll('.nav-btn').forEach(btn => {
-  btn.addEventListener('click', e => {
-    const rect = btn.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top  + rect.height / 2;
+  const overlay      = document.getElementById('section-overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayDesc  = document.getElementById('overlayDesc');
+  const overlayClose = document.getElementById('overlayClose');
 
-    // Efecto de partículas  (smoke + chakra)
-    spawnParticles(cx, cy, 'smoke');
-    spawnParticles(cx, cy, 'chakra');
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const rect = btn.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top  + rect.height / 2;
 
-    const sec = btn.dataset.section;
+      // Efecto de partículas  (smoke + chakra)
+      spawnParticles(cx, cy, 'smoke');
+      spawnParticles(cx, cy, 'chakra');
 
-    // texto flotante con nombre de sección
-    const labels = { heroe:'HÉROE', misiones:'MISIONES', clanes:'CLANES',
-                     eventos:'EVENTOS', jutsus:'JUTSUS', batallas:'BATALLAS',
-                     invocaciones:'INVOCAR', habilidades:'ÁRBOL', ajustes:'AJUSTES' };
-    spawnFloatText(cx, cy, '▶ ' + (labels[sec] || sec), '#e8923a');
+      const sec = btn.dataset.section;
 
-    // Marcar activo
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.activeSection = sec;
+      // texto flotante con nombre de sección
+      const labels = { heroe:'HÉROE', misiones:'MISIONES', clanes:'CLANES',
+                       eventos:'EVENTOS', jutsus:'JUTSUS', batallas:'BATALLAS',
+                       invocaciones:'INVOCAR', habilidades:'ÁRBOL', ajustes:'AJUSTES' };
+      spawnFloatText(cx, cy, '▶ ' + (labels[sec] || sec), '#e8923a');
 
-    // Abrir overlay
-    const info = sections[sec];
-    if (info) {
-      overlayTitle.innerHTML = `${info.icon} ${info.title}`;
-      overlayDesc.textContent = info.desc;
-      overlay.classList.add('visible');
-    }
+      // Marcar activo
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.activeSection = sec;
+
+      // Abrir overlay
+      const info = sections[sec];
+      if (info) {
+        overlayTitle.innerHTML = `${info.icon} ${info.title}`;
+        overlayDesc.textContent = info.desc;
+        overlay.classList.add('visible');
+      }
+    });
   });
-});
 
-overlayClose.addEventListener('click', () => {
-  overlay.classList.remove('visible');
-  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-  spawnParticles(cx, cy, 'amber-spark');
-});
+  overlayClose.addEventListener('click', () => {
+    overlay.classList.remove('visible');
+    const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+    spawnParticles(cx, cy, 'amber-spark');
+  });
+}
+
+(async function bootstrap() {
+  await loadPartials();
+  initUI();
+})();
