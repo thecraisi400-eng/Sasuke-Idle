@@ -49,9 +49,11 @@ export function initUI() {
       gold: state.gold,
       initialSlotLevels: state.equipmentSlots,
       stats: buildHeroStatsRows(),
-      onSlotLevelChange: ({ id, level }) => {
+      onUpgrade: ({ id, level, gold }) => {
+        state.gold = Math.max(0, Math.floor(gold));
         setEquipmentSlotLevel(id, level);
         renderBars();
+        showHeroPanel();
       },
     });
   }
