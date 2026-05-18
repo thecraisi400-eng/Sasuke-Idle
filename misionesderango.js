@@ -19,6 +19,9 @@
   const misionesderango2CSS = `
     #misionesderango2-root {
       font-family: 'Segoe UI', 'Arial Black', sans-serif;
+      width: 100%;
+      height: 100%;
+      display: flex;
     }
 
     #misionesderango2-root *, #misionesderango2-root *::before, #misionesderango2-root *::after {
@@ -26,10 +29,10 @@
     }
 
     #misionesderango2-container {
-      width: 355px;
-      height: 500px;
+      width: 100%;
+      height: 100%;
       background-color: white;
-      border-radius: 20px;
+      border-radius: 0;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2);
       overflow: hidden;
       position: relative;

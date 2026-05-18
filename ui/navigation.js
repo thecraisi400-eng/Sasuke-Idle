@@ -1,4 +1,5 @@
 import '../botonheroe.js';
+import '../misionesderango.js';
 import { getHeroStats, setEquipmentSlotLevel, state, syncDerivedStateFromHero } from '../core/state.js';
 import { sections } from '../data/sections.js';
 import { renderBars } from './renderBars.js';
@@ -34,9 +35,23 @@ export function initUI() {
     ];
   }
 
+  function destroyActivePanel() {
+    if (heroWidgetInstance?.destroy) {
+      heroWidgetInstance.destroy();
+      heroWidgetInstance = null;
+    }
+
+    if (typeof window.misionesderango2StopBattle === 'function') {
+      window.misionesderango2StopBattle();
+    }
+
+    centerPanel.innerHTML = '';
+    centerPanel.classList.remove('hero-panel-active');
+  }
+
   function showHeroPanel() {
     overlay.classList.remove('visible');
-    centerPanel.innerHTML = '';
+    destroyActivePanel();
     centerPanel.classList.add('hero-panel-active');
 
     if (typeof window.botonhero1Mount !== 'function') {
@@ -58,15 +73,35 @@ export function initUI() {
     });
   }
 
-  function showSectionOverlay(sec) {
-    centerPanel.classList.remove('hero-panel-active');
+  function showMisionesPanel() {
+    overlay.classList.remove('visible');
+    destroyActivePanel();
 
-    if (heroWidgetInstance?.destroy) {
-      heroWidgetInstance.destroy();
-      heroWidgetInstance = null;
-    } else {
-      centerPanel.innerHTML = '';
+    const missionsRoot = document.createElement('div');
+    missionsRoot.id = 'misionesderango2-root';
+    missionsRoot.style.width = '100%';
+    missionsRoot.style.height = '100%';
+    centerPanel.appendChild(missionsRoot);
+
+    if (typeof window.misionesderango2Init !== 'function') {
+      console.warn('[misionesderango] Función misionesderango2Init no disponible');
+      return;
     }
+
+    syncDerivedStateFromHero();
+    window.misionesderango2Init({
+      lvl: state.level,
+      hp: state.hpMax,
+      maxHp: state.hpMax,
+      mp: state.mpMax,
+      maxMp: state.mpMax,
+      atk: state.atk,
+      def: state.def,
+    });
+  }
+
+  function showSectionOverlay(sec) {
+    destroyActivePanel();
 
     const info = sections[sec];
     if (!info) return;
@@ -82,25 +117,27 @@ export function initUI() {
       const cx = rect.left + rect.width / 2;
       const cy = rect.top  + rect.height / 2;
 
-      // Efecto de partículas  (smoke + chakra)
       spawnParticles(cx, cy, 'smoke');
       spawnParticles(cx, cy, 'chakra');
 
       const sec = btn.dataset.section;
 
-      // texto flotante con nombre de sección
       const labels = { heroe:'HÉROE', misiones:'MISIONES', clanes:'CLANES',
                        eventos:'EVENTOS', jutsus:'JUTSUS', batallas:'BATALLAS',
                        invocaciones:'INVOCAR', habilidades:'ÁRBOL', ajustes:'AJUSTES' };
       spawnFloatText(cx, cy, '▶ ' + (labels[sec] || sec), '#e8923a');
 
-      // Marcar activo
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.activeSection = sec;
 
       if (sec === 'heroe') {
         showHeroPanel();
+        return;
+      }
+
+      if (sec === 'misiones') {
+        showMisionesPanel();
         return;
       }
 
