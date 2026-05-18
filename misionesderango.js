@@ -50,7 +50,7 @@
 
   width: var(--mdr2-game-w);
   height: var(--mdr2-game-h);
-  background-color: white;
+  background: linear-gradient(160deg, #0a0d14 0%, #111827 52%, #1a2236 100%);
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   overflow: hidden;
@@ -65,7 +65,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  background: white;
+  background: linear-gradient(160deg, #0a0d14 0%, #111827 52%, #1a2236 100%);
   transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
   box-sizing: border-box;
   overflow-y: auto;
