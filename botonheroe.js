@@ -449,7 +449,7 @@
     botonhero1InjectStyles();
 
     /* opciones */
-    const opts = Object.assign({ gold: 24850, initialSlotLevels: {}, stats: null, onSlotLevelChange: null }, options);
+    const opts = Object.assign({ gold: 24850, initialSlotLevels: {}, stats: null, onUpgrade: null }, options);
 
     /* estado local de la instancia */
     let instanceGold = opts.gold;
@@ -576,8 +576,14 @@
 
       instanceGold -= cost;
       activeSlot.level++;
-      if (typeof opts.onSlotLevelChange === 'function') {
-        opts.onSlotLevelChange({ id: activeSlot.id, level: activeSlot.level, slots });
+      if (typeof opts.onUpgrade === 'function') {
+        opts.onUpgrade({
+          id: activeSlot.id,
+          level: activeSlot.level,
+          cost,
+          gold: instanceGold,
+          slots,
+        });
       }
 
       const rar = botonhero1GetRar(activeSlot.level);
