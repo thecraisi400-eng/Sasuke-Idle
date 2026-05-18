@@ -2,12 +2,15 @@ import { state } from '../core/state.js';
 import { sections } from '../data/sections.js';
 import { renderBars } from './renderBars.js';
 import { spawnParticles, spawnFloatText } from './effects.js';
+import { mountHeroe } from './botonheroe.js';
 
 /* ─────────────────────────────────────────────
    NAVEGACIÓN DE BOTONES
 ───────────────────────────────────────────── */
 export function initUI() {
   renderBars();
+  const center = document.getElementById('hud-center');
+  mountHeroe(center);
 
   const overlay      = document.getElementById('section-overlay');
   const overlayTitle = document.getElementById('overlayTitle');
@@ -37,12 +40,17 @@ export function initUI() {
       btn.classList.add('active');
       state.activeSection = sec;
 
-      // Abrir overlay
-      const info = sections[sec];
-      if (info) {
-        overlayTitle.innerHTML = `${info.icon} ${info.title}`;
-        overlayDesc.textContent = info.desc;
-        overlay.classList.add('visible');
+      // Mostrar contenido
+      if (sec === 'heroe') {
+        overlay.classList.remove('visible');
+        mountHeroe(center);
+      } else {
+        const info = sections[sec];
+        if (info) {
+          overlayTitle.innerHTML = `${info.icon} ${info.title}`;
+          overlayDesc.textContent = info.desc;
+          overlay.classList.add('visible');
+        }
       }
     });
   });
