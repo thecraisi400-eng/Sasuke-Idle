@@ -757,6 +757,7 @@
      PANTALLAS
   ============================================================ */
   function misionesderango2GoToMain() {
+    if (typeof window.misionesderangod3Hide === 'function') window.misionesderangod3Hide();
     md2Hide(md2$('misionesderango2-rank-list-screen'));
     md2Hide(md2$('misionesderango2-missions-screen'));
     md2Hide(md2$('misionesderango2-battle-screen'));
@@ -765,6 +766,7 @@
   }
 
   function misionesderango2GoToRanks() {
+    if (typeof window.misionesderangod3Hide === 'function') window.misionesderangod3Hide();
     md2Hide(md2$('misionesderango2-main-menu-screen'));
     md2Hide(md2$('misionesderango2-missions-screen'));
     md2Hide(md2$('misionesderango2-battle-screen'));
@@ -801,6 +803,19 @@
       `;
       if (locked) {
         div.style.pointerEvents = 'none';
+      } else {
+        div.addEventListener('click', () => {
+          if (rank === 'D' && typeof window.misionesderangod3Show === 'function') {
+            md2Hide(md2$('misionesderango2-missions-screen'));
+            md2Hide(md2$('misionesderango2-rank-list-screen'));
+            md2Hide(md2$('misionesderango2-main-menu-screen'));
+            md2Hide(md2$('misionesderango2-battle-screen'));
+            window.misionesderangod3Show('#misionesderango2-container');
+            misionesderango2CurrentScreen = 'battle';
+            return;
+          }
+          misionesderango2StartBattle(rank, index);
+        });
       }
       mScreen.appendChild(div);
     });
@@ -1123,6 +1138,7 @@
   }
 
   function misionesderango2StopAndGoMain() {
+    if (typeof window.misionesderangod3Hide === 'function') window.misionesderangod3Hide();
     misionesderango2StopBattle();
     md2Hide(md2$('misionesderango2-battle-screen'));
     md2Hide(md2$('misionesderango2-rank-list-screen'));
