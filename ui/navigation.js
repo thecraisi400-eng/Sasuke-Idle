@@ -96,6 +96,10 @@ export function initUI() {
       window.misionesderango2Init('#hud-center');
       isMisionesMounted = true;
     }
+
+    if (typeof window.misionesderango2ShowMain === 'function') {
+      window.misionesderango2ShowMain();
+    }
   }
 
   document.querySelectorAll('.nav-btn').forEach(btn => {
