@@ -23,17 +23,19 @@
     #misionesderango2-body-wrap {
       background: linear-gradient(135deg, #0a0d14 0%, #111827 50%, #1a2236 100%);
       display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
+      justify-content: stretch;
+      align-items: stretch;
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
       font-family: 'Segoe UI', 'Arial Black', sans-serif;
-      padding: 10px;
+      padding: 0;
       box-sizing: border-box;
     }
 
     #misionesderango2-container {
-      width: 355px;
-      height: 500px;
+      width: 100%;
+      height: 100%;
       background: linear-gradient(160deg, #111827 0%, #0a0d14 100%);
       border-radius: 20px;
       box-shadow:

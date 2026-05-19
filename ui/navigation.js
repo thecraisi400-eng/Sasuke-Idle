@@ -17,6 +17,7 @@ export function initUI() {
   const overlayClose = document.getElementById('overlayClose');
 
   let heroWidgetInstance = null;
+  let isMisionesMounted = false;
 
   function buildHeroStatsRows() {
     const s = getHeroStats();
@@ -76,6 +77,27 @@ export function initUI() {
     overlay.classList.add('visible');
   }
 
+  function showMisionesPanel() {
+    overlay.classList.remove('visible');
+    centerPanel.classList.remove('hero-panel-active');
+
+    if (heroWidgetInstance?.destroy) {
+      heroWidgetInstance.destroy();
+      heroWidgetInstance = null;
+    } else {
+      centerPanel.innerHTML = '';
+    }
+
+    if (!isMisionesMounted) {
+      if (typeof window.misionesderango2Init !== 'function') {
+        console.warn('[misionesderango2] Función misionesderango2Init no disponible');
+        return;
+      }
+      window.misionesderango2Init('#hud-center');
+      isMisionesMounted = true;
+    }
+  }
+
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const rect = btn.getBoundingClientRect();
@@ -100,8 +122,22 @@ export function initUI() {
       state.activeSection = sec;
 
       if (sec === 'heroe') {
+        if (isMisionesMounted && typeof window.misionesderango2Destroy === 'function') {
+          window.misionesderango2Destroy();
+          isMisionesMounted = false;
+        }
         showHeroPanel();
         return;
+      }
+
+      if (sec === 'misiones') {
+        showMisionesPanel();
+        return;
+      }
+
+      if (isMisionesMounted && typeof window.misionesderango2Destroy === 'function') {
+        window.misionesderango2Destroy();
+        isMisionesMounted = false;
       }
 
       showSectionOverlay(sec);
