@@ -799,9 +799,7 @@
         </div>
         ${locked ? `<div class="misionesderango2-mission-lock">🔒 Nivel mínimo: ${mission.lvl}</div>` : ''}
       `;
-      if (!locked) {
-        div.addEventListener('click', () => misionesderango2StartBattle(rank, index));
-      } else {
+      if (locked) {
         div.style.pointerEvents = 'none';
       }
       mScreen.appendChild(div);
@@ -1199,6 +1197,12 @@
    * stats = { hp, maxHp, mp, maxMp, atk, def, lvl }
    * Solo se aplican los campos proporcionados.
    */
+
+  window.misionesderango2ShowMain = function () {
+    if (!document.getElementById('misionesderango2-container')) return;
+    misionesderango2StopBattle();
+    misionesderango2GoToMain();
+  };
   window.misionesderango2SetPlayerStats = function (stats) {
     Object.assign(misionesderango2PlayerStats, stats);
   };
