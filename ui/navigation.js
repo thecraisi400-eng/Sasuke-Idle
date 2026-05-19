@@ -18,6 +18,7 @@ export function initUI() {
 
   let heroWidgetInstance = null;
   let isMisionesMounted = false;
+  let heroRegenInterval = null;
 
   function buildHeroStatsRows() {
     const s = getHeroStats();
@@ -35,6 +36,30 @@ export function initUI() {
     ];
   }
 
+
+  function stopHeroRegen() {
+    if (heroRegenInterval) {
+      clearInterval(heroRegenInterval);
+      heroRegenInterval = null;
+    }
+  }
+
+  function startHeroRegen() {
+    stopHeroRegen();
+    heroRegenInterval = setInterval(() => {
+      if (state.activeSection !== 'heroe') return;
+      const hpRegen = Math.max(1, Math.round(state.hpMax * 0.07));
+      const mpRegen = Math.max(1, Math.round(state.mpMax * 0.07));
+      const nextHp = Math.min(state.hpMax, state.hp + hpRegen);
+      const nextMp = Math.min(state.mpMax, state.mp + mpRegen);
+      if (nextHp === state.hp && nextMp === state.mp) return;
+      state.hp = nextHp;
+      state.mp = nextMp;
+      renderBars();
+      syncHeroStatsToMissions();
+    }, 1000);
+  }
+
   function showHeroPanel() {
     overlay.classList.remove('visible');
     centerPanel.innerHTML = '';
@@ -46,6 +71,7 @@ export function initUI() {
     }
 
     syncDerivedStateFromHero();
+    startHeroRegen();
     heroWidgetInstance = window.botonhero1Mount(centerPanel, {
       gold: state.gold,
       initialSlotLevels: state.equipmentSlots,
@@ -60,6 +86,7 @@ export function initUI() {
   }
 
   function showSectionOverlay(sec) {
+    stopHeroRegen();
     centerPanel.classList.remove('hero-panel-active');
 
     if (heroWidgetInstance?.destroy) {
@@ -101,6 +128,7 @@ export function initUI() {
   }
 
   function showMisionesPanel() {
+    stopHeroRegen();
     overlay.classList.remove('visible');
     centerPanel.classList.remove('hero-panel-active');
 
@@ -118,6 +146,17 @@ export function initUI() {
       window.misionesderango2Init('#hud-center');
       isMisionesMounted = true;
     }
+
+    window.misionesderango2OnPlayerStatsChange = (stats) => {
+      state.hp = Math.max(0, Math.min(state.hpMax, Math.round(stats.hp ?? state.hp)));
+      state.mp = Math.max(0, Math.min(state.mpMax, Math.round(stats.mp ?? state.mp)));
+      renderBars();
+    };
+    window.misionesderango2OnMissionComplete = ({ xp, gold }) => {
+      state.exp += Math.max(0, Number(xp) || 0);
+      state.gold += Math.max(0, Number(gold) || 0);
+      renderBars();
+    };
 
     syncHeroStatsToMissions();
     if (typeof window.misionesderango2ShowMain === 'function') {
