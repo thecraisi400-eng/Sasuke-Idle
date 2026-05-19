@@ -1,5 +1,6 @@
 import '../botonheroe.js';
 import { getHeroStats, setEquipmentSlotLevel, state, syncDerivedStateFromHero } from '../core/state.js';
+import { calcStats } from '../core/stats.js';
 import { sections } from '../data/sections.js';
 import { renderBars } from './renderBars.js';
 import { spawnParticles, spawnFloatText } from './effects.js';
@@ -18,6 +19,46 @@ export function initUI() {
 
   let heroWidgetInstance = null;
   let isMisionesMounted = false;
+
+  let heroRegenTimer = null;
+
+  function stopHeroRegen() {
+    if (!heroRegenTimer) return;
+    clearInterval(heroRegenTimer);
+    heroRegenTimer = null;
+  }
+
+  function startHeroRegen() {
+    stopHeroRegen();
+    heroRegenTimer = setInterval(() => {
+      if (state.activeSection !== 'heroe') return;
+      const hpGain = Math.max(1, Math.round(state.hpMax * 0.07));
+      const mpGain = Math.max(1, Math.round(state.mpMax * 0.07));
+      const nextHp = Math.min(state.hpMax, state.hp + hpGain);
+      const nextMp = Math.min(state.mpMax, state.mp + mpGain);
+      if (nextHp === state.hp && nextMp === state.mp) return;
+      state.hp = nextHp;
+      state.mp = nextMp;
+      renderBars();
+      syncHeroStatsToMissions();
+    }, 1000);
+  }
+
+  function applyMissionRewards({ xp = 0, gold = 0 }) {
+    state.exp += Math.max(0, Math.floor(xp));
+    state.gold += Math.max(0, Math.floor(gold));
+
+    while (state.exp >= state.expMax) {
+      state.exp -= state.expMax;
+      state.level += 1;
+      state.expMax = calcStats(state.level).xpReq;
+      syncDerivedStateFromHero();
+      state.hp = state.hpMax;
+      state.mp = state.mpMax;
+    }
+
+    renderBars();
+  }
 
   function buildHeroStatsRows() {
     const s = getHeroStats();
@@ -46,6 +87,7 @@ export function initUI() {
     }
 
     syncDerivedStateFromHero();
+    startHeroRegen();
     heroWidgetInstance = window.botonhero1Mount(centerPanel, {
       gold: state.gold,
       initialSlotLevels: state.equipmentSlots,
@@ -158,6 +200,7 @@ export function initUI() {
       }
 
       if (sec === 'misiones') {
+        stopHeroRegen();
         showMisionesPanel();
         return;
       }
@@ -167,6 +210,7 @@ export function initUI() {
         isMisionesMounted = false;
       }
 
+      stopHeroRegen();
       showSectionOverlay(sec);
     });
   });
@@ -183,6 +227,18 @@ export function initUI() {
     state.activeSection = 'heroe';
   };
 
+
+  window.misionesderango2OnPlayerStatsChange = function (stats) {
+    state.hp = Math.max(0, Math.min(Math.round(stats.hp ?? state.hp), Math.round(stats.maxHp ?? state.hpMax)));
+    state.hpMax = Math.max(1, Math.round(stats.maxHp ?? state.hpMax));
+    state.mp = Math.max(0, Math.min(Math.round(stats.mp ?? state.mp), Math.round(stats.maxMp ?? state.mpMax)));
+    state.mpMax = Math.max(1, Math.round(stats.maxMp ?? state.mpMax));
+    renderBars();
+  };
+
+  window.misionesderango2OnMissionWin = function (reward) {
+    applyMissionRewards(reward || {});
+  };
   overlayClose.addEventListener('click', () => {
     overlay.classList.remove('visible');
     const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
