@@ -4,7 +4,7 @@
 // para evitar conflictos con otros scripts del juego.
 // ============================================================
 
-(function () {
+function misionesderangod2Mount(targetElement) {
   // ── Estilos ────────────────────────────────────────────────
   const misionesderangod2StyleId = 'misionesderangod2-styles';
   if (!document.getElementById(misionesderangod2StyleId)) {
@@ -12,8 +12,8 @@
     misionesderangod2Style.id = misionesderangod2StyleId;
     misionesderangod2Style.textContent = `
       #misionesderangod2-game-container {
-        width: 355px;
-        height: 500px;
+        width: 100%;
+        height: 100%;
         background: linear-gradient(160deg, #111827 0%, #0a0d14 100%);
         border-radius: 20px;
         box-shadow:
@@ -267,8 +267,12 @@
     </div>
   `;
 
-  // Insertar el contenedor en el body (o en el elemento que elijas)
-  document.body.appendChild(misionesderangod2Container);
+  // Insertar el contenedor en el contenedor objetivo
+  if (!targetElement) {
+    throw new Error('misionesderangod2Mount requiere un elemento contenedor.');
+  }
+  targetElement.innerHTML = '';
+  targetElement.appendChild(misionesderangod2Container);
 
   // ── Datos ──────────────────────────────────────────────────
   const misionesderangod2Data = {
@@ -403,4 +407,11 @@
   // ── Init ───────────────────────────────────────────────────
   misionesderangod2MainScreen.classList.remove('misionesderangod2-hidden');
 
-})();
+  return {
+    destroy() {
+      misionesderangod2Container.remove();
+    },
+  };
+}
+
+window.misionesderangod2Mount = misionesderangod2Mount;
