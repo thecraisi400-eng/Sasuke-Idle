@@ -10,7 +10,7 @@
   const misionesderangod3Style = document.createElement('style');
   misionesderangod3Style.textContent = `
     #misionesderangod3-wrapper {
-      position: relative; width: 460px; height: 360px;
+      position: relative; width: 100%; height: 100%;
       overflow: hidden;
       box-shadow:
         0 0 0 1px rgba(255,120,0,0.25),
@@ -86,7 +86,7 @@
       <button id="misionesderangod3-btn-restart">▶ &nbsp; NUEVA BATALLA</button>
     </div>
   `;
-  // Inserta el wrapper en el body (o puedes cambiar el selector si lo necesitas)
+  misionesderangod3Wrapper.style.display = 'none';
   document.body.appendChild(misionesderangod3Wrapper);
 
   // ─── Constantes ────────────────────────────────
@@ -878,6 +878,8 @@
   //  GAME LOOP
   // ═══════════════════════════════════════════════
   let misionesderangod3LastTs = 0;
+  let misionesderangod3RafId = null;
+  let misionesderangod3Running = false;
   function misionesderangod3Loop(ts) {
     const rawDt = Math.min((ts - misionesderangod3LastTs) / 16.667, 3);
     misionesderangod3LastTs = ts;
@@ -885,15 +887,45 @@
     const dms = rawDt * 16.667 * misionesderangod3SlowMo;
     misionesderangod3Update(dt, dms);
     misionesderangod3Render();
-    requestAnimationFrame(misionesderangod3Loop);
+    if (!misionesderangod3Running) return;
+    misionesderangod3RafId = requestAnimationFrame(misionesderangod3Loop);
   }
+
+  function misionesderangod3StartLoop() {
+    if (misionesderangod3Running) return;
+    misionesderangod3Running = true;
+    misionesderangod3RafId = requestAnimationFrame(ts => {
+      misionesderangod3LastTs = ts;
+      misionesderangod3RafId = requestAnimationFrame(misionesderangod3Loop);
+    });
+  }
+
+  function misionesderangod3StopLoop() {
+    misionesderangod3Running = false;
+    if (misionesderangod3RafId) cancelAnimationFrame(misionesderangod3RafId);
+    misionesderangod3RafId = null;
+  }
+
+  function misionesderangod3Mount(targetSelector) {
+    const target = document.querySelector(targetSelector || 'body');
+    if (!target) return false;
+    target.appendChild(misionesderangod3Wrapper);
+    misionesderangod3Wrapper.style.display = 'block';
+    return true;
+  }
+
+  window.misionesderangod3Show = function (targetSelector) {
+    if (!misionesderangod3Mount(targetSelector)) return;
+    misionesderangod3StartGame();
+    misionesderangod3StartLoop();
+  };
+
+  window.misionesderangod3Hide = function () {
+    misionesderangod3StopLoop();
+    misionesderangod3Wrapper.style.display = 'none';
+  };
 
   // ─── Arranque ──────────────────────────────────
   misionesderangod3GenBG();
-  misionesderangod3StartGame();
-  requestAnimationFrame(ts => {
-    misionesderangod3LastTs = ts;
-    requestAnimationFrame(misionesderangod3Loop);
-  });
 
 })(); // fin IIFE
