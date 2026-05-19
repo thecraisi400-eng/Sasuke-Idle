@@ -674,6 +674,13 @@
           <div class="misionesderango2-log-line" id="misionesderango2-log-2"></div>
         </div>
 
+        <div id="misionesderango2-result-modal" class="misionesderango2-result-modal">
+          <div class="misionesderango2-result-box">
+            <div id="misionesderango2-result-title" class="misionesderango2-result-title"></div>
+            <button id="misionesderango2-result-btn" class="misionesderango2-result-btn">Aceptar</button>
+          </div>
+        </div>
+
         <div class="misionesderango2-back-battle-btn" id="misionesderango2-back-from-battle">⬅️ Abandonar</div>
         <div class="misionesderango2-stop-battle-btn" id="misionesderango2-stop-battle-btn">⏹️ DETENER</div>
       </div>
@@ -731,7 +738,7 @@
   ============================================================ */
   let misionesderango2CurrentScreen   = 'main';
   let misionesderango2BattleActive    = false;
-  let misionesderango2PlayerStats     = { hp: 200, maxHp: 200, mp: 100, maxMp: 100, atk: 25, def: 18, lvl: 1 };
+  let misionesderango2PlayerStats     = { hp: 100, maxHp: 100, mp: 50, maxMp: 50, atk: 15, def: 10, lvl: 1, agi: 12, int: 10, luk: 5, res: 6, cri: 5, cdmg: 150, eva: 0, rgHp: 5 };
   let misionesderango2CurrentEnemy    = null;
   let misionesderango2CurrentMissions = [];
   let misionesderango2EnemyIndex      = 0;
@@ -845,8 +852,8 @@
     misionesderango2CurrentEnemy = { ...misionesderango2CurrentMissions[misionesderango2EnemyIndex] };
     misionesderango2CurrentEnemy.maxHp = misionesderango2CurrentEnemy.hp;
 
-    misionesderango2PlayerStats.hp = misionesderango2PlayerStats.maxHp;
-    misionesderango2PlayerStats.mp = 0;
+    misionesderango2PlayerStats.hp = Math.min(misionesderango2PlayerStats.hp, misionesderango2PlayerStats.maxHp);
+    misionesderango2PlayerStats.mp = Math.min(misionesderango2PlayerStats.mp || 0, misionesderango2PlayerStats.maxMp);
 
     md2$('misionesderango2-enemy-name').textContent = misionesderango2CurrentEnemy.name;
     md2$('misionesderango2-hero-hp-text').textContent = `${misionesderango2PlayerStats.hp}/${misionesderango2PlayerStats.maxHp}`;
@@ -1043,8 +1050,11 @@
     misionesderango2IsEnemyAtk = false;
     if (misionesderango2PlayerStats.hp <= 0) {
       misionesderango2BattleActive = false;
-      misionesderango2AddLog('💀 ¡Has sido derrotado!', '🔄 Reinicia la misión');
+      misionesderango2AddLog('💀 ¡Has sido derrotado!', 'Regresa a HÉROE para recuperarte.');
       md2$('misionesderango2-turn-indicator').textContent = '💀 Derrota';
+      misionesderango2ShowResultModal('Has perdido', 'Volver a HÉROE', () => {
+        if (typeof window.showHeroSection === 'function') window.showHeroSection();
+      });
     }
   }
 
@@ -1093,14 +1103,41 @@
 
   function misionesderango2NextEnemy() {
     if (!misionesderango2BattleActive) return;
-    misionesderango2EnemyIndex = (misionesderango2EnemyIndex + 1) % misionesderango2CurrentMissions.length;
     misionesderango2CurrentEnemy = { ...misionesderango2CurrentMissions[misionesderango2EnemyIndex] };
     misionesderango2CurrentEnemy.maxHp = misionesderango2CurrentEnemy.hp;
     md2$('misionesderango2-enemy-name').textContent     = misionesderango2CurrentEnemy.name;
     md2$('misionesderango2-enemy-hp-text').textContent  = `${misionesderango2CurrentEnemy.hp}/${misionesderango2CurrentEnemy.maxHp}`;
+    misionesderango2CurrentEnemy.hp = misionesderango2CurrentEnemy.maxHp;
     misionesderango2UpdateBars();
-    misionesderango2AddLog(`⚔️ Nuevo enemigo: ${misionesderango2CurrentEnemy.name}`, '');
-    md2$('misionesderango2-turn-indicator').textContent = '⚔ Combate Activo';
+    misionesderango2AddLog('🏁 Victoria de ronda', 'Próxima Ronda...');
+    md2$('misionesderango2-turn-indicator').textContent = '⏳ Preparando próxima ronda';
+    misionesderango2BattleActive = false;
+    misionesderango2ShowResultModal('Próxima Ronda', 'Continuar', () => {
+      setTimeout(() => {
+        if (misionesderango2CurrentScreen !== 'battle') return;
+        misionesderango2BattleActive = true;
+        misionesderango2HeroTimer = 0;
+        misionesderango2EnemyTimer = 0;
+        misionesderango2LastTs = 0;
+        md2$('misionesderango2-turn-indicator').textContent = '⚔ Combate Activo';
+        misionesderango2AddLog(`⚔️ Nuevo enemigo: ${misionesderango2CurrentEnemy.name}`, '');
+        requestAnimationFrame(misionesderango2BattleLoop);
+      }, 1000);
+    });
+  }
+
+
+  function misionesderango2ShowResultModal(title, buttonText, onClick) {
+    const modal = md2$('misionesderango2-result-modal');
+    const titleEl = md2$('misionesderango2-result-title');
+    const btn = md2$('misionesderango2-result-btn');
+    titleEl.textContent = title;
+    btn.textContent = buttonText;
+    btn.onclick = () => {
+      modal.classList.remove('misionesderango2-visible');
+      if (typeof onClick === 'function') onClick();
+    };
+    modal.classList.add('misionesderango2-visible');
   }
 
   function misionesderango2BattleLoop(timestamp) {
@@ -1221,6 +1258,10 @@
   };
   window.misionesderango2SetPlayerStats = function (stats) {
     Object.assign(misionesderango2PlayerStats, stats);
+    misionesderango2PlayerStats.maxHp = Math.max(1, Math.round(misionesderango2PlayerStats.maxHp || misionesderango2PlayerStats.hp || 1));
+    misionesderango2PlayerStats.hp = Math.max(0, Math.min(Math.round(misionesderango2PlayerStats.hp || misionesderango2PlayerStats.maxHp), misionesderango2PlayerStats.maxHp));
+    misionesderango2PlayerStats.maxMp = Math.max(1, Math.round(misionesderango2PlayerStats.maxMp || misionesderango2PlayerStats.mp || 1));
+    misionesderango2PlayerStats.mp = Math.max(0, Math.min(Math.round(misionesderango2PlayerStats.mp || 0), misionesderango2PlayerStats.maxMp));
   };
 
   /**

@@ -77,6 +77,29 @@ export function initUI() {
     overlay.classList.add('visible');
   }
 
+
+  function syncHeroStatsToMissions() {
+    if (typeof window.misionesderango2SetPlayerStats !== 'function') return;
+    const s = getHeroStats();
+    window.misionesderango2SetPlayerStats({
+      lvl: state.level,
+      hp: Math.round(state.hp),
+      maxHp: Math.round(state.hpMax),
+      mp: Math.round(state.mp),
+      maxMp: Math.round(state.mpMax),
+      atk: Math.round(s.str),
+      def: Math.round(s.def),
+      agi: Math.round(s.agi),
+      int: Math.round(s.int),
+      luk: Number(s.luk),
+      res: Number(s.res),
+      cri: Number(s.cri),
+      cdmg: Number(s.cdmg),
+      eva: Number(s.eva),
+      rgHp: Number(s.rgHp),
+    });
+  }
+
   function showMisionesPanel() {
     overlay.classList.remove('visible');
     centerPanel.classList.remove('hero-panel-active');
@@ -96,6 +119,7 @@ export function initUI() {
       isMisionesMounted = true;
     }
 
+    syncHeroStatsToMissions();
     if (typeof window.misionesderango2ShowMain === 'function') {
       window.misionesderango2ShowMain();
     }
@@ -146,6 +170,18 @@ export function initUI() {
       showSectionOverlay(sec);
     });
   });
+
+  window.showHeroSection = function () {
+    if (isMisionesMounted && typeof window.misionesderango2Destroy === 'function') {
+      window.misionesderango2Destroy();
+      isMisionesMounted = false;
+    }
+    showHeroPanel();
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const heroBtn = document.querySelector('.nav-btn[data-section="heroe"]');
+    if (heroBtn) heroBtn.classList.add('active');
+    state.activeSection = 'heroe';
+  };
 
   overlayClose.addEventListener('click', () => {
     overlay.classList.remove('visible');
