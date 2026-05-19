@@ -84,11 +84,10 @@ export function initUI() {
     if (heroWidgetInstance?.destroy) {
       heroWidgetInstance.destroy();
       heroWidgetInstance = null;
-    } else {
-      centerPanel.innerHTML = '';
     }
 
     if (!isMisionesMounted) {
+      centerPanel.innerHTML = '';
       if (typeof window.misionesderango2Init !== 'function') {
         console.warn('[misionesderango2] Función misionesderango2Init no disponible');
         return;
