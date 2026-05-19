@@ -3,6 +3,7 @@ import { getHeroStats, setEquipmentSlotLevel, state, syncDerivedStateFromHero } 
 import { sections } from '../data/sections.js';
 import { renderBars } from './renderBars.js';
 import { spawnParticles, spawnFloatText } from './effects.js';
+import { mountMisionesRango } from './MisionesRango.js';
 
 /* ─────────────────────────────────────────────
    NAVEGACIÓN DE BOTONES
@@ -17,6 +18,7 @@ export function initUI() {
   const overlayClose = document.getElementById('overlayClose');
 
   let heroWidgetInstance = null;
+  let misionesRangoInstance = null;
 
   function buildHeroStatsRows() {
     const s = getHeroStats();
@@ -36,6 +38,7 @@ export function initUI() {
 
   function showHeroPanel() {
     overlay.classList.remove('visible');
+    clearCenterProcesses();
     centerPanel.innerHTML = '';
     centerPanel.classList.add('hero-panel-active');
 
@@ -58,15 +61,30 @@ export function initUI() {
     });
   }
 
-  function showSectionOverlay(sec) {
-    centerPanel.classList.remove('hero-panel-active');
 
+
+  function clearCenterProcesses() {
     if (heroWidgetInstance?.destroy) {
       heroWidgetInstance.destroy();
       heroWidgetInstance = null;
-    } else {
-      centerPanel.innerHTML = '';
     }
+    if (misionesRangoInstance?.destroy) {
+      misionesRangoInstance.destroy();
+      misionesRangoInstance = null;
+    }
+  }
+
+  function showMisionesPanel() {
+    overlay.classList.remove('visible');
+    clearCenterProcesses();
+    centerPanel.classList.remove('hero-panel-active');
+    centerPanel.innerHTML = '';
+    misionesRangoInstance = mountMisionesRango(centerPanel);
+  }
+  function showSectionOverlay(sec) {
+    centerPanel.classList.remove('hero-panel-active');
+    clearCenterProcesses();
+    centerPanel.innerHTML = '';
 
     const info = sections[sec];
     if (!info) return;
@@ -101,6 +119,11 @@ export function initUI() {
 
       if (sec === 'heroe') {
         showHeroPanel();
+        return;
+      }
+
+      if (sec === 'misiones') {
+        showMisionesPanel();
         return;
       }
 
