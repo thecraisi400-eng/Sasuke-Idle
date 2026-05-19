@@ -1,4 +1,5 @@
 import '../botonheroe.js';
+import '../misionesderangod.js';
 import { getHeroStats, setEquipmentSlotLevel, state, syncDerivedStateFromHero } from '../core/state.js';
 import { sections } from '../data/sections.js';
 import { renderBars } from './renderBars.js';
@@ -17,6 +18,19 @@ export function initUI() {
   const overlayClose = document.getElementById('overlayClose');
 
   let heroWidgetInstance = null;
+  let missionsWidgetInstance = null;
+
+  function destroyCenterWidgets() {
+    if (heroWidgetInstance?.destroy) {
+      heroWidgetInstance.destroy();
+      heroWidgetInstance = null;
+    }
+
+    if (missionsWidgetInstance?.destroy) {
+      missionsWidgetInstance.destroy();
+      missionsWidgetInstance = null;
+    }
+  }
 
   function buildHeroStatsRows() {
     const s = getHeroStats();
@@ -36,6 +50,7 @@ export function initUI() {
 
   function showHeroPanel() {
     overlay.classList.remove('visible');
+    destroyCenterWidgets();
     centerPanel.innerHTML = '';
     centerPanel.classList.add('hero-panel-active');
 
@@ -60,13 +75,8 @@ export function initUI() {
 
   function showSectionOverlay(sec) {
     centerPanel.classList.remove('hero-panel-active');
-
-    if (heroWidgetInstance?.destroy) {
-      heroWidgetInstance.destroy();
-      heroWidgetInstance = null;
-    } else {
-      centerPanel.innerHTML = '';
-    }
+    destroyCenterWidgets();
+    centerPanel.innerHTML = '';
 
     const info = sections[sec];
     if (!info) return;
@@ -74,6 +84,20 @@ export function initUI() {
     overlayTitle.innerHTML = `${info.icon} ${info.title}`;
     overlayDesc.textContent = info.desc;
     overlay.classList.add('visible');
+  }
+
+  function showMissionsPanel() {
+    overlay.classList.remove('visible');
+    centerPanel.classList.remove('hero-panel-active');
+    destroyCenterWidgets();
+    centerPanel.innerHTML = '';
+
+    if (typeof window.misionesderangod2Mount !== 'function') {
+      console.warn('[misionesderangod2] Función misionesderangod2Mount no disponible');
+      return;
+    }
+
+    missionsWidgetInstance = window.misionesderangod2Mount(centerPanel);
   }
 
   document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -101,6 +125,11 @@ export function initUI() {
 
       if (sec === 'heroe') {
         showHeroPanel();
+        return;
+      }
+
+      if (sec === 'misiones') {
+        showMissionsPanel();
         return;
       }
 
