@@ -5,18 +5,22 @@
  */
 (function() {
   const misionesderango2_css = `
+    #hud-center.missions-panel-active {
+      padding: 0;
+    }
     #misionesderango2_game-container {
-      width: 355px; height: 500px;
+      width: 100%; height: 100%;
+      min-width: 0; min-height: 0;
       background: linear-gradient(160deg, #111827 0%, #0a0d14 100%);
-      border-radius: 20px;
-      box-shadow: 0 0 0 1px rgba(255, 107, 0, 0.18), 0 0 30px rgba(255, 107, 0, 0.08), 0 10px 40px rgba(0,0,0,0.7);
+      border-radius: 0;
+      box-shadow: none;
       overflow: hidden; position: relative; box-sizing: border-box;
-      font-family: 'Segoe UI', 'Arial Black', sans-serif;
+      font-family: 'Rajdhani', 'Segoe UI', 'Arial Black', sans-serif;
     }
     .misionesderango2_screen {
       width: 100%; height: 100%; position: absolute; top: 0; left: 0;
       background: transparent; transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
-      box-sizing: border-box; overflow-y: auto; overflow-x: hidden; padding: 10px;
+      box-sizing: border-box; overflow-y: auto; overflow-x: hidden; padding: clamp(8px, 2.4vw, 14px);
       display: flex; flex-direction: column; gap: 8px;
     }
     .misionesderango2_screen.misionesderango2_hidden {
@@ -24,7 +28,7 @@
     }
     .misionesderango2_menu-button, .misionesderango2_rank-button, .misionesderango2_back-button, .misionesderango2_stop-button {
       border-radius: 30px; padding: 12px 8px; text-align: center; font-weight: bold;
-      font-size: 16px; cursor: pointer; transition: all 0.1s ease; box-sizing: border-box; width: 100%; flex-shrink: 0;
+      font-size: clamp(14px, 3.5vw, 18px); cursor: pointer; transition: all 0.1s ease; box-sizing: border-box; width: 100%; flex-shrink: 0;
     }
     .misionesderango2_menu-button:active, .misionesderango2_rank-button:active, .misionesderango2_back-button:active { transform: translateY(2px); }
     .misionesderango2_menu-button {
@@ -40,7 +44,7 @@
     .misionesderango2_rank-button:active { box-shadow: none; transform: translateY(4px); }
     .misionesderango2_mission-item {
       display: flex; flex-direction: column; align-items: stretch; padding: 10px 10px; border-left: 6px solid;
-      border-radius: 12px; cursor: pointer; font-size: 12px; line-height: 1.4; gap: 5px; position: relative; transition: all 0.15s ease;
+      border-radius: 12px; cursor: pointer; font-size: clamp(11px, 2.8vw, 13px); line-height: 1.4; gap: 5px; position: relative; transition: all 0.15s ease;
     }
     .misionesderango2_mission-item:not(.misionesderango2_locked):active { transform: scale(0.98); }
     .misionesderango2_missions-D .misionesderango2_mission-item { background: linear-gradient(135deg, #0d2010 0%, #091509 100%); border-color: #2e7d32; border-top: 1px solid rgba(76,175,80,0.2); border-right: 1px solid rgba(46,125,50,0.12); border-bottom: 1px solid rgba(46,125,50,0.15); box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 6px rgba(46,125,50,0.1); }
@@ -70,7 +74,7 @@
     #misionesderango2_hud { position: absolute; top: 0; left: 0; right: 0; z-index: 20; padding: 6px 8px; display: flex; justify-content: space-between; background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%); pointer-events: none; }
     .misionesderango2_hud-unit { display: flex; align-items: center; gap: 6px; max-width: 150px; }
     .misionesderango2_hud-unit.misionesderango2_enemy { flex-direction: row-reverse; }
-    .misionesderango2_avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #FF6B00; flex-shrink: 0; background: linear-gradient(135deg, #FF6B00, #FF8F00); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .misionesderango2_avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #FF6B00; flex-shrink: 0; background: linear-gradient(135deg, #FF6B00, #FF8F00); display: flex; align-items: center; justify-content: center; font-size: clamp(14px, 3.5vw, 18px); }
     .misionesderango2_avatar.misionesderango2_enemy-avatar { border-color: #FF1744; background: linear-gradient(135deg, #B71C1C, #D32F2F); }
     .misionesderango2_hp-info { flex: 1; min-width: 0; }
     .misionesderango2_unit-name { font-size: 8px; font-weight: 900; color: #fff; text-transform: uppercase; text-shadow: 0 0 6px rgba(0,0,0,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -113,7 +117,7 @@
     #misionesderango2_jutsu-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.65); z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; }
     #misionesderango2_jutsu-overlay.misionesderango2_active { opacity: 1; animation: misionesderango2_jutsuDarken 1.8s forwards; }
     @keyframes misionesderango2_jutsuDarken { 0% { opacity: 0; } 15% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
-    .misionesderango2_jutsu-name { font-size: 16px; font-weight: 900; color: #fff; text-transform: uppercase; text-shadow: 0 0 10px #2196F3, 2px 2px 0 #000; text-align: center; }
+    .misionesderango2_jutsu-name { font-size: clamp(14px, 3.5vw, 18px); font-weight: 900; color: #fff; text-transform: uppercase; text-shadow: 0 0 10px #2196F3, 2px 2px 0 #000; text-align: center; }
     .misionesderango2_jutsu-kanji { font-size: 28px; margin-bottom: 4px; }
     #misionesderango2_combat-log { position: absolute; bottom: 4px; left: 4px; right: 4px; z-index: 20; background: rgba(0,0,0,0.75); border-radius: 4px; padding: 3px 6px; max-height: 36px; overflow: hidden; pointer-events: none; }
     .misionesderango2_log-line { font-size: 8px; color: rgba(255,255,255,0.85); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -128,7 +132,7 @@
     .misionesderango2_particle { position: absolute; width: 3px; height: 3px; border-radius: 50%; animation: misionesderango2_particleBurst 0.6s forwards; }
     @keyframes misionesderango2_particleBurst { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--px), var(--py)) scale(0); opacity: 0; } }
     .misionesderango2_back-battle-btn { position: absolute; top: 5px; left: 5px; z-index: 25; background: rgba(0,0,0,0.6); color: white; border: 1px solid #ff6b00; border-radius: 20px; padding: 4px 10px; font-size: 10px; cursor: pointer; pointer-events: auto; font-weight: bold; }
-    .misionesderango2_stop-battle-btn { position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); z-index: 25; background: #ef5350; border: none; border-radius: 20px; padding: 6px 16px; font-size: 12px; font-weight: bold; color: white; cursor: pointer; pointer-events: auto; }
+    .misionesderango2_stop-battle-btn { position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); z-index: 25; background: #ef5350; border: none; border-radius: 20px; padding: 6px 16px; font-size: clamp(11px, 2.8vw, 13px); font-weight: bold; color: white; cursor: pointer; pointer-events: auto; }
   `;
 
   // Inject CSS once
@@ -138,6 +142,8 @@
     styleTag.textContent = misionesderango2_css;
     document.head.appendChild(styleTag);
   }
+
+  let misionesderango2_mountNode = null;
 
   const misionesderango2_html = `
     <div id="misionesderango2_game-container">
@@ -253,12 +259,65 @@
   let misionesderango2_mainScreen, misionesderango2_rankScreen, misionesderango2_missionsScreen, misionesderango2_battleScreen;
   const $ = (id) => document.getElementById(id);
 
+  function misionesderango2_syncPlayerStats() {
+    const sourceState = window.misionesderango2?.state;
+    const sourceStats = typeof window.misionesderango2?.getHeroStats === 'function'
+      ? window.misionesderango2.getHeroStats()
+      : null;
+
+    if (!sourceState && !sourceStats) return;
+
+    misionesderango2_playerStats = {
+      hp: Math.max(1, Math.round(sourceState?.hp ?? sourceStats?.hp ?? misionesderango2_playerStats.hp)),
+      maxHp: Math.max(1, Math.round(sourceState?.hpMax ?? sourceStats?.hp ?? misionesderango2_playerStats.maxHp)),
+      mp: Math.max(0, Math.round(sourceState?.mp ?? sourceStats?.mp ?? misionesderango2_playerStats.mp)),
+      maxMp: Math.max(1, Math.round(sourceState?.mpMax ?? sourceStats?.mp ?? misionesderango2_playerStats.maxMp)),
+      atk: Math.max(1, Math.round(sourceState?.atk ?? sourceStats?.str ?? misionesderango2_playerStats.atk)),
+      def: Math.max(0, Math.round(sourceState?.def ?? sourceStats?.def ?? misionesderango2_playerStats.def)),
+      lvl: Math.max(1, Math.round(sourceState?.level ?? misionesderango2_playerStats.lvl)),
+    };
+  }
+
+  function misionesderango2_setGlobalResource(key, value) {
+    if (!window.misionesderango2?.state) return;
+    window.misionesderango2.state[key] = Math.max(0, Math.round(value));
+    if (typeof window.misionesderango2.renderBars === 'function') {
+      window.misionesderango2.renderBars();
+    }
+  }
+
+  function misionesderango2_applyMissionRewards(mission) {
+    const sourceState = window.misionesderango2?.state;
+    if (!sourceState || !mission) return;
+
+    sourceState.gold = Math.max(0, Math.round(sourceState.gold + mission.gold));
+    sourceState.exp = Math.max(0, Math.round(sourceState.exp + mission.xp));
+
+    while (sourceState.expMax > 0 && sourceState.exp >= sourceState.expMax) {
+      sourceState.exp -= sourceState.expMax;
+      sourceState.level += 1;
+      if (typeof window.misionesderango2.calcStats === 'function') {
+        sourceState.expMax = window.misionesderango2.calcStats(sourceState.level).xpReq;
+      }
+      if (typeof window.misionesderango2.syncDerivedStateFromHero === 'function') {
+        window.misionesderango2.syncDerivedStateFromHero();
+      }
+      misionesderango2_syncPlayerStats();
+    }
+
+    if (typeof window.misionesderango2.renderBars === 'function') {
+      window.misionesderango2.renderBars();
+    }
+  }
+
+
   function misionesderango2_switchScreen(from, to) {
     from.classList.add('misionesderango2_hidden');
     to.classList.remove('misionesderango2_hidden');
   }
 
   function misionesderango2_showMissions(rank) {
+    misionesderango2_syncPlayerStats();
     misionesderango2_currentRank = rank;
     const missions = misionesderango2_data[rank];
     const backBtn = misionesderango2_rankScreen.querySelector('#misionesderango2_back-to-ranks-from-missions').cloneNode(true);
@@ -284,12 +343,13 @@
       misionesderango2_missionsScreen.appendChild(missionDiv);
     });
     misionesderango2_missionsScreen.appendChild(backBtn);
-    
+
     misionesderango2_switchScreen(misionesderango2_rankScreen, misionesderango2_missionsScreen);
     misionesderango2_currentScreen = 'missions';
   }
 
   function misionesderango2_startBattle(rank, missionIndex) {
+    misionesderango2_syncPlayerStats();
     misionesderango2_stopBattle();
     misionesderango2_currentMissionList = misionesderango2_data[rank];
     misionesderango2_enemyIndex = missionIndex;
@@ -469,6 +529,7 @@
     await new Promise(r => setTimeout(r, 100));
     const dmg = misionesderango2_calculateDamage(misionesderango2_currentEnemyMission.atk, misionesderango2_playerStats.def);
     misionesderango2_playerStats.hp = Math.max(0, misionesderango2_playerStats.hp - dmg);
+    misionesderango2_setGlobalResource('hp', misionesderango2_playerStats.hp);
     misionesderango2_updateBars();
     misionesderango2_hitFlash('hero');
     misionesderango2_spawnCombatText('hero', dmg, 'normal');
@@ -510,6 +571,7 @@
     misionesderango2_screenShake('critical');
     misionesderango2_addLog(`✨ <span class="misionesderango2_jutsu-text">${jutsu.name}</span> — <span class="misionesderango2_dmg">-${dmg} Daño</span>`);
     misionesderango2_playerStats.mp = 0;
+    misionesderango2_setGlobalResource('mp', misionesderango2_playerStats.mp);
     misionesderango2_updateBars();
     await new Promise(r => setTimeout(r, 400));
     misionesderango2_isJutsuActive = false;
@@ -518,13 +580,14 @@
 
   function misionesderango2_nextEnemy() {
     if (!misionesderango2_battleActive) return;
+    misionesderango2_applyMissionRewards(misionesderango2_currentEnemyMission);
     misionesderango2_enemyIndex = (misionesderango2_enemyIndex + 1) % misionesderango2_currentMissionList.length;
     misionesderango2_currentEnemyMission = { ...misionesderango2_currentMissionList[misionesderango2_enemyIndex] };
     misionesderango2_currentEnemyMission.maxHp = misionesderango2_currentEnemyMission.hp;
     $('#misionesderango2_enemy-name').textContent = misionesderango2_currentEnemyMission.name;
     $('#misionesderango2_enemy-hp-text').textContent = `${misionesderango2_currentEnemyMission.hp}/${misionesderango2_currentEnemyMission.maxHp}`;
     misionesderango2_updateBars();
-    misionesderango2_addLog(`⚔️ Nuevo enemigo: ${misionesderango2_currentEnemyMission.name}`, '');
+    misionesderango2_addLog(`✅ Recompensa: +${misionesderango2_currentMissionList[(misionesderango2_enemyIndex + misionesderango2_currentMissionList.length - 1) % misionesderango2_currentMissionList.length].xp} XP / +${misionesderango2_currentMissionList[(misionesderango2_enemyIndex + misionesderango2_currentMissionList.length - 1) % misionesderango2_currentMissionList.length].gold} Oro`, `⚔️ Nuevo enemigo: ${misionesderango2_currentEnemyMission.name}`);
     $('#misionesderango2_turn-indicator').textContent = '⚔ Combate Activo';
   }
 
@@ -543,6 +606,7 @@
           misionesderango2_heroAttack();
         }
         misionesderango2_playerStats.mp = Math.min(misionesderango2_playerStats.maxMp, misionesderango2_playerStats.mp + 5);
+        misionesderango2_setGlobalResource('mp', misionesderango2_playerStats.mp);
         misionesderango2_updateBars();
       }
       misionesderango2_enemyAttackTimer += delta;
@@ -568,13 +632,24 @@
     misionesderango2_currentScreen = 'main';
   }
 
-  window.misionesderango2 = {
-    init: function() {
-      if ($('#misionesderango2_game-container')) return;
-      
+  window.misionesderango2 = window.misionesderango2 || {};
+  Object.assign(window.misionesderango2, {
+    init: function(mountTarget = document.body, options = {}) {
+      misionesderango2_syncPlayerStats();
+      const existingContainer = $('#misionesderango2_game-container');
+      if (existingContainer) {
+        if (mountTarget && existingContainer.parentElement !== mountTarget) {
+          mountTarget.appendChild(existingContainer);
+        }
+        existingContainer.classList.remove('misionesderango2_hidden');
+        return window.misionesderango2;
+      }
+
       const wrapper = document.createElement('div');
-      wrapper.innerHTML = misionesderango2_html;
-      document.body.appendChild(wrapper);
+      wrapper.innerHTML = misionesderango2_html.trim();
+      const container = wrapper.firstElementChild;
+      misionesderango2_mountNode = mountTarget || document.body;
+      misionesderango2_mountNode.appendChild(container);
 
       misionesderango2_mainScreen = $('#misionesderango2_main-menu-screen');
       misionesderango2_rankScreen = $('#misionesderango2_rank-list-screen');
@@ -605,6 +680,15 @@
 
       $('#misionesderango2_back-from-battle').addEventListener('click', misionesderango2_stopBattleAndGoToMain);
       $('#misionesderango2_stop-battle-btn').addEventListener('click', misionesderango2_stopBattleAndGoToMain);
-    }
-  };
+      return window.misionesderango2;
+    },
+    destroy: function() {
+      misionesderango2_stopBattle();
+      const container = $('#misionesderango2_game-container');
+      if (container) container.remove();
+      misionesderango2_mountNode = null;
+    },
+    stop: misionesderango2_stopBattle,
+    syncPlayerStats: misionesderango2_syncPlayerStats,
+  });
 })();

@@ -1,5 +1,6 @@
 import '../botonheroe.js';
 import { getHeroStats, setEquipmentSlotLevel, state, syncDerivedStateFromHero } from '../core/state.js';
+import { calcStats } from '../core/stats.js';
 import { sections } from '../data/sections.js';
 import { renderBars } from './renderBars.js';
 import { spawnParticles, spawnFloatText } from './effects.js';
@@ -17,6 +18,21 @@ export function initUI() {
   const overlayClose = document.getElementById('overlayClose');
 
   let heroWidgetInstance = null;
+  let missionsPanelInstance = null;
+
+  function stopCenterPanelContent() {
+    if (heroWidgetInstance?.destroy) {
+      heroWidgetInstance.destroy();
+      heroWidgetInstance = null;
+    }
+
+    if (missionsPanelInstance?.destroy) {
+      missionsPanelInstance.destroy();
+      missionsPanelInstance = null;
+    } else if (window.misionesderango2?.stop) {
+      window.misionesderango2.stop();
+    }
+  }
 
   function buildHeroStatsRows() {
     const s = getHeroStats();
@@ -36,7 +52,9 @@ export function initUI() {
 
   function showHeroPanel() {
     overlay.classList.remove('visible');
+    stopCenterPanelContent();
     centerPanel.innerHTML = '';
+    centerPanel.classList.remove('missions-panel-active');
     centerPanel.classList.add('hero-panel-active');
 
     if (typeof window.botonhero1Mount !== 'function') {
@@ -58,15 +76,33 @@ export function initUI() {
     });
   }
 
-  function showSectionOverlay(sec) {
+  function showMissionsPanel() {
+    overlay.classList.remove('visible');
+    stopCenterPanelContent();
+    centerPanel.innerHTML = '';
     centerPanel.classList.remove('hero-panel-active');
+    centerPanel.classList.add('missions-panel-active');
 
-    if (heroWidgetInstance?.destroy) {
-      heroWidgetInstance.destroy();
-      heroWidgetInstance = null;
-    } else {
-      centerPanel.innerHTML = '';
+    if (!window.misionesderango2?.init) {
+      console.warn('[misionesderango2] Función init no disponible');
+      return;
     }
+
+    syncDerivedStateFromHero();
+    Object.assign(window.misionesderango2, {
+      state,
+      getHeroStats,
+      renderBars,
+      syncDerivedStateFromHero,
+      calcStats,
+    });
+    missionsPanelInstance = window.misionesderango2.init(centerPanel);
+  }
+
+  function showSectionOverlay(sec) {
+    centerPanel.classList.remove('hero-panel-active', 'missions-panel-active');
+    stopCenterPanelContent();
+    centerPanel.innerHTML = '';
 
     const info = sections[sec];
     if (!info) return;
@@ -101,6 +137,11 @@ export function initUI() {
 
       if (sec === 'heroe') {
         showHeroPanel();
+        return;
+      }
+
+      if (sec === 'misiones') {
+        showMissionsPanel();
         return;
       }
 
