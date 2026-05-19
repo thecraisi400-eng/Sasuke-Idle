@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Naruto Idle RPG - Misiones y Batalla</title>
+<style>
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --game-w: 355px;
+  --game-h: 500px;
+  --accent-orange: #FF6B00;
+  --accent-red: #FF1744;
+  --accent-blue: #00B0FF;
+  --accent-chakra: #2196F3;
+  --accent-gold: #FFD600;
+  --dark-overlay: rgba(0, 0, 0, 0.65);
+  --bg-primary: #0a0d14;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1a2236;
+}
+
+body {
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: 'Segoe UI', 'Arial Black', sans-serif;
+  padding: 10px;
+}
+
+#game-container {
+  width: 355px;
+  height: 500px;
+  background: linear-gradient(160deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+  border-radius: 20px;
+  box-shadow:
+    0 0 0 1px rgba(255, 107, 0, 0.18),
+    0 0 30px rgba(255, 107, 0, 0.08),
+    0 10px 40px rgba(0,0,0,0.7);
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.screen {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: transparent;
+  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.screen.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+  display: none;
+}
+
+.menu-button, .rank-button, .back-button, .stop-button {
+  border-radius: 30px;
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  box-sizing: border-box;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.menu-button:active, .rank-button:active, .back-button:active {
+  transform: translateY(2px);
+}
+
+/* Botón menú principal */
+.menu-button {
+  background: linear-gradient(135deg, #1e2d45 0%, #162036 100%);
+  border: 2px solid #FF6B00;
+  color: #FF8C30;
+  box-shadow: 0 4px 0 #7a3300, inset 0 1px 0 rgba(255,150,50,0.15);
+  text-shadow: 0 0 10px rgba(255,107,0,0.5);
+}
+.menu-button:active {
+  box-shadow: none;
+}
+
+/* Rangos */
+.rank-d {
+  background: linear-gradient(135deg, #0d2010 0%, #0a1a0d 100%);
+  border: 2px solid #2e7d32;
+  color: #4caf50;
+  box-shadow: 0 4px 0 #1b4020, 0 0 8px rgba(46,125,50,0.2), inset 0 1px 0 rgba(100,200,100,0.1);
+}
+.rank-c {
+  background: linear-gradient(135deg, #0a1a2e 0%, #071525 100%);
+  border: 2px solid #0277bd;
+  color: #29b6f6;
+  box-shadow: 0 4px 0 #014a75, 0 0 8px rgba(2,119,189,0.2), inset 0 1px 0 rgba(50,150,255,0.1);
+}
+.rank-b {
+  background: linear-gradient(135deg, #2a1800 0%, #1e1200 100%);
+  border: 2px solid #ef6c00;
+  color: #ffa726;
+  box-shadow: 0 4px 0 #7a3500, 0 0 8px rgba(239,108,0,0.2), inset 0 1px 0 rgba(255,150,0,0.1);
+}
+.rank-a {
+  background: linear-gradient(135deg, #2a0808 0%, #1e0505 100%);
+  border: 2px solid #b71c1c;
+  color: #ef5350;
+  box-shadow: 0 4px 0 #6a0e0e, 0 0 8px rgba(183,28,28,0.25), inset 0 1px 0 rgba(255,80,80,0.1);
+}
+.rank-s {
+  background: linear-gradient(135deg, #1e0a2e 0%, #150621 100%);
+  border: 2px solid #7b1fa2;
+  color: #ce93d8;
+  box-shadow: 0 4px 0 #4a0e6e, 0 0 10px rgba(123,31,162,0.3), inset 0 1px 0 rgba(200,100,255,0.1);
+}
+
+.rank-button:active {
+  box-shadow: none;
+  transform: translateY(4px);
+}
+
+/* Scrolls de misiones */
+.mission-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 10px 10px;
+  border-left: 6px solid;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.4;
+  gap: 5px;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.mission-item:not(.locked):active {
+  transform: scale(0.98);
+}
+
+/* Misiones por rango con sus temas de color oscuro */
+.missions-D .mission-item {
+  background: linear-gradient(135deg, #0d2010 0%, #091509 100%);
+  border-color: #2e7d32;
+  border-top: 1px solid rgba(76,175,80,0.2);
+  border-right: 1px solid rgba(76,175,80,0.12);
+  border-bottom: 1px solid rgba(46,125,50,0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 6px rgba(46,125,50,0.1);
+}
+.missions-C .mission-item {
+  background: linear-gradient(135deg, #0a1a2e 0%, #060f1e 100%);
+  border-color: #0277bd;
+  border-top: 1px solid rgba(41,182,246,0.2);
+  border-right: 1px solid rgba(2,119,189,0.12);
+  border-bottom: 1px solid rgba(2,119,189,0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 6px rgba(2,119,189,0.1);
+}
+.missions-B .mission-item {
+  background: linear-gradient(135deg, #201000 0%, #160b00 100%);
+  border-color: #ef6c00;
+  border-top: 1px solid rgba(255,167,38,0.2);
+  border-right: 1px solid rgba(239,108,0,0.12);
+  border-bottom: 1px solid rgba(239,108,0,0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 6px rgba(239,108,0,0.1);
+}
+.missions-A .mission-item {
+  background: linear-gradient(135deg, #200808 0%, #160404 100%);
+  border-color: #b71c1c;
+  border-top: 1px solid rgba(239,83,80,0.2);
+  border-right: 1px solid rgba(183,28,28,0.12);
+  border-bottom: 1px solid rgba(183,28,28,0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 6px rgba(183,28,28,0.1);
+}
+.missions-S .mission-item {
+  background: linear-gradient(135deg, #160a20 0%, #0e0616 100%);
+  border-color: #7b1fa2;
+  border-top: 1px solid rgba(206,147,216,0.2);
+  border-right: 1px solid rgba(123,31,162,0.12);
+  border-bottom: 1px solid rgba(123,31,162,0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 8px rgba(123,31,162,0.12);
+}
+
+.mission-header {
+  text-align: center;
+  font-weight: 800;
+  font-size: 13px;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  color: #e8e0d0;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+.mission-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.mission-left, .mission-right {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mission-left span, .mission-right span {
+  background: rgba(0,0,0,0.35);
+  color: rgba(220,210,195,0.85);
+  padding: 2px 6px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.mission-lock {
+  text-align: center;
+  background: rgba(150,20,20,0.3);
+  color: #ff6b6b;
+  border-radius: 20px;
+  padding: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  border: 1px solid rgba(198,40,40,0.4);
+}
+
+.locked {
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+
+.back-button {
+  background: linear-gradient(135deg, #1a1f2e 0%, #111520 100%);
+  border: 2px solid #37474f;
+  color: #90a4ae;
+  box-shadow: 0 3px 0 #1a2228, inset 0 1px 0 rgba(144,164,174,0.08);
+  margin-top: 4px;
+  font-size: 14px;
+}
+.back-button:active {
+  box-shadow: none;
+  transform: translateY(3px);
+}
+
+/* ============================================
+   BATTLE SCREEN (sin cambios)
+   ============================================ */
+#battle-screen {
+  background: transparent;
+  padding: 0;
+  overflow: hidden;
+}
+
+.battle-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: linear-gradient(180deg, #1a0a2e 0%, #16213e 25%, #0f3460 45%, #1a5c2e 60%, #2d8a4e 100%);
+  overflow: hidden;
+}
+
+.bg-layer {
+  position: absolute;
+  width: 300%;
+  height: 100%;
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  will-change: transform;
+}
+
+.bg-layer-1 {
+  background: linear-gradient(180deg, 
+    #1a0a2e 0%, #16213e 25%, #0f3460 45%, 
+    #1a5c2e 60%, #2d8a4e 75%, #1a4a2e 100%);
+  animation: scrollBg 12s linear infinite;
+  z-index: 0;
+}
+
+.bg-layer-2 {
+  background-image: 
+    radial-gradient(circle 18px at 350px 40px, #fffde7 60%, transparent 61%),
+    radial-gradient(circle 22px at 350px 40px, rgba(255,253,231,0.3) 60%, transparent 61%);
+  animation: scrollBg2 8s linear infinite;
+  z-index: 1;
+  opacity: 0.5;
+}
+
+@keyframes scrollBg {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+@keyframes scrollBg2 {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+
+#ground {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: linear-gradient(180deg, #3a5a3a 0%, #2d4a2d 20%, #1a3a1a 100%);
+  z-index: 3;
+}
+
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  padding: 6px 8px;
+  display: flex;
+  justify-content: space-between;
+  background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.hud-unit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 150px;
+}
+
+.hud-unit.enemy {
+  flex-direction: row-reverse;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-orange);
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #FF6B00, #FF8F00);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.avatar.enemy-avatar {
+  border-color: var(--accent-red);
+  background: linear-gradient(135deg, #B71C1C, #D32F2F);
+}
+
+.hp-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.unit-name {
+  font-size: 8px;
+  font-weight: 900;
+  color: #fff;
+  text-transform: uppercase;
+  text-shadow: 0 0 6px rgba(0,0,0,0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hp-bar-container, .chakra-bar-container {
+  width: 100%;
+  height: 8px;
+  background: rgba(0,0,0,0.6);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.hp-bar, .chakra-bar-fill {
+  height: 100%;
+  transition: width 0.2s;
+}
+
+.hp-bar { background: linear-gradient(90deg, #f44336, #FF1744); }
+.chakra-bar-fill { background: linear-gradient(90deg, #2196F3, #00B0FF); }
+
+.hp-text {
+  font-size: 7px;
+  color: rgba(255,255,255,0.7);
+  text-align: right;
+}
+
+.character {
+  position: absolute;
+  bottom: 70px;
+  z-index: 10;
+}
+
+#hero {
+  left: 20px;
+  width: 45px;
+  height: 65px;
+}
+
+.hero-body {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  animation: heroIdle 2s ease-in-out infinite;
+}
+
+@keyframes heroIdle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.hero-head {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 25px;
+  height: 25px;
+  background: linear-gradient(135deg, #FFCC80, #FFB74D);
+  border-radius: 50%;
+}
+
+.hero-headband {
+  position: absolute;
+  top: 5px;
+  left: -2px;
+  width: 29px;
+  height: 7px;
+  background: #1565C0;
+  border-radius: 2px;
+}
+
+.hero-eyes {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.hero-eye {
+  width: 4px;
+  height: 4px;
+  background: #1565C0;
+  border-radius: 50%;
+}
+
+.hero-torso {
+  position: absolute;
+  top: 23px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22px;
+  height: 20px;
+  background: linear-gradient(180deg, #FF6B00, #E65100);
+  border-radius: 4px;
+}
+
+.hero-legs {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 14px;
+  display: flex;
+  gap: 2px;
+}
+
+.hero-leg {
+  flex: 1;
+  background: #1565C0;
+  border-radius: 0 0 3px 3px;
+}
+
+#enemy {
+  right: 20px;
+  width: 50px;
+  height: 70px;
+}
+
+.enemy-body {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  animation: enemyIdle 2.5s ease-in-out infinite;
+}
+
+@keyframes enemyIdle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+.enemy-head {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 27px;
+  height: 27px;
+  background: linear-gradient(135deg, #9E9E9E, #757575);
+  border-radius: 50%;
+}
+
+.enemy-eyes {
+  position: absolute;
+  top: 13px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.enemy-eye {
+  width: 5px;
+  height: 5px;
+  background: #FF1744;
+  border-radius: 50%;
+  box-shadow: 0 0 4px #FF1744;
+}
+
+.enemy-torso {
+  position: absolute;
+  top: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 25px;
+  height: 23px;
+  background: linear-gradient(180deg, #4A148C, #311B92);
+  border-radius: 4px;
+}
+
+.enemy-legs {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 14px;
+  display: flex;
+  gap: 2px;
+}
+
+.enemy-leg {
+  flex: 1;
+  background: #37474F;
+  border-radius: 0 0 3px 3px;
+}
+
+.combat-text {
+  position: absolute;
+  z-index: 35;
+  font-weight: 900;
+  font-size: 18px;
+  pointer-events: none;
+  animation: combatTextFloat 1s forwards;
+  text-shadow: 2px 2px 0 #000;
+  white-space: nowrap;
+}
+
+.combat-text.normal { color: #FFD600; }
+.combat-text.critical { color: #FF1744; font-size: 24px; }
+.combat-text.jutsu-dmg { color: #40C4FF; font-size: 22px; }
+
+@keyframes combatTextFloat {
+  0% { transform: translateY(0) scale(0.5); opacity: 0; }
+  20% { transform: translateY(-10px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(-50px) scale(0.8); opacity: 0; }
+}
+
+.hit-flash {
+  animation: hitFlash 0.12s steps(1) 2 !important;
+}
+
+@keyframes hitFlash {
+  0% { filter: brightness(0) invert(1); }
+  100% { filter: brightness(0) invert(1); }
+}
+
+.shake {
+  animation: screenShake 0.3s;
+}
+
+@keyframes screenShake {
+  0%,100% { transform: translate(0,0); }
+  10%,30%,50%,70%,90% { transform: translate(-2px, -1px); }
+  20%,40%,60%,80% { transform: translate(2px, 1px); }
+}
+
+.shake-crit {
+  animation: screenShakeCrit 0.4s;
+}
+
+@keyframes screenShakeCrit {
+  0%,100% { transform: translate(0,0); }
+  10%,30%,50%,70%,90% { transform: translate(-4px, -2px); }
+  20%,40%,60%,80% { transform: translate(4px, 2px); }
+}
+
+#jutsu-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#jutsu-overlay.active {
+  opacity: 1;
+  animation: jutsuDarken 1.8s forwards;
+}
+
+@keyframes jutsuDarken {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.jutsu-name {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px var(--accent-chakra), 2px 2px 0 #000;
+  text-align: center;
+}
+
+.jutsu-kanji {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+#combat-log {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  z-index: 20;
+  background: rgba(0,0,0,0.75);
+  border-radius: 4px;
+  padding: 3px 6px;
+  max-height: 36px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.log-line {
+  font-size: 8px;
+  color: rgba(255,255,255,0.85);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-line .dmg { color: #FF1744; }
+.log-line .jutsu-text { color: #00B0FF; }
+
+#turn-indicator {
+  position: absolute;
+  top: 38px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  font-size: 7px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.projectile {
+  position: absolute;
+  z-index: 18;
+  pointer-events: none;
+}
+
+.projectile-rasengan {
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle, #fff, #40C4FF, #0091EA, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 15px #40C4FF;
+}
+
+.projectile-katon {
+  width: 25px;
+  height: 25px;
+  background: radial-gradient(circle, #fff, #FF6B00, #FF1744, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 20px #FF6B00;
+}
+
+.explosion-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid;
+  animation: explosionRing 0.5s forwards;
+}
+
+@keyframes explosionRing {
+  0% { width: 0; height: 0; opacity: 1; }
+  100% { width: 50px; height: 50px; opacity: 0; }
+}
+
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  animation: particleBurst 0.6s forwards;
+}
+
+@keyframes particleBurst {
+  0% { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--px), var(--py)) scale(0); opacity: 0; }
+}
+
+.back-battle-btn {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  z-index: 25;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: 1px solid #ff6b00;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 10px;
+  cursor: pointer;
+  pointer-events: auto;
+  font-weight: bold;
+}
+
+.stop-battle-btn {
+  position: absolute;
+  bottom: 45px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  background: #ef5350;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  pointer-events: auto;
+}
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <!-- Pantalla 1: Menú principal MISIONES RANGO -->
+  <div id="main-menu-screen" class="screen">
+    <div id="main-misiones" class="menu-button">⚔️ MISIONES RANGO ⚔️</div>
+  </div>
+
+  <!-- Pantalla 2: Lista de Rangos -->
+  <div id="rank-list-screen" class="screen hidden">
+    <div id="rank-D" class="rank-button rank-d">📜 MISION RANGO D</div>
+    <div id="rank-C" class="rank-button rank-c">🔥 MISION RANGO C</div>
+    <div id="rank-B" class="rank-button rank-b">🌪️ MISION RANGO B</div>
+    <div id="rank-A" class="rank-button rank-a">💀 MISION RANGO A</div>
+    <div id="rank-S" class="rank-button rank-s">👑 MISION RANGO S</div>
+    <div class="back-button" id="back-to-main-from-ranks">⬅️ Volver</div>
+  </div>
+
+  <!-- Pantalla 3: Misiones de un Rango -->
+  <div id="missions-screen" class="screen hidden">
+    <div class="back-button" id="back-to-ranks-from-missions">⬅️ Volver a Rangos</div>
+  </div>
+
+  <!-- Pantalla 4: Batalla (Naruto Style) -->
+  <div id="battle-screen" class="screen hidden">
+    <div class="battle-container">
+      <div class="bg-layer bg-layer-1"></div>
+      <div class="bg-layer bg-layer-2"></div>
+      <div id="ground"></div>
+
+      <div id="hud">
+        <div class="hud-unit hero">
+          <div class="avatar">🍥</div>
+          <div class="hp-info">
+            <div class="unit-name">Naruto Uzumaki</div>
+            <div class="hp-bar-container"><div class="hp-bar" id="hero-hp-bar" style="width:100%"></div></div>
+            <div class="hp-text" id="hero-hp-text">200 / 200</div>
+            <div class="chakra-bar-container"><div class="chakra-bar-fill" id="chakra-bar"></div></div>
+          </div>
+        </div>
+        <div class="hud-unit enemy">
+          <div class="avatar enemy-avatar">👹</div>
+          <div class="hp-info">
+            <div class="unit-name" id="enemy-name">Enemigo</div>
+            <div class="hp-bar-container"><div class="hp-bar" id="enemy-hp-bar" style="width:100%"></div></div>
+            <div class="hp-text" id="enemy-hp-text">0 / 0</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="turn-indicator">⚔ Combate Iniciado</div>
+
+      <div id="hero" class="character"><div class="hero-body"><div class="hero-head"><div class="hero-headband"></div><div class="hero-eyes"><div class="hero-eye"></div><div class="hero-eye"></div></div></div><div class="hero-torso"></div><div class="hero-legs"><div class="hero-leg"></div><div class="hero-leg"></div></div></div></div>
+      <div id="enemy" class="character"><div class="enemy-body"><div class="enemy-head"><div class="enemy-eyes"><div class="enemy-eye"></div><div class="enemy-eye"></div></div></div><div class="enemy-torso"></div><div class="enemy-legs"><div class="enemy-leg"></div><div class="enemy-leg"></div></div></div></div>
+
+      <div id="jutsu-overlay"><div class="jutsu-kanji" id="jutsu-kanji">忍</div><div class="jutsu-name" id="jutsu-name"></div></div>
+      <div id="combat-log"><div class="log-line" id="log-1">⚔ ¡El combate ha comenzado!</div><div class="log-line" id="log-2"></div></div>
+
+      <div class="back-battle-btn" id="back-from-battle">⬅️ Abandonar</div>
+      <div class="stop-battle-btn" id="stop-battle-btn">⏹️ DETENER</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const missionsData = {
+  D: [
+    { name: "Eliminar lobos hambrientos", xp: 2, gold: 4, hp: 138, atk: 25, def: 17, lvl: 1 },
+    { name: "Recuperar suministros robados por goblins", xp: 4, gold: 8, hp: 174, atk: 43, def: 28, lvl: 3 },
+    { name: "Proteger la aldea de jabalíes", xp: 6, gold: 12, hp: 210, atk: 61, def: 39, lvl: 5 },
+    { name: "Investigar ruinas infestadas de ratas gigantes", xp: 8, gold: 16, hp: 246, atk: 78, def: 50, lvl: 7 },
+    { name: "Escoltar a un mercader (bandido)", xp: 9, gold: 18, hp: 264, atk: 87, def: 55, lvl: 9 },
+    { name: "Cazar una bestia nocturna", xp: 10, gold: 20, hp: 282, atk: 96, def: 61, lvl: 12 }
+  ],
+  C: [
+    { name: "Limpiar una mina de murciélagos vampíricos", xp: 12, gold: 24, hp: 318, atk: 113, def: 72, lvl: 14 },
+    { name: "Derrotar a un grupo de orcos merodeadores", xp: 14, gold: 28, hp: 354, atk: 131, def: 83, lvl: 16 },
+    { name: "Rescatar a un rehén de los bandidos", xp: 16, gold: 32, hp: 390, atk: 149, def: 94, lvl: 18 },
+    { name: "Eliminar una amenaza de lobos de las nieves", xp: 18, gold: 36, hp: 426, atk: 166, def: 105, lvl: 20 },
+    { name: "Recuperar un artefacto custodiado por esqueletos", xp: 19, gold: 38, hp: 444, atk: 175, def: 110, lvl: 22 },
+    { name: "Acabar con un troll de las colinas", xp: 20, gold: 40, hp: 462, atk: 184, def: 116, lvl: 24 }
+  ],
+  B: [
+    { name: "Exterminar una colonia de arácnidos gigantes", xp: 22, gold: 44, hp: 498, atk: 201, def: 127, lvl: 28 },
+    { name: "Detener a un invoca demonios menores", xp: 24, gold: 48, hp: 534, atk: 219, def: 138, lvl: 32 },
+    { name: "Proteger una Ciudad de ataque de grifos salvajes", xp: 26, gold: 52, hp: 570, atk: 237, def: 149, lvl: 36 },
+    { name: "Investigar desapariciones en un bosque encantado", xp: 28, gold: 56, hp: 606, atk: 254, def: 160, lvl: 40 },
+    { name: "Derrotar a un caballero oscuro errante", xp: 29, gold: 58, hp: 624, atk: 263, def: 165, lvl: 45 },
+    { name: "Asaltar una fortaleza de ogros", xp: 30, gold: 60, hp: 642, atk: 272, def: 171, lvl: 50 }
+  ],
+  A: [
+    { name: "Eliminar a un dragón joven", xp: 32, gold: 64, hp: 678, atk: 289, def: 182, lvl: 55 },
+    { name: "Infiltrarse en una base de asesinos", xp: 34, gold: 68, hp: 714, atk: 307, def: 193, lvl: 50 },
+    { name: "Proteger una ciudad de un ataque", xp: 36, gold: 72, hp: 750, atk: 325, def: 204, lvl: 55 },
+    { name: "Recuperar un tesoro de una tumba maldita", xp: 38, gold: 76, hp: 786, atk: 342, def: 215, lvl: 60 },
+    { name: "Derrotar a un guerrero legendario", xp: 39, gold: 78, hp: 804, atk: 351, def: 220, lvl: 65 },
+    { name: "Acabar con un demonio de las sombras", xp: 40, gold: 80, hp: 822, atk: 360, def: 226, lvl: 70 }
+  ],
+  S: [
+    { name: "Enfrentar a un dragón adulto", xp: 50, gold: 100, hp: 1002, atk: 448, def: 281, lvl: 75 },
+    { name: "Derrotar a un señor demonio menor", xp: 60, gold: 120, hp: 1182, atk: 536, def: 336, lvl: 80 },
+    { name: "Salvar el reino de un lich", xp: 70, gold: 140, hp: 1362, atk: 624, def: 391, lvl: 85 },
+    { name: "Enfrentar a un titán antiguo", xp: 80, gold: 160, hp: 1542, atk: 712, def: 446, lvl: 90 },
+    { name: "Combatir a un dios olvidado", xp: 90, gold: 180, hp: 1722, atk: 800, def: 501, lvl: 95 },
+    { name: "Derrotar al dragón anciano", xp: 100, gold: 200, hp: 1902, atk: 808, def: 556, lvl: 100 }
+  ]
+};
+
+let currentScreen = 'main';
+let battleInterval = null;
+let battleActive = false;
+let playerStats = { hp: 200, maxHp: 200, mp: 100, maxMp: 100, atk: 25, def: 18, lvl: 1 };
+let currentEnemyMission = null;
+let currentMissionList = [];
+let enemyIndex = 0;
+let currentRank = 'D';
+let isJutsuActive = false;
+let isHeroAttacking = false;
+let isEnemyAttacking = false;
+let heroAttackTimer = 0;
+let enemyAttackTimer = 0;
+let lastTimestamp = 0;
+
+const mainScreen = document.getElementById('main-menu-screen');
+const rankScreen = document.getElementById('rank-list-screen');
+const missionsScreen = document.getElementById('missions-screen');
+const battleScreen = document.getElementById('battle-screen');
+
+document.getElementById('main-misiones').addEventListener('click', () => {
+  mainScreen.classList.add('hidden');
+  rankScreen.classList.remove('hidden');
+  currentScreen = 'ranks';
+});
+
+document.getElementById('rank-D').addEventListener('click', () => showMissions('D'));
+document.getElementById('rank-C').addEventListener('click', () => showMissions('C'));
+document.getElementById('rank-B').addEventListener('click', () => showMissions('B'));
+document.getElementById('rank-A').addEventListener('click', () => showMissions('A'));
+document.getElementById('rank-S').addEventListener('click', () => showMissions('S'));
+
+document.getElementById('back-to-main-from-ranks').addEventListener('click', () => {
+  rankScreen.classList.add('hidden');
+  mainScreen.classList.remove('hidden');
+  currentScreen = 'main';
+});
+
+document.getElementById('back-to-ranks-from-missions').addEventListener('click', () => {
+  missionsScreen.classList.add('hidden');
+  rankScreen.classList.remove('hidden');
+  currentScreen = 'ranks';
+  stopBattle();
+});
+
+document.getElementById('back-from-battle').addEventListener('click', () => stopBattleAndGoToMain());
+document.getElementById('stop-battle-btn').addEventListener('click', () => stopBattleAndGoToMain());
+
+function showMissions(rank) {
+  currentRank = rank;
+  const missions = missionsData[rank];
+  const backBtn = document.getElementById('back-to-ranks-from-missions');
+  missionsScreen.innerHTML = '';
+  missionsScreen.className = `screen missions-${rank}`;
+
+  missions.forEach((mission, index) => {
+    const missionDiv = document.createElement('div');
+    missionDiv.className = `mission-item ${playerStats.lvl < mission.lvl ? 'locked' : ''}`;
+    missionDiv.innerHTML = `
+      <div class="mission-header">${mission.name}</div>
+      <div class="mission-details">
+        <div class="mission-left"><span>⚡ XP: ${mission.xp}</span><span>💰 Oro: ${mission.gold}</span></div>
+        <div class="mission-right"><span>❤️ HP: ${mission.hp}</span><span>⚔️ ATK: ${mission.atk}</span><span>🛡️ DEF: ${mission.def}</span></div>
+      </div>
+      ${playerStats.lvl < mission.lvl ? '<div class="mission-lock">🔒 Nivel mínimo: ' + mission.lvl + '</div>' : ''}
+    `;
+    if (playerStats.lvl >= mission.lvl) {
+      missionDiv.addEventListener('click', () => startBattle(rank, index));
+    } else {
+      missionDiv.style.pointerEvents = 'none';
+    }
+    missionsScreen.appendChild(missionDiv);
+  });
+  missionsScreen.appendChild(backBtn);
+  rankScreen.classList.add('hidden');
+  missionsScreen.classList.remove('hidden');
+  currentScreen = 'missions';
+}
+
+function startBattle(rank, missionIndex) {
+  stopBattle();
+  currentMissionList = missionsData[rank];
+  enemyIndex = missionIndex;
+  currentEnemyMission = { ...currentMissionList[enemyIndex] };
+  currentEnemyMission.maxHp = currentEnemyMission.hp;
+
+  playerStats.hp = playerStats.maxHp;
+  playerStats.mp = playerStats.maxMp;
+
+  document.getElementById('enemy-name').textContent = currentEnemyMission.name;
+  document.getElementById('hero-hp-text').textContent = `${playerStats.hp}/${playerStats.maxHp}`;
+  document.getElementById('enemy-hp-text').textContent = `${currentEnemyMission.hp}/${currentEnemyMission.hp}`;
+  updateBars();
+
+  missionsScreen.classList.add('hidden');
+  rankScreen.classList.add('hidden');
+  mainScreen.classList.add('hidden');
+  battleScreen.classList.remove('hidden');
+  currentScreen = 'battle';
+
+  document.getElementById('log-1').innerHTML = '⚔ ¡El combate ha comenzado!';
+  document.getElementById('log-2').innerHTML = `Contra: ${currentEnemyMission.name}`;
+  document.getElementById('turn-indicator').textContent = '⚔ Combate Activo';
+
+  battleActive = true;
+  heroAttackTimer = 0;
+  enemyAttackTimer = 0;
+  lastTimestamp = 0;
+  requestAnimationFrame(battleLoop);
+}
+
+function updateBars() {
+  const heroPct = (playerStats.hp / playerStats.maxHp) * 100;
+  const enemyPct = (currentEnemyMission.hp / currentEnemyMission.maxHp) * 100;
+  const chakraPct = (playerStats.mp / playerStats.maxMp) * 100;
+  document.getElementById('hero-hp-bar').style.width = `${Math.max(0, heroPct)}%`;
+  document.getElementById('enemy-hp-bar').style.width = `${Math.max(0, enemyPct)}%`;
+  document.getElementById('chakra-bar').style.width = `${chakraPct}%`;
+  document.getElementById('hero-hp-text').textContent = `${Math.max(0, Math.floor(playerStats.hp))}/${playerStats.maxHp}`;
+  document.getElementById('enemy-hp-text').textContent = `${Math.max(0, Math.floor(currentEnemyMission.hp))}/${currentEnemyMission.maxHp}`;
+}
+
+function addLog(line1, line2) {
+  if (line1 !== undefined) document.getElementById('log-1').innerHTML = line1;
+  if (line2 !== undefined) document.getElementById('log-2').innerHTML = line2;
+}
+
+function screenShake(intensity = 'normal') {
+  const container = document.getElementById('game-container');
+  container.classList.add(intensity === 'critical' ? 'shake-crit' : 'shake');
+  setTimeout(() => container.classList.remove(intensity === 'critical' ? 'shake-crit' : 'shake'), intensity === 'critical' ? 400 : 300);
+}
+
+function spawnCombatText(target, value, type = 'normal') {
+  const el = document.createElement('div');
+  el.className = `combat-text ${type}`;
+  el.textContent = type === 'heal' ? `+${value}` : `-${value}`;
+  const targetEl = document.getElementById(target === 'enemy' ? 'enemy' : 'hero');
+  const rect = targetEl.getBoundingClientRect();
+  const containerRect = document.getElementById('game-container').getBoundingClientRect();
+  el.style.left = `${rect.left - containerRect.left + rect.width / 2 + (Math.random() - 0.5) * 30}px`;
+  el.style.top = `${rect.top - containerRect.top + (Math.random() - 0.5) * 20}px`;
+  document.getElementById('game-container').appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+function hitFlash(target) {
+  const el = document.getElementById(target === 'enemy' ? 'enemy' : 'hero');
+  el.classList.add('hit-flash');
+  setTimeout(() => el.classList.remove('hit-flash'), 150);
+}
+
+function showJutsuOverlay(jutsu) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('jutsu-overlay');
+    document.getElementById('jutsu-kanji').textContent = jutsu.kanji;
+    document.getElementById('jutsu-name').textContent = jutsu.name;
+    overlay.classList.add('active');
+    setTimeout(resolve, 900);
+  });
+}
+
+function animateProjectile(fromEl, toEl, type) {
+  return new Promise((resolve) => {
+    const container = document.getElementById('game-container');
+    const proj = document.createElement('div');
+    proj.className = `projectile projectile-${type}`;
+    const fromRect = fromEl.getBoundingClientRect();
+    const toRect = toEl.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    let startX = fromRect.left - containerRect.left + fromRect.width / 2 - 10;
+    let startY = fromRect.top - containerRect.top + fromRect.height / 2 - 10;
+    const endX = toRect.left - containerRect.left + toRect.width / 2 - 12;
+    const endY = toRect.top - containerRect.top + toRect.height / 2 - 12;
+    proj.style.left = `${startX}px`;
+    proj.style.top = `${startY}px`;
+    container.appendChild(proj);
+    let progress = 0;
+    function animate() {
+      progress += 0.08;
+      if (progress >= 1) { proj.remove(); resolve(); return; }
+      const curX = startX + (endX - startX) * progress;
+      const curY = startY + (endY - startY) * progress + Math.sin(progress * Math.PI) * -20;
+      proj.style.left = `${curX}px`;
+      proj.style.top = `${curY}px`;
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+  });
+}
+
+function spawnExplosion(x, y, color) {
+  const container = document.getElementById('game-container');
+  const exp = document.createElement('div');
+  exp.style.position = 'absolute';
+  exp.style.left = `${x}px`;
+  exp.style.top = `${y}px`;
+  const ring = document.createElement('div');
+  ring.className = 'explosion-ring';
+  ring.style.borderColor = color;
+  exp.appendChild(ring);
+  container.appendChild(exp);
+  setTimeout(() => exp.remove(), 500);
+}
+
+function spawnParticles(x, y, color, count = 8) {
+  const container = document.getElementById('game-container');
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = `${x + (Math.random() - 0.5) * 20}px`;
+    p.style.top = `${y + (Math.random() - 0.5) * 20}px`;
+    p.style.background = color;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * 30 + 10;
+    p.style.setProperty('--px', `${Math.cos(angle) * dist}px`);
+    p.style.setProperty('--py', `${Math.sin(angle) * dist}px`);
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 600);
+  }
+}
+
+function calculateDamage(atk, def, isCrit = false, multi = 1.0) {
+  let dmg = Math.max(1, Math.floor((atk * multi) - (def * 0.3) + (Math.random() * 10 - 5)));
+  if (isCrit) dmg *= 2;
+  return Math.floor(dmg);
+}
+
+async function heroAttack() {
+  if (!battleActive || isHeroAttacking || isJutsuActive) return;
+  isHeroAttacking = true;
+  const hero = document.getElementById('hero');
+  const enemy = document.getElementById('enemy');
+  hero.style.transform = `translateX(80px)`;
+  await new Promise(r => setTimeout(r, 100));
+  const isCrit = Math.random() < 0.15;
+  const dmg = calculateDamage(playerStats.atk, currentEnemyMission.def, isCrit);
+  currentEnemyMission.hp = Math.max(0, currentEnemyMission.hp - dmg);
+  updateBars();
+  hitFlash('enemy');
+  spawnCombatText('enemy', dmg, isCrit ? 'critical' : 'normal');
+  screenShake(isCrit ? 'critical' : 'normal');
+  addLog(`Naruto ataca — <span class="dmg">-${dmg} Daño</span>${isCrit ? ' ¡CRÍTICO!' : ''}`);
+  const enemyRect = enemy.getBoundingClientRect();
+  const containerRect = document.getElementById('game-container').getBoundingClientRect();
+  spawnParticles(enemyRect.left - containerRect.left + enemyRect.width/2, enemyRect.top - containerRect.top + enemyRect.height/3, isCrit ? '#FF1744' : '#FFD600', 6);
+  hero.style.transform = '';
+  await new Promise(r => setTimeout(r, 150));
+  isHeroAttacking = false;
+  if (currentEnemyMission.hp <= 0) nextEnemy();
+}
+
+async function enemyAttack() {
+  if (!battleActive || isEnemyAttacking || currentEnemyMission.hp <= 0) return;
+  isEnemyAttacking = true;
+  const enemy = document.getElementById('enemy');
+  enemy.style.transform = `translateX(-70px)`;
+  await new Promise(r => setTimeout(r, 100));
+  const dmg = calculateDamage(currentEnemyMission.atk, playerStats.def);
+  playerStats.hp = Math.max(0, playerStats.hp - dmg);
+  updateBars();
+  hitFlash('hero');
+  spawnCombatText('hero', dmg, 'normal');
+  screenShake('normal');
+  addLog(`${currentEnemyMission.name} ataca — <span class="dmg">-${dmg} Daño</span>`);
+  const hero = document.getElementById('hero');
+  const heroRect = hero.getBoundingClientRect();
+  const containerRect = document.getElementById('game-container').getBoundingClientRect();
+  spawnParticles(heroRect.left - containerRect.left + heroRect.width/2, heroRect.top - containerRect.top + heroRect.height/3, '#FF5722', 5);
+  enemy.style.transform = '';
+  await new Promise(r => setTimeout(r, 150));
+  isEnemyAttacking = false;
+  if (playerStats.hp <= 0) {
+    battleActive = false;
+    addLog(`💀 ¡Has sido derrotado!`, '🔄 Reinicia la misión');
+    document.getElementById('turn-indicator').textContent = '💀 Derrota';
+  }
+}
+
+async function executeJutsu() {
+  if (!battleActive || isJutsuActive || isHeroAttacking || playerStats.mp < playerStats.maxMp) return;
+  isJutsuActive = true;
+  const jutsuList = [
+    { name: 'Rasengan', kanji: '螺', dmgMulti: 2.5, type: 'rasengan', color: '#40C4FF' },
+    { name: 'Katon: Gōkakyū', kanji: '火', dmgMulti: 3.0, type: 'katon', color: '#FF6B00' }
+  ];
+  const jutsu = jutsuList[Math.floor(Math.random() * jutsuList.length)];
+  await showJutsuOverlay(jutsu);
+  await animateProjectile(document.getElementById('hero'), document.getElementById('enemy'), jutsu.type);
+  const dmg = calculateDamage(playerStats.atk, currentEnemyMission.def, false, jutsu.dmgMulti);
+  currentEnemyMission.hp = Math.max(0, currentEnemyMission.hp - dmg);
+  updateBars();
+  hitFlash('enemy');
+  spawnCombatText('enemy', dmg, 'jutsu-dmg');
+  const enemyRect = document.getElementById('enemy').getBoundingClientRect();
+  const containerRect = document.getElementById('game-container').getBoundingClientRect();
+  spawnExplosion(enemyRect.left - containerRect.left + enemyRect.width/2, enemyRect.top - containerRect.top + enemyRect.height/3, jutsu.color);
+  spawnParticles(enemyRect.left - containerRect.left + enemyRect.width/2, enemyRect.top - containerRect.top + enemyRect.height/3, jutsu.color, 12);
+  screenShake('critical');
+  addLog(`✨ <span class="jutsu-text">${jutsu.name}</span> — <span class="dmg">-${dmg} Daño</span>`);
+  playerStats.mp = 0;
+  updateBars();
+  await new Promise(r => setTimeout(r, 400));
+  isJutsuActive = false;
+  if (currentEnemyMission.hp <= 0) nextEnemy();
+}
+
+function nextEnemy() {
+  if (!battleActive) return;
+  enemyIndex = (enemyIndex + 1) % currentMissionList.length;
+  currentEnemyMission = { ...currentMissionList[enemyIndex] };
+  currentEnemyMission.maxHp = currentEnemyMission.hp;
+  document.getElementById('enemy-name').textContent = currentEnemyMission.name;
+  document.getElementById('enemy-hp-text').textContent = `${currentEnemyMission.hp}/${currentEnemyMission.maxHp}`;
+  updateBars();
+  addLog(`⚔️ Nuevo enemigo: ${currentEnemyMission.name}`, '');
+  document.getElementById('turn-indicator').textContent = '⚔ Combate Activo';
+}
+
+function battleLoop(timestamp) {
+  if (!battleActive) return;
+  if (!lastTimestamp) lastTimestamp = timestamp;
+  const delta = Math.min(100, timestamp - lastTimestamp);
+  lastTimestamp = timestamp;
+  if (playerStats.hp > 0 && currentEnemyMission.hp > 0) {
+    heroAttackTimer += delta;
+    if (heroAttackTimer >= 1800 && !isHeroAttacking && !isJutsuActive) {
+      heroAttackTimer = 0;
+      if (playerStats.mp >= playerStats.maxMp) {
+        executeJutsu();
+      } else {
+        heroAttack();
+      }
+      playerStats.mp = Math.min(playerStats.maxMp, playerStats.mp + 5);
+      updateBars();
+    }
+    enemyAttackTimer += delta;
+    if (enemyAttackTimer >= 2200 && !isEnemyAttacking && !isJutsuActive) {
+      enemyAttackTimer = 0;
+      enemyAttack();
+    }
+  }
+  requestAnimationFrame(battleLoop);
+}
+
+function stopBattle() {
+  battleActive = false;
+  isHeroAttacking = false;
+  isEnemyAttacking = false;
+  isJutsuActive = false;
+}
+
+function stopBattleAndGoToMain() {
+  stopBattle();
+  battleScreen.classList.add('hidden');
+  mainScreen.classList.remove('hidden');
+  rankScreen.classList.add('hidden');
+  missionsScreen.classList.add('hidden');
+  currentScreen = 'main';
+}
+
+mainScreen.classList.remove('hidden');
+</script>
+</body>
+</html>
