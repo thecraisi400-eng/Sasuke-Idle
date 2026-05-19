@@ -812,15 +812,6 @@
         div.style.pointerEvents = 'none';
       } else {
         div.addEventListener('click', () => {
-          if (rank === 'D' && typeof window.misionesderangod3Show === 'function') {
-            md2Hide(md2$('misionesderango2-missions-screen'));
-            md2Hide(md2$('misionesderango2-rank-list-screen'));
-            md2Hide(md2$('misionesderango2-main-menu-screen'));
-            md2Hide(md2$('misionesderango2-battle-screen'));
-            window.misionesderangod3Show('#misionesderango2-container');
-            misionesderango2CurrentScreen = 'battle';
-            return;
-          }
           misionesderango2StartBattle(rank, index);
         });
       }
@@ -1019,7 +1010,7 @@
     hero.style.transform = '';
     await new Promise(r => setTimeout(r, 150));
     misionesderango2IsHeroAtk = false;
-    if (misionesderango2CurrentEnemy.hp <= 0) misionesderango2NextEnemy();
+    if (misionesderango2CurrentEnemy.hp <= 0) misionesderango2HandleVictory();
   }
 
   async function misionesderango2EnemyAttack() {
@@ -1031,6 +1022,7 @@
     const dmg = misionesderango2CalcDamage(misionesderango2CurrentEnemy.atk, misionesderango2PlayerStats.def);
     misionesderango2PlayerStats.hp = Math.max(0, misionesderango2PlayerStats.hp - dmg);
     misionesderango2UpdateBars();
+    misionesderango2SyncPlayerState();
     misionesderango2HitFlash('hero');
     misionesderango2SpawnCombatText('hero', dmg, 'normal');
     misionesderango2ScreenShake('normal');
@@ -1096,9 +1088,39 @@
     );
     misionesderango2PlayerStats.mp = 0;
     misionesderango2UpdateBars();
+    misionesderango2SyncPlayerState();
     await new Promise(r => setTimeout(r, 400));
     misionesderango2IsJutsuActive = false;
-    if (misionesderango2CurrentEnemy.hp <= 0) misionesderango2NextEnemy();
+    if (misionesderango2CurrentEnemy.hp <= 0) misionesderango2HandleVictory();
+  }
+
+
+  function misionesderango2SyncPlayerState() {
+    if (typeof window.misionesderango2OnPlayerStatsChange === 'function') {
+      window.misionesderango2OnPlayerStatsChange({ ...misionesderango2PlayerStats });
+    }
+  }
+
+  function misionesderango2HandleVictory() {
+    if (!misionesderango2CurrentEnemy) return;
+    const xpGain = Math.max(0, Number(misionesderango2CurrentEnemy.xp) || 0);
+    const goldGain = Math.max(0, Number(misionesderango2CurrentEnemy.gold) || 0);
+    misionesderango2BattleActive = false;
+    misionesderango2AddLog(`🏆 ¡Victoria! +${xpGain} XP`, `💰 Recompensa: +${goldGain} Oro`);
+    md2$('misionesderango2-turn-indicator').textContent = '🏆 Victoria';
+
+    if (typeof window.misionesderango2OnMissionComplete === 'function') {
+      window.misionesderango2OnMissionComplete({
+        rank: misionesderango2CurrentRank,
+        mission: { ...misionesderango2CurrentEnemy },
+        xp: xpGain,
+        gold: goldGain,
+      });
+    }
+
+    misionesderango2ShowResultModal('¡Misión completada!', 'Volver a Misiones', () => {
+      misionesderango2GoToRanks();
+    });
   }
 
   function misionesderango2NextEnemy() {
@@ -1157,6 +1179,7 @@
         }
         misionesderango2PlayerStats.mp = Math.min(misionesderango2PlayerStats.maxMp, misionesderango2PlayerStats.mp + 5);
         misionesderango2UpdateBars();
+        misionesderango2SyncPlayerState();
       }
       misionesderango2EnemyTimer += delta;
       if (misionesderango2EnemyTimer >= 2200 && !misionesderango2IsEnemyAtk && !misionesderango2IsJutsuActive) {
