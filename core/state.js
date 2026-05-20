@@ -84,6 +84,21 @@ export function setEquipmentSlotLevel(slotId, level) {
   syncDerivedStateFromHero();
 }
 
+export function addMissionRewards({ exp = 0, gold = 0 } = {}) {
+  state.exp += Math.max(0, Math.floor(exp));
+  state.gold += Math.max(0, Math.floor(gold));
+
+  while (state.exp >= state.expMax) {
+    state.exp -= state.expMax;
+    state.level += 1;
+    const nextStats = calcStats(state.level);
+    state.expMax = nextStats.xpReq;
+    syncDerivedStateFromHero();
+    state.hp = state.hpMax;
+    state.mp = state.mpMax;
+  }
+}
+
 // Aplicar bonus de equipo iniciales
 syncDerivedStateFromHero();
 
