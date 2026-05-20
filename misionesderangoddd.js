@@ -121,6 +121,8 @@ let misionesderangod2CritFlash  = 0;
 let misionesderangod2JutsuVeil  = 0;
 
 let misionesderangod2BgMountains, misionesderangod2BgTrees, misionesderangod2BgStars;
+let misionesderangod2RoundActive = false;
+let misionesderangod2NextRoundTimeout = null;
 
 // ═══════════════════════════════════════════════════
 //  PARTICLE
@@ -249,7 +251,24 @@ class misionesderangod2Fighter {
     this.color = id===0 ? '#E8A030' : '#6855CC';
     this.glowColor = id===0 ? '#FF8C00' : '#9932CC';
     this.skinColor = id===0 ? '#F5C09A' : '#D8C8E8';
+    this.power=1; this.defense=1;
     this.hp=100; this.maxHp=100;
+    if (id===0 && typeof window.__sasukeIdleGetHeroStats === 'function') {
+      const heroStats = window.__sasukeIdleGetHeroStats();
+      const sharedState = window.__sasukeIdleState;
+      this.maxHp = Math.max(1, Math.round(heroStats.hp));
+      this.hp = Math.max(1, Math.min(Math.round(sharedState?.hp ?? this.maxHp), this.maxHp));
+      this.power = Math.max(1, Number(heroStats.str) || 1);
+      this.defense = Math.max(1, Number(heroStats.def) || 1);
+    }
+    if (id===1 && window.misionesderangod2SelectedMission) {
+      const m = window.misionesderangod2SelectedMission;
+      this.name = (m.name || 'ENEMIGO').slice(0, 18).toUpperCase();
+      this.maxHp = Math.max(1, Math.round(m.hp || 100));
+      this.hp = this.maxHp;
+      this.power = Math.max(1, Number(m.atk) || 1);
+      this.defense = Math.max(1, Number(m.def) || 1);
+    }
     this.dashTimer=0; this.dashInterval=800;
     this.tX=x; this.tY=misionesderangod2GROUND-misionesderangod2NH;
     this.atkCD=0; this.jutsuCD=0;
@@ -341,7 +360,7 @@ class misionesderangod2Fighter {
   die(){
     this.isDead=true; misionesderangod2SlowMo=0.16; misionesderangod2GameOver=true;
     const winner=misionesderangod2Fighters.find(f=>!f.isDead);
-    setTimeout(()=>misionesderangod2ShowWinner(winner?winner.name:'???'),2600);
+    setTimeout(()=>misionesderangod2ShowWinner(winner),2600);
   }
 
   update(dt, dms, enemy){
@@ -395,7 +414,9 @@ class misionesderangod2Fighter {
     if(!enemy.isDead){
       const dist=Math.hypot(this.cx-enemy.cx,this.cy-enemy.cy);
       if(dist<50 && this.atkCD<=0){
-        const dmg=8+Math.random()*7;
+        const baseAtk = Math.max(1, this.power * 0.18);
+        const rawMitigation = Math.max(0, enemy.defense * 0.08);
+        const dmg=Math.max(1, baseAtk + (Math.random()*7) - rawMitigation);
         enemy.receiveHit(dmg,this.cx,this);
         this.atkCD=42;
       } else if(dist>150 && this.jutsuCD<=0){
@@ -561,10 +582,25 @@ function misionesderangod2SpawnSmoke(x,y,count){
   }
 }
 
-function misionesderangod2ShowWinner(name){
-  misionesderangod2WinName.textContent=name;
-  misionesderangod2WinName.style.color=name==='UZUMAKI'?'#FFD700':'#CC88FF';
+function misionesderangod2ShowWinner(winner){
+  const playerWon = winner && winner.id === 0;
+  misionesderangod2WinName.textContent = playerWon ? 'PRÓXIMA RONDA' : 'HAS PERDIDO';
+  misionesderangod2WinName.style.color = playerWon ? '#FFD700' : '#FF6688';
+  const btn = document.getElementById('misionesderangod2BtnRestart');
+  btn.textContent = playerWon ? 'CONTINUAR' : 'VOLVER A HÉROE';
+  btn.onclick = playerWon ? misionesderangod2StartNextRound : misionesderangod2BackToHero;
   misionesderangod2WinScreen.style.display='flex';
+}
+function misionesderangod2BackToHero(){
+  const heroBtn = document.querySelector('.nav-btn[data-section=\"heroe\"]');
+  if (heroBtn) heroBtn.click();
+}
+function misionesderangod2StartNextRound(){
+  misionesderangod2WinScreen.style.display='none';
+  if (misionesderangod2NextRoundTimeout) clearTimeout(misionesderangod2NextRoundTimeout);
+  misionesderangod2NextRoundTimeout = setTimeout(() => {
+    misionesderangod2StartGame({ keepPlayerHp: true });
+  }, 1000);
 }
 
 // ─── Generación de fondo ─────────────────────────
@@ -849,7 +885,9 @@ function misionesderangod2Update(dt, dms){
     for(const f of misionesderangod2Fighters){
       if(f===j.owner||f.isDead||f.invincible) continue;
       if(Math.hypot(j.x-f.cx,j.y-f.cy)<j.size+misionesderangod2NW/2){
-        const dmg=10+Math.random()*10;
+        const atkScale = Math.max(1, (j.owner?.power || 1) * 0.2);
+        const defScale = Math.max(0, (f.defense || 1) * 0.08);
+        const dmg=Math.max(1, atkScale + Math.random()*10 - defScale);
         f.receiveHit(dmg,j.x,j.owner);
         for(let i=0;i<16;i++){
           const ang=Math.random()*Math.PI*2, spd=2+Math.random()*4;
@@ -898,13 +936,22 @@ function misionesderangod2Render(){
 // ═══════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════
-function misionesderangod2StartGame(){
+function misionesderangod2StartGame(options = {}){
+  const keepPlayerHp = !!options.keepPlayerHp;
+  const prevPlayerHp = keepPlayerHp && misionesderangod2Fighters[0] ? Math.max(1, Math.round(misionesderangod2Fighters[0].hp)) : null;
   misionesderangod2Particles=[]; misionesderangod2DamageNums=[]; misionesderangod2Jutsus=[];
   misionesderangod2HitStop=0; misionesderangod2SlowMo=1; misionesderangod2FrameN=0; misionesderangod2GameOver=false;
   misionesderangod2ShakeX=0; misionesderangod2ShakeY=0; misionesderangod2ShakeDur=0; misionesderangod2ShakeAmp=0; misionesderangod2CritFlash=0;
   misionesderangod2JutsuVeil=0; misionesderangod2Veil.style.background='rgba(0,0,0,0)';
   misionesderangod2WinScreen.style.display='none';
+  misionesderangod2RoundActive = true;
   misionesderangod2Fighters=[new misionesderangod2Fighter(70,0), new misionesderangod2Fighter(360,1)];
+  if (prevPlayerHp !== null) {
+    misionesderangod2Fighters[0].hp = Math.min(misionesderangod2Fighters[0].maxHp, prevPlayerHp);
+  }
+  if (window.__sasukeIdleState) {
+    window.__sasukeIdleState.hp = Math.max(1, Math.round(misionesderangod2Fighters[0].hp));
+  }
   misionesderangod2Fighters[0].tX=120+Math.random()*80;
   misionesderangod2Fighters[1].tX=250+Math.random()*80;
 }

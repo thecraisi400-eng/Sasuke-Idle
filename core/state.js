@@ -86,3 +86,10 @@ export function setEquipmentSlotLevel(slotId, level) {
 
 // Aplicar bonus de equipo iniciales
 syncDerivedStateFromHero();
+
+
+if (typeof window !== 'undefined') {
+  window.__sasukeIdleState = state;
+  window.__sasukeIdleGetHeroStats = getHeroStats;
+  window.__sasukeIdleSyncHero = syncDerivedStateFromHero;
+}
