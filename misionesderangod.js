@@ -54,8 +54,9 @@ function misionesderangod2Mount(targetElement) {
       data: misionesderangod2Data,
       missionsScreen: misionesderangod2MissionsScreen,
       rankScreen: misionesderangod2RankScreen,
-      onMissionSelect: ({ rank: missionRank }) => {
+      onMissionSelect: ({ rank: missionRank, mission }) => {
         if (missionRank === 'D' && typeof window.misionesderangodddMount === 'function') {
+          window.misionesderangod2SelectedMission = mission;
           targetElement.innerHTML = '';
           window.misionesderangodddMount(targetElement);
         }
