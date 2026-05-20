@@ -8,6 +8,7 @@
 
 // ─── Inyectar estilos ────────────────────────────
 const misionesderangod2Style = document.createElement('style');
+misionesderangod2Style.id = 'misionesderangod2-battle-style';
 misionesderangod2Style.textContent = `
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -17,7 +18,7 @@ body {
   font-family: 'Arial Black', Impact, sans-serif;
 }
 #misionesderangod2Wrapper {
-  position: relative; width: 460px; height: 360px;
+  position: relative; width: 100%; height: 100%;
   overflow: hidden;
   box-shadow:
     0 0 0 1px rgba(255,120,0,0.25),
@@ -69,7 +70,9 @@ body {
   to   { filter: drop-shadow(0 0 25px rgba(255,200,0,0.7)); }
 }
 `;
-document.head.appendChild(misionesderangod2Style);
+if (!document.getElementById('misionesderangod2-battle-style')) {
+  document.head.appendChild(misionesderangod2Style);
+}
 
 // ─── Inyectar HTML ───────────────────────────────
 const misionesderangod2Container = document.createElement('div');
@@ -86,9 +89,6 @@ misionesderangod2Container.innerHTML = `
     <button id="misionesderangod2BtnRestart">&#9654; &nbsp; NUEVA BATALLA</button>
   </div>
 `;
-document.body.appendChild(misionesderangod2Container);
-
-document.getElementById('misionesderangod2BtnRestart').addEventListener('click', misionesderangod2StartGame);
 
 // ═══════════════════════════════════════════════════
 //  CONSTANTES
@@ -100,11 +100,11 @@ const misionesderangod2SC = 0.70;
 const misionesderangod2NW = Math.round(30 * misionesderangod2SC);
 const misionesderangod2NH = Math.round(50 * misionesderangod2SC);
 
-const misionesderangod2Canvas   = document.getElementById('misionesderangod2Canvas');
-const misionesderangod2Ctx      = misionesderangod2Canvas.getContext('2d');
-const misionesderangod2Veil     = document.getElementById('misionesderangod2Veil');
-const misionesderangod2WinScreen= document.getElementById('misionesderangod2WinnerScreen');
-const misionesderangod2WinName  = document.getElementById('misionesderangod2WinName');
+let misionesderangod2Canvas;
+let misionesderangod2Ctx;
+let misionesderangod2Veil;
+let misionesderangod2WinScreen;
+let misionesderangod2WinName;
 
 // ─── Estado global ───────────────────────────────
 let misionesderangod2Particles  = [];
@@ -923,8 +923,36 @@ function misionesderangod2Loop(ts){
   requestAnimationFrame(misionesderangod2Loop);
 }
 
-misionesderangod2GenBG();
-misionesderangod2StartGame();
-requestAnimationFrame(ts=>{ misionesderangod2LastTs=ts; requestAnimationFrame(misionesderangod2Loop); });
+let misionesderangod2LoopStarted = false;
+
+window.misionesderangodddMount = function(targetElement){
+  if (!targetElement) return null;
+  targetElement.innerHTML = '';
+  targetElement.appendChild(misionesderangod2Container);
+
+  misionesderangod2Canvas = document.getElementById('misionesderangod2Canvas');
+  misionesderangod2Ctx = misionesderangod2Canvas.getContext('2d');
+  misionesderangod2Veil = document.getElementById('misionesderangod2Veil');
+  misionesderangod2WinScreen = document.getElementById('misionesderangod2WinnerScreen');
+  misionesderangod2WinName = document.getElementById('misionesderangod2WinName');
+
+  document.getElementById('misionesderangod2BtnRestart').onclick = misionesderangod2StartGame;
+
+  misionesderangod2GenBG();
+  misionesderangod2StartGame();
+
+  if (!misionesderangod2LoopStarted) {
+    misionesderangod2LoopStarted = true;
+    requestAnimationFrame(ts=>{ misionesderangod2LastTs=ts; requestAnimationFrame(misionesderangod2Loop); });
+  }
+
+  return {
+    destroy(){
+      if (misionesderangod2Container.parentNode) {
+        misionesderangod2Container.parentNode.removeChild(misionesderangod2Container);
+      }
+    }
+  };
+};
 
 })(); // fin del IIFE

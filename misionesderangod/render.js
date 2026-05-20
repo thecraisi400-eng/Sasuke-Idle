@@ -1,4 +1,4 @@
-export function misionesderangod2RenderMissions({ rank, playerLevel, data, missionsScreen, rankScreen }) {
+export function misionesderangod2RenderMissions({ rank, playerLevel, data, missionsScreen, rankScreen, onMissionSelect }) {
   const misionesderangod2Missions = data[rank];
   const misionesderangod2BackBtn = document.getElementById('misionesderangod2-back-missions-to-ranks');
 
@@ -28,6 +28,8 @@ export function misionesderangod2RenderMissions({ rank, playerLevel, data, missi
     `;
     if (misionesderangod2IsLocked) {
       misionesderangod2Div.style.pointerEvents = 'none';
+    } else if (typeof onMissionSelect === 'function') {
+      misionesderangod2Div.addEventListener('click', () => onMissionSelect({ rank, mission }));
     }
     missionsScreen.appendChild(misionesderangod2Div);
   });
