@@ -21,6 +21,31 @@ export function initUI() {
   let heroWidgetInstance = null;
   let missionsWidgetInstance = null;
 
+  let heroRegenInterval = null;
+
+  function stopHeroRegen() {
+    if (heroRegenInterval) {
+      clearInterval(heroRegenInterval);
+      heroRegenInterval = null;
+    }
+  }
+
+  function startHeroRegen() {
+    stopHeroRegen();
+    heroRegenInterval = setInterval(() => {
+      if (state.activeSection !== 'heroe') return;
+      const hpRegen = Math.max(1, Math.round(state.hpMax * 0.07));
+      const mpRegen = Math.max(1, Math.round(state.mpMax * 0.07));
+      const prevHp = state.hp;
+      const prevMp = state.mp;
+      state.hp = Math.min(state.hpMax, state.hp + hpRegen);
+      state.mp = Math.min(state.mpMax, state.mp + mpRegen);
+      if (state.hp !== prevHp || state.mp !== prevMp) {
+        renderBars();
+      }
+    }, 1000);
+  }
+
   function destroyCenterWidgets() {
     if (heroWidgetInstance?.destroy) {
       heroWidgetInstance.destroy();
@@ -125,9 +150,12 @@ export function initUI() {
       state.activeSection = sec;
 
       if (sec === 'heroe') {
+        startHeroRegen();
         showHeroPanel();
         return;
       }
+
+      stopHeroRegen();
 
       if (sec === 'misiones') {
         showMissionsPanel();
@@ -137,6 +165,8 @@ export function initUI() {
       showSectionOverlay(sec);
     });
   });
+
+  startHeroRegen();
 
   overlayClose.addEventListener('click', () => {
     overlay.classList.remove('visible');

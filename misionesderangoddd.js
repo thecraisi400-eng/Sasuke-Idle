@@ -1,3 +1,6 @@
+import { addMissionRewards } from './core/state.js';
+import { renderBars } from './ui/renderBars.js';
+
 // ═══════════════════════════════════════════════════
 //  misionesderangosdd.js — SHINOBI EVOLUTION Combat Engine
 //  Todos los nombres globales usan prefijo "misionesderangod2"
@@ -258,6 +261,8 @@ class misionesderangod2Fighter {
       const sharedState = window.__sasukeIdleState;
       this.maxHp = Math.max(1, Math.round(heroStats.hp));
       this.hp = Math.max(1, Math.min(Math.round(sharedState?.hp ?? this.maxHp), this.maxHp));
+      this.maxMp = Math.max(1, Math.round(heroStats.mp || 1));
+      this.mp = Math.max(0, Math.min(Math.round(sharedState?.mp ?? this.maxMp), this.maxMp));
       this.power = Math.max(1, Number(heroStats.str) || 1);
       this.defense = Math.max(1, Number(heroStats.def) || 1);
     }
@@ -584,6 +589,11 @@ function misionesderangod2SpawnSmoke(x,y,count){
 
 function misionesderangod2ShowWinner(winner){
   const playerWon = winner && winner.id === 0;
+  if (playerWon && window.misionesderangod2SelectedMission) {
+    const mission = window.misionesderangod2SelectedMission;
+    addMissionRewards({ exp: mission.xp, gold: mission.gold });
+    renderBars();
+  }
   misionesderangod2WinName.textContent = playerWon ? 'PRÓXIMA RONDA' : 'HAS PERDIDO';
   misionesderangod2WinName.style.color = playerWon ? '#FFD700' : '#FF6688';
   const btn = document.getElementById('misionesderangod2BtnRestart');
@@ -903,6 +913,16 @@ function misionesderangod2Update(dt, dms){
   misionesderangod2Particles=misionesderangod2Particles.filter(p=>!p.isDead());
   misionesderangod2DamageNums.forEach(d=>d.update(dt));
   misionesderangod2DamageNums=misionesderangod2DamageNums.filter(d=>!d.isDead());
+
+  const player = misionesderangod2Fighters[0];
+  if (player && window.__sasukeIdleState) {
+    const sharedState = window.__sasukeIdleState;
+    const nextHp = Math.max(0, Math.round(player.hp));
+    if (sharedState.hp !== nextHp) {
+      sharedState.hp = nextHp;
+      renderBars();
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -951,6 +971,10 @@ function misionesderangod2StartGame(options = {}){
   }
   if (window.__sasukeIdleState) {
     window.__sasukeIdleState.hp = Math.max(1, Math.round(misionesderangod2Fighters[0].hp));
+    if (typeof misionesderangod2Fighters[0].mp === 'number') {
+      window.__sasukeIdleState.mp = Math.max(0, Math.round(misionesderangod2Fighters[0].mp));
+    }
+    renderBars();
   }
   misionesderangod2Fighters[0].tX=120+Math.random()*80;
   misionesderangod2Fighters[1].tX=250+Math.random()*80;
