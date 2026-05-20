@@ -1,5 +1,6 @@
 import '../botonheroe.js';
 import '../misionesderangod.js';
+import '../misionesderangoddd.js';
 import { getHeroStats, setEquipmentSlotLevel, state, syncDerivedStateFromHero } from '../core/state.js';
 import { sections } from '../data/sections.js';
 import { renderBars } from './renderBars.js';
