@@ -1,0 +1,46 @@
+#status-bar {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  z-index: 10;
+  gap: clamp(3px, 1.25vw, 5px);
+  width: clamp(90px, 22.5vw, 100px);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: clamp(3px, 1.1vw, 4.5px);
+  background: rgba(0,0,0,0.3);
+  border: 1.5px solid rgba(255,255,255,0.25);
+  border-radius: 18px;
+  padding: 3.6px clamp(3.6px, 1.6vw, 7.2px) 3.6px 4.5px;
+  min-width: 0;
+  width: 100%;
+}
+
+.status-icon { width: clamp(19px, 6vw, 25px); height: clamp(19px, 6vw, 25px); flex-shrink: 0; }
+.status-texts { display: flex; flex-direction: column; min-width: 0; }
+.status-value {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(11px, 3.4vw, 14.3px);
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.status-label {
+  font-size: clamp(7.7px, 2.2vw, 8.8px);
+  color: rgba(255,255,255,0.8);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
