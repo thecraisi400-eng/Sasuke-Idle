@@ -1721,7 +1721,7 @@ function openModal(type) {
     settings: '⚙️ Ajustes',
   };
   title.textContent = titles[type] || type;
-  title.classList.toggle('centered-title', type === 'axe');
+  title.classList.toggle('centered-title', type === 'axe' || type === 'attrs');
   body.innerHTML = renderModal(type);
   overlay.classList.add('active');
 }
@@ -1737,7 +1737,7 @@ function closeModalOutside(e) {
 function renderModal(type) {
   switch(type) {
     case 'axe': return renderAxeModal();
-    case 'attrs': return renderAttrsModal();
+    case 'attrs': return window.renderAttrsModal();
     case 'shop': return renderShopModal();
     case 'missions': return renderMissionsModal();
     case 'clans': return renderClansModal();
@@ -1755,42 +1755,6 @@ const getAxeUpgradeGain = window.getAxeUpgradeGain;
 const buyAxeUpgrade = window.buyAxeUpgrade;
 const useWhetstone = window.useWhetstone;
 
-function renderAttrsModal() {
-  let html = `<p class="modal-section-title">Mejoras de Atributos</p>
-  <div class="stat-row"><span class="label">Nivel</span><span class="value">${G.level}</span></div>
-  <div class="stat-row"><span class="label">XP</span><span class="value">${Math.floor(G.xp)} / ${G.xpNeeded}</span></div>
-  <div class="stat-row"><span class="label">Multiplicador Prestigio</span><span class="value">x${G.prestigeMultiplier.toFixed(2)}</span></div>
-  <br>`;
-  ATTR_UPGRADES.forEach((u, i) => {
-    const canAfford = u.costCurrency === 'gold' ? G.gold >= u.cost : G.crystals >= u.cost;
-    const icon = u.costCurrency === 'gold' ? '🪙' : '💎';
-    html += `<div class="upgrade-item">
-      <div class="upgrade-icon">💪</div>
-      <div class="upgrade-info">
-        <div class="upgrade-name">${u.name} ${u.owned ? '✅' : ''}</div>
-        <div class="upgrade-desc">${u.desc}</div>
-        <div class="upgrade-cost">${u.owned ? 'Comprado' : `Costo: ${u.cost} ${icon}`}</div>
-      </div>
-      ${!u.owned ? `<button class="upgrade-btn" ${!canAfford ? 'disabled' : ''} onclick="buyAttrUpgrade(${i})">
-        ${canAfford ? 'Comprar' : 'Insuf.'}
-      </button>` : ''}
-    </div>`;
-  });
-  return html;
-}
-
-function buyAttrUpgrade(i) {
-  const u = ATTR_UPGRADES[i];
-  if (u.owned) return;
-  if (u.costCurrency === 'gold' && G.gold < u.cost) { showToast('💰 Oro insuficiente'); return; }
-  if (u.costCurrency === 'crystal' && G.crystals < u.cost) { showToast('💎 Cristales insuficientes'); return; }
-  if (u.costCurrency === 'gold') G.gold -= u.cost;
-  else G.crystals -= u.cost;
-  u.owned = true;
-  showToast(`✅ ¡${u.name} comprado!`);
-  updateUI();
-  openModal('attrs');
-}
 
 function renderShopModal() {
   let html = `<p class="modal-section-title">Tienda de Objetos</p>`;
@@ -2058,11 +2022,16 @@ if (document.readyState === 'loading') {
   startGame();
 }
 
+
+window.G = G;
+window.getCurrentDPS = () => currentDPS;
+window.setCurrentDPS = (v) => { currentDPS = v; };
+window.updateUI = updateUI;
+window.showToast = showToast;
 window.openModal = openModal;
 window.closeModal = closeModal;
 window.closeModalOutside = closeModalOutside;
 window.buyAxeUpgrade = buyAxeUpgrade;
-window.buyAttrUpgrade = buyAttrUpgrade;
 window.buyShopItem = buyShopItem;
 window.buySkill = buySkill;
 window.doPrestige = doPrestige;
