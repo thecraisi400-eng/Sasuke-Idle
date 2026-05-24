@@ -90,7 +90,7 @@
           <div class="upgrade-desc">🚀 Próxima mejora: +x${filo.nextGain.toFixed(2)} → x${filoNextTotal.toFixed(2)}</div>
           <div class="upgrade-desc">💥 Multiplicador permanente total: x${filo.totalPermanentMultiplier.toFixed(2)}</div>
         </div>
-        <button class="upgrade-btn" ${canBuyFilo ? '' : 'disabled'} onclick="window.buyAttrUpgrade('filo')">${canBuyFilo ? 'Mejorar' : 'Sin puntos'}</button>
+        <button class="upgrade-btn" onclick="window.buyAttrUpgrade('filo')">Mejorar</button>
       </div>
 
       <div class="upgrade-item" style="align-items:flex-start">
@@ -103,7 +103,7 @@
           <div class="upgrade-desc">🚀 Próxima mejora: +x${reflejo.nextGain.toFixed(2)} → x${reflejoNextTotal.toFixed(2)}</div>
           <div class="upgrade-desc">🌲 Bonus permanente total: x${reflejo.totalPermanentMultiplier.toFixed(2)}</div>
         </div>
-        <button class="upgrade-btn" ${canBuyReflejo ? '' : 'disabled'} onclick="window.buyAttrUpgrade('reflejo')">${canBuyReflejo ? 'Mejorar' : 'Sin puntos'}</button>
+        <button class="upgrade-btn" onclick="window.buyAttrUpgrade('reflejo')">Mejorar</button>
       </div>
 
       <div class="upgrade-item" style="align-items:flex-start">
@@ -116,7 +116,7 @@
           <div class="upgrade-desc">🚀 Próxima mejora: +${(precision.nextGain * 100).toFixed(2)}% → ${(precisionNextTotal * 100).toFixed(2)}%</div>
           <div class="upgrade-desc">💎 Bonus permanente total: ${(precision.totalChance * 100).toFixed(2)}%</div>
         </div>
-        <button class="upgrade-btn" ${canBuyPrecision ? '' : 'disabled'} onclick="window.buyAttrUpgrade('precision')">${canBuyPrecision ? 'Mejorar' : 'Sin puntos'}</button>
+        <button class="upgrade-btn" onclick="window.buyAttrUpgrade('precision')">Mejorar</button>
       </div>
     `;
   }
@@ -127,7 +127,7 @@
 
     if (type === 'filo') {
       const filo = attr.filoCarbono;
-      if (attr.availablePoints < filo.currentCost) return window.showToast('⚠️ no hay puntos');
+      if (attr.availablePoints < filo.currentCost) return window.showToast('no hay puntos');
 
       attr.availablePoints -= filo.currentCost;
       filo.level += 1;
@@ -142,7 +142,7 @@
 
     if (type === 'reflejo') {
       const reflejo = attr.reflejoBosque;
-      if (attr.availablePoints < reflejo.currentCost) return window.showToast('⚠️ no hay puntos');
+      if (attr.availablePoints < reflejo.currentCost) return window.showToast('no hay puntos');
 
       attr.availablePoints -= reflejo.currentCost;
       reflejo.level += 1;
@@ -151,13 +151,13 @@
       window.G.attrPermanentAttackSpeedMultiplier = +(window.G.attrPermanentAttackSpeedMultiplier * reflejo.nextGain).toFixed(4);
 
       reflejo.currentCost = +(reflejo.currentCost * pickRandom(REFLEJO_COST_MULTIPLIERS)).toFixed(1);
-      reflejo.nextGain = reflejo.level === 1 ? 0.13 : +(reflejo.nextGain + randomReflejoGain()).toFixed(2);
+      reflejo.nextGain = +(reflejo.nextGain + randomReflejoGain()).toFixed(2);
       window.showToast('✅ Reflejo Del Bosque mejorado');
     }
 
     if (type === 'precision') {
       const precision = attr.precisionQuirurgica;
-      if (attr.availablePoints < precision.currentCost) return window.showToast('⚠️ no hay puntos');
+      if (attr.availablePoints < precision.currentCost) return window.showToast('no hay puntos');
 
       attr.availablePoints -= precision.currentCost;
       precision.level += 1;
@@ -166,7 +166,7 @@
       window.G.attrPermanentCritChanceBonus = precision.totalChance;
 
       precision.currentCost = +(precision.currentCost * pickRandom(PRECISION_COST_MULTIPLIERS)).toFixed(1);
-      precision.nextGain = precision.level === 1 ? 0.01 : +(precision.nextGain + randomPrecisionGain()).toFixed(3);
+      precision.nextGain = +(precision.nextGain + randomPrecisionGain()).toFixed(3);
       window.showToast('✅ Precisión Quirúrgica mejorada');
     }
 
