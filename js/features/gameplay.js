@@ -2015,6 +2015,9 @@ if (document.readyState === 'loading') {
 window.openModal = openModal;
 window.closeModal = closeModal;
 window.closeModalOutside = closeModalOutside;
+window.G = G;
+window.updateUI = updateUI;
+window.showToast = showToast;
 window.buyAxeUpgrade = buyAxeUpgrade;
 window.buyShopItem = buyShopItem;
 window.buySkill = buySkill;
