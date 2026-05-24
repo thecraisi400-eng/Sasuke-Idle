@@ -1,15 +1,16 @@
 (function(){
   function ensureAttrState() {
-    if (!window.G) return null;
-    G.attrLevel = 1;
-    G.attrXp = 0;
-    G.attrXpNeeded = 100;
-    G.attrAvailablePoints = Number.isFinite(G.attrAvailablePoints) ? G.attrAvailablePoints : 0;
-    G.carbLvl = Number.isFinite(G.carbLvl) ? G.carbLvl : 0;
-    G.carbCost = Number.isFinite(G.carbCost) ? G.carbCost : 1;
-    G.carbMultiplier = Number.isFinite(G.carbMultiplier) ? G.carbMultiplier : 1.3;
-    G.carbAppliedBase = Number.isFinite(G.carbAppliedBase) ? G.carbAppliedBase : 0;
-    return G;
+    const state = window.G;
+    if (!state) return null;
+    state.attrLevel = 1;
+    state.attrXp = 0;
+    state.attrXpNeeded = 100;
+    state.attrAvailablePoints = Number.isFinite(state.attrAvailablePoints) ? state.attrAvailablePoints : 0;
+    state.carbLvl = Number.isFinite(state.carbLvl) ? state.carbLvl : 0;
+    state.carbCost = Number.isFinite(state.carbCost) ? state.carbCost : 1;
+    state.carbMultiplier = Number.isFinite(state.carbMultiplier) ? state.carbMultiplier : 1.3;
+    state.carbAppliedBase = Number.isFinite(state.carbAppliedBase) ? state.carbAppliedBase : 0;
+    return state;
   }
 
   function rngFrom(list){ return list[Math.floor(Math.random()*list.length)]; }
