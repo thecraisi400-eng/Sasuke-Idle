@@ -34,6 +34,8 @@ const G = {
   skillPoints: 0,
   skills: { strength: 0, speed: 0, luck: 0, endurance: 0 }
 };
+window.G = G;
+window.getGameState = () => G;
 
 // =============================================
 // SISTEMA DE TIEMPO
@@ -1756,14 +1758,26 @@ const buyAxeUpgrade = window.buyAxeUpgrade;
 const useWhetstone = window.useWhetstone;
 
 function renderAttrsModal() {
-  if (typeof window.renderAtributosModal === 'function') return window.renderAtributosModal();
+  if (typeof window.renderAtributosModal === 'function') {
+    try {
+      return window.renderAtributosModal(G);
+    } catch (err) {
+      console.error('Error al renderizar Atributos:', err);
+    }
+  }
   return '<p class="modal-section-title" style="text-align:center">Mejoras de Atributos</p>';
 }
 
 function buyAttrUpgrade(i) {
   if (typeof window.buyAtributoUpgrade === 'function') {
-    window.buyAtributoUpgrade(i);
+    try {
+      window.buyAtributoUpgrade(i, G);
+      return;
+    } catch (err) {
+      console.error('Error al comprar atributo:', err);
+    }
   }
+  if (window.showToast) showToast('⚠️ Esta mejora no está disponible ahora mismo.');
 }
 
 function renderShopModal() {

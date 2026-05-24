@@ -1,21 +1,22 @@
 (function(){
   function ensureAttrState() {
-    if (!window.G) return null;
-    G.attrLevel = 1;
-    G.attrXp = 0;
-    G.attrXpNeeded = 100;
-    G.attrAvailablePoints = Number.isFinite(G.attrAvailablePoints) ? G.attrAvailablePoints : 0;
-    G.carbLvl = Number.isFinite(G.carbLvl) ? G.carbLvl : 0;
-    G.carbCost = Number.isFinite(G.carbCost) ? G.carbCost : 1;
-    G.carbMultiplier = Number.isFinite(G.carbMultiplier) ? G.carbMultiplier : 1.3;
-    G.carbAppliedBase = Number.isFinite(G.carbAppliedBase) ? G.carbAppliedBase : 0;
-    return G;
+    const state = typeof window.getGameState === 'function' ? window.getGameState() : window.G;
+    if (!state) return null;
+    state.attrLevel = 1;
+    state.attrXp = 0;
+    state.attrXpNeeded = 100;
+    state.attrAvailablePoints = Number.isFinite(state.attrAvailablePoints) ? state.attrAvailablePoints : 0;
+    state.carbLvl = Number.isFinite(state.carbLvl) ? state.carbLvl : 0;
+    state.carbCost = Number.isFinite(state.carbCost) ? state.carbCost : 1;
+    state.carbMultiplier = Number.isFinite(state.carbMultiplier) ? state.carbMultiplier : 1.3;
+    state.carbAppliedBase = Number.isFinite(state.carbAppliedBase) ? state.carbAppliedBase : 0;
+    return state;
   }
 
   function rngFrom(list){ return list[Math.floor(Math.random()*list.length)]; }
 
-  window.renderAtributosModal = function() {
-    const state = ensureAttrState();
+  window.renderAtributosModal = function(externalState) {
+    const state = externalState || ensureAttrState();
     if (!state) return '<p>Error: estado no disponible.</p>';
     const nextBonus = state.carbLvl === 0 ? 1.3 : Number((Math.random()*0.30 + 0.15).toFixed(2));
     state.carbPreviewBonus = nextBonus;
@@ -52,9 +53,9 @@
       </div>`;
   };
 
-  window.buyAtributoUpgrade = function(i) {
+  window.buyAtributoUpgrade = function(i, externalState) {
     if (i !== 0) return;
-    const state = ensureAttrState();
+    const state = externalState || ensureAttrState();
     const cost = Math.max(1, Math.floor(state.carbCost));
     if (state.attrAvailablePoints < cost) {
       if (window.showToast) showToast('⚠️ No tienes puntos disponibles.');
