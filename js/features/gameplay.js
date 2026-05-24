@@ -34,6 +34,8 @@ const G = {
   skillPoints: 0,
   skills: { strength: 0, speed: 0, luck: 0, endurance: 0 }
 };
+window.G = G;
+window.getGameState = () => G;
 
 // =============================================
 // SISTEMA DE TIEMPO
@@ -1756,13 +1758,13 @@ const buyAxeUpgrade = window.buyAxeUpgrade;
 const useWhetstone = window.useWhetstone;
 
 function renderAttrsModal() {
-  if (typeof window.renderAtributosModal === 'function') return window.renderAtributosModal();
+  if (typeof window.renderAtributosModal === 'function') return window.renderAtributosModal(G);
   return '<p class="modal-section-title" style="text-align:center">Mejoras de Atributos</p>';
 }
 
 function buyAttrUpgrade(i) {
   if (typeof window.buyAtributoUpgrade === 'function') {
-    window.buyAtributoUpgrade(i);
+    window.buyAtributoUpgrade(i, G);
   }
 }
 
