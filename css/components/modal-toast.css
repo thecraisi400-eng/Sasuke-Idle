@@ -368,6 +368,81 @@
   box-shadow: 0 8px 18px rgba(32, 80, 44, 0.1);
 }
 
+.carbon-scroll-card {
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(133, 212, 255, 0.22), transparent 40%),
+    linear-gradient(145deg, #ffffff, #eff6ff 45%, #eefcf4);
+  border-color: #c8ddf5;
+}
+
+.carbon-stats-scroll {
+  margin-top: 7px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(156px, 1fr);
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 3px 3px 7px;
+  scrollbar-width: thin;
+  scrollbar-color: #4ec8a8 rgba(78, 200, 168, 0.22);
+  scroll-snap-type: x proximity;
+}
+
+.carbon-stats-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.carbon-stats-scroll::-webkit-scrollbar-track {
+  background: rgba(78, 200, 168, 0.14);
+  border-radius: 10px;
+}
+
+.carbon-stats-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #67e0c0, #39b5ea);
+  border-radius: 999px;
+}
+
+.carbon-stat-mini {
+  border: 1px solid transparent;
+  border-radius: 11px;
+  padding: 7px 8px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "emoji label"
+    "emoji value";
+  gap: 2px 6px;
+  box-shadow: 0 6px 12px rgba(28, 53, 71, 0.11);
+  min-height: 58px;
+  scroll-snap-align: start;
+}
+
+.mini-emoji { grid-area: emoji; font-size: 16px; }
+.mini-label { grid-area: label; font-size: 10px; color: #28405e; letter-spacing: 0.2px; }
+.mini-value { grid-area: value; font-size: 12px; font-weight: 700; color: #112842; }
+
+.mini-cost {
+  background: linear-gradient(130deg, #fff7ef, #ffe5cb);
+  border-color: #ffc483;
+}
+
+.mini-current {
+  background: linear-gradient(130deg, #f3f8ff, #dfebff);
+  border-color: #bcd0ff;
+}
+
+.mini-next {
+  background: linear-gradient(130deg, #f0fff8, #d6f8ea);
+  border-color: #98e2c6;
+}
+
+.mini-growth {
+  background: linear-gradient(130deg, #f9f2ff, #ecdfff);
+  border-color: #cfb4ff;
+}
+
 .upgrade-meta-row {
   display: flex;
   justify-content: space-between;

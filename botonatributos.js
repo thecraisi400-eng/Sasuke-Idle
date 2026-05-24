@@ -40,6 +40,15 @@ function randomChoice(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function getNextAttrPreview(u) {
+  const nextLevel = u.level + 1;
+  const nextCostMin = Math.ceil(u.pointsCost * 1.5);
+  const nextCostMax = Math.ceil(u.pointsCost * 3.5);
+  const nextBonusMin = u.level === 0 ? 1.3 : u.bonus + 0.15;
+  const nextBonusMax = u.level === 0 ? 1.3 : u.bonus + 0.45;
+  return { nextLevel, nextCostMin, nextCostMax, nextBonusMin, nextBonusMax };
+}
+
 loadAttrState();
 
 window.renderAttrsModal = function renderAttrsModal() {
@@ -74,7 +83,9 @@ window.renderAttrsModal = function renderAttrsModal() {
       return;
     }
 
-    html += `<div class="upgrade-item attr-upgrade-item">
+    const preview = getNextAttrPreview(u);
+
+    html += `<div class="upgrade-item attr-upgrade-item carbon-scroll-card">
       <div class="upgrade-icon">${u.icon}</div>
       <div class="upgrade-info">
         <div class="upgrade-name">${u.name}</div>
@@ -82,6 +93,28 @@ window.renderAttrsModal = function renderAttrsModal() {
         <div class="upgrade-meta-row">
           <div class="upgrade-cost">Costo: ${Math.ceil(u.pointsCost)} punto(s)</div>
           <div class="upgrade-cost">x${u.bonus.toFixed(2)}</div>
+        </div>
+        <div class="carbon-stats-scroll" role="region" aria-label="Estadísticas de ${u.name}">
+          <article class="carbon-stat-mini mini-cost">
+            <span class="mini-emoji" aria-hidden="true">🎟️</span>
+            <span class="mini-label">Costo actual</span>
+            <span class="mini-value">${Math.ceil(u.pointsCost)} pts</span>
+          </article>
+          <article class="carbon-stat-mini mini-current">
+            <span class="mini-emoji" aria-hidden="true">⚔️</span>
+            <span class="mini-label">Actual (${u.level})</span>
+            <span class="mini-value">x${u.bonus.toFixed(2)}</span>
+          </article>
+          <article class="carbon-stat-mini mini-next">
+            <span class="mini-emoji" aria-hidden="true">🚀</span>
+            <span class="mini-label">Próximo (${preview.nextLevel})</span>
+            <span class="mini-value">x${preview.nextBonusMin.toFixed(2)} - x${preview.nextBonusMax.toFixed(2)}</span>
+          </article>
+          <article class="carbon-stat-mini mini-growth">
+            <span class="mini-emoji" aria-hidden="true">📈</span>
+            <span class="mini-label">Costo siguiente</span>
+            <span class="mini-value">${preview.nextCostMin} - ${preview.nextCostMax} pts</span>
+          </article>
         </div>
       </div>
       <button class="upgrade-btn" disabled onclick="buyAttrUpgrade(${i})">Sin puntos</button>
