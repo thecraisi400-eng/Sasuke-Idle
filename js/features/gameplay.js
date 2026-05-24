@@ -1714,7 +1714,7 @@ function openModal(type) {
     settings: '⚙️ Ajustes',
   };
   title.textContent = titles[type] || type;
-  title.classList.toggle('centered-title', type === 'axe');
+  title.classList.toggle('centered-title', type === 'axe' || type === 'attrs');
   body.innerHTML = renderModal(type);
   overlay.classList.add('active');
 }
