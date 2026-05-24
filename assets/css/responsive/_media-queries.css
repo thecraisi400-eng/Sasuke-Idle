@@ -1,0 +1,17 @@
+@media (max-height: 620px) {
+  body { padding: max(4px, env(safe-area-inset-top)) max(4px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left)); }
+  #game-wrapper {
+    width: min(420px, calc(100vw - 8px));
+    height: min(720px, calc(var(--app-height, 100dvh) - 8px));
+    min-height: min(520px, calc(var(--app-height, 100dvh) - 8px));
+  }
+  #bottom-section { height: 170px; }
+  .menu-btn svg { width: 24px; height: 24px; }
+  .menu-btn span { font-size: 9px; }
+  #time-bar { top: 48px; }
+}
+
+@media (max-width: 360px) {
+  .status-label { display: none; }
+  .menu-btn span { font-size: 9px; }
+}

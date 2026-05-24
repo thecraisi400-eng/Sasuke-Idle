@@ -1,0 +1,18 @@
+@keyframes burstUp {
+  0% { opacity:1; transform: translateY(0) scale(1); }
+  100% { opacity:0; transform: translateY(-60px) scale(1.4); }
+}
+
+@keyframes rippleOut {
+  0% { width: 10px; height: 10px; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { width: 80px; height: 80px; opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes logShakeAnim {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-5px) rotate(-2deg); }
+  40% { transform: translateX(5px) rotate(2deg); }
+  60% { transform: translateX(-4px) rotate(-1deg); }
+  80% { transform: translateX(4px) rotate(1deg); }
+  100% { transform: translateX(0); }
+}
