@@ -47,9 +47,23 @@ window.renderAttrsModal = function renderAttrsModal() {
     <p class="modal-section-title attrs-title">Mejoras de Atributos</p>
 
     <div class="attrs-summary">
-      <div class="stat-row"><span class="label">Nivel</span><span class="value">1</span></div>
-      <div class="stat-row"><span class="label">XP</span><span class="value">0 / 100</span></div>
-      <div class="stat-row"><span class="label">Puntos Disponibles</span><span class="value">0</span></div>
+      <div class="attrs-stats-scroll" role="region" aria-label="Resumen de estadísticas del personaje">
+        <article class="attr-stat-chip stat-chip-level">
+          <span class="stat-chip-emoji" aria-hidden="true">🧬</span>
+          <span class="label">Nivel</span>
+          <span class="value">1</span>
+        </article>
+        <article class="attr-stat-chip stat-chip-xp">
+          <span class="stat-chip-emoji" aria-hidden="true">✨</span>
+          <span class="label">XP</span>
+          <span class="value">0 / 100</span>
+        </article>
+        <article class="attr-stat-chip stat-chip-points">
+          <span class="stat-chip-emoji" aria-hidden="true">🎯</span>
+          <span class="label">Puntos</span>
+          <span class="value">0</span>
+        </article>
+      </div>
     </div>
 
     <div class="attrs-scroll" role="region" aria-label="Lista de mejoras de atributos">`;
