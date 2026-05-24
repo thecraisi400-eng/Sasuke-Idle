@@ -1,6 +1,5 @@
 (function(){
   function ensureAttrState() {
-    const state = window.G;
     if (!state) return null;
     state.attrLevel = 1;
     state.attrXp = 0;
@@ -15,8 +14,8 @@
 
   function rngFrom(list){ return list[Math.floor(Math.random()*list.length)]; }
 
-  window.renderAtributosModal = function() {
-    const state = ensureAttrState();
+  window.renderAtributosModal = function(externalState) {
+    const state = externalState || ensureAttrState();
     if (!state) return '<p>Error: estado no disponible.</p>';
     const nextBonus = state.carbLvl === 0 ? 1.3 : Number((Math.random()*0.30 + 0.15).toFixed(2));
     state.carbPreviewBonus = nextBonus;
@@ -53,9 +52,9 @@
       </div>`;
   };
 
-  window.buyAtributoUpgrade = function(i) {
+  window.buyAtributoUpgrade = function(i, externalState) {
     if (i !== 0) return;
-    const state = ensureAttrState();
+    const state = externalState || ensureAttrState();
     const cost = Math.max(1, Math.floor(state.carbCost));
     if (state.attrAvailablePoints < cost) {
       if (window.showToast) showToast('⚠️ No tienes puntos disponibles.');
