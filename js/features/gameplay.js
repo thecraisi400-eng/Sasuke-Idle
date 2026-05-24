@@ -1740,9 +1740,10 @@ const renderAxeModal = window.renderAxeModal;
 const getAxeUpgradeGain = window.getAxeUpgradeGain;
 const buyAxeUpgrade = window.buyAxeUpgrade;
 const useWhetstone = window.useWhetstone;
+const externalRenderAttrsModal = window.renderAttrsModal;
 
 function renderAttrsModal() {
-  if (window.renderAttrsModal) return window.renderAttrsModal();
+  if (typeof externalRenderAttrsModal === 'function') return externalRenderAttrsModal();
   return '<p>Cargando atributos...</p>';
 }
 
