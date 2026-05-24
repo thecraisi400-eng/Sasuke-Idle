@@ -52,17 +52,6 @@ window.renderAttrsModal = function renderAttrsModal() {
       <div class="stat-row"><span class="label">Puntos Disponibles</span><span class="value">0</span></div>
     </div>
 
-    <div class="attrs-subscroll stats-subscroll" role="region" aria-label="Estadísticas que obtendrás">
-      <div class="attrs-subscroll-title">📊 Estadísticas que obtendrás</div>
-      <div class="attrs-stat-item">⚡ DPS automático: <strong>+30%</strong> base al desbloquear</div>
-      <div class="attrs-stat-item">🪓 Filo de hacha: <strong>golpes más potentes</strong></div>
-      <div class="attrs-stat-item">🎯 Progreso por nivel: <strong>bono incremental</strong></div>
-      <div class="attrs-stat-item">💰 Eficiencia: <strong>más oro por minuto indirecto</strong></div>
-      <div class="attrs-stat-item">🔥 Escalado: <strong>mejor rendimiento en niveles altos</strong></div>
-    </div>
-
-    <div class="attrs-scroll upgrades-subscroll" role="region" aria-label="Lista de mejoras de atributos">`;
-
   window.ATTR_UPGRADES.forEach((u, i) => {
     if (u.empty) {
       html += `<div class="upgrade-item upgrade-item-empty"><div class="empty-slot-text">Espacio bloqueado</div></div>`;
