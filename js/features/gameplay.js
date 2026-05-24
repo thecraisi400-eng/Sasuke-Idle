@@ -251,15 +251,8 @@ function lerpHex(c1, c2, t) {
 
 // Upgrade definitions moved to mejorarhacha.js
 const AXE_UPGRADES = window.AXE_UPGRADES;
+const ATTR_UPGRADES = window.ATTR_UPGRADES;
 
-
-const ATTR_UPGRADES = [
-  { id:'at1', name:'Fuerza I',      desc:'+10% Oro/seg',        cost:100,  costCurrency:'gold',    pct:0.10, owned:false },
-  { id:'at2', name:'Fuerza II',     desc:'+25% Oro/seg',        cost:500,  costCurrency:'gold',    pct:0.25, owned:false },
-  { id:'at3', name:'Resistencia I', desc:'+15% Oro/click',      cost:300,  costCurrency:'gold',    pct:0.15, owned:false },
-  { id:'at4', name:'Agilidad',      desc:'+0.5 Oro/seg base',   cost:30,   costCurrency:'crystal', flat:0.5, owned:false },
-  { id:'at5', name:'Maestría',      desc:'+50% todo el oro',    cost:100,  costCurrency:'crystal', pct:0.50, all:true, owned:false },
-];
 
 const MISSIONS = [
   { id:'m1', name:'Primer Golpe',    desc:'Haz tu primer click en el leñador.',   goal:1,    stat:'totalClicks',     reward:10,   rewardType:'gold' },
@@ -1754,43 +1747,8 @@ const renderAxeModal = window.renderAxeModal;
 const getAxeUpgradeGain = window.getAxeUpgradeGain;
 const buyAxeUpgrade = window.buyAxeUpgrade;
 const useWhetstone = window.useWhetstone;
-
-function renderAttrsModal() {
-  let html = `<p class="modal-section-title">Mejoras de Atributos</p>
-  <div class="stat-row"><span class="label">Nivel</span><span class="value">${G.level}</span></div>
-  <div class="stat-row"><span class="label">XP</span><span class="value">${Math.floor(G.xp)} / ${G.xpNeeded}</span></div>
-  <div class="stat-row"><span class="label">Multiplicador Prestigio</span><span class="value">x${G.prestigeMultiplier.toFixed(2)}</span></div>
-  <br>`;
-  ATTR_UPGRADES.forEach((u, i) => {
-    const canAfford = u.costCurrency === 'gold' ? G.gold >= u.cost : G.crystals >= u.cost;
-    const icon = u.costCurrency === 'gold' ? '🪙' : '💎';
-    html += `<div class="upgrade-item">
-      <div class="upgrade-icon">💪</div>
-      <div class="upgrade-info">
-        <div class="upgrade-name">${u.name} ${u.owned ? '✅' : ''}</div>
-        <div class="upgrade-desc">${u.desc}</div>
-        <div class="upgrade-cost">${u.owned ? 'Comprado' : `Costo: ${u.cost} ${icon}`}</div>
-      </div>
-      ${!u.owned ? `<button class="upgrade-btn" ${!canAfford ? 'disabled' : ''} onclick="buyAttrUpgrade(${i})">
-        ${canAfford ? 'Comprar' : 'Insuf.'}
-      </button>` : ''}
-    </div>`;
-  });
-  return html;
-}
-
-function buyAttrUpgrade(i) {
-  const u = ATTR_UPGRADES[i];
-  if (u.owned) return;
-  if (u.costCurrency === 'gold' && G.gold < u.cost) { showToast('💰 Oro insuficiente'); return; }
-  if (u.costCurrency === 'crystal' && G.crystals < u.cost) { showToast('💎 Cristales insuficientes'); return; }
-  if (u.costCurrency === 'gold') G.gold -= u.cost;
-  else G.crystals -= u.cost;
-  u.owned = true;
-  showToast(`✅ ¡${u.name} comprado!`);
-  updateUI();
-  openModal('attrs');
-}
+const renderAttrsModal = window.renderAttrsModal;
+const buyAttrUpgrade = window.buyAttrUpgrade;
 
 function renderShopModal() {
   let html = `<p class="modal-section-title">Tienda de Objetos</p>`;
@@ -2062,7 +2020,6 @@ window.openModal = openModal;
 window.closeModal = closeModal;
 window.closeModalOutside = closeModalOutside;
 window.buyAxeUpgrade = buyAxeUpgrade;
-window.buyAttrUpgrade = buyAttrUpgrade;
 window.buyShopItem = buyShopItem;
 window.buySkill = buySkill;
 window.doPrestige = doPrestige;
