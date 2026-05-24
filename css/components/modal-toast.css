@@ -252,10 +252,87 @@
 }
 
 .attrs-summary {
-  background: linear-gradient(160deg, #f8fff9, #eef8ff);
-  border: 1px solid #d9e9de;
+  background: linear-gradient(165deg, #fcfffd, #eef7ff);
+  border: 1px solid #d6e6de;
+  border-radius: 14px;
+  padding: 8px;
+}
+
+.attrs-stats-scroll {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(136px, 1fr);
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 4px 8px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: #6e80ff rgba(110, 128, 255, 0.18);
+}
+
+.attrs-stats-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.attrs-stats-scroll::-webkit-scrollbar-track {
+  background: rgba(110, 128, 255, 0.14);
+  border-radius: 10px;
+}
+
+.attrs-stats-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #8ca0ff, #687cff);
+  border-radius: 999px;
+}
+
+.attr-stat-chip {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "emoji label"
+    "emoji value";
+  align-items: center;
+  gap: 4px 8px;
   border-radius: 12px;
-  padding: 6px 10px;
+  border: 1px solid transparent;
+  padding: 8px 10px;
+  min-height: 62px;
+  scroll-snap-align: start;
+  box-shadow: 0 8px 18px rgba(26, 37, 66, 0.12);
+}
+
+.stat-chip-emoji {
+  grid-area: emoji;
+  font-size: 22px;
+}
+
+.attr-stat-chip .label {
+  grid-area: label;
+  font-size: 11px;
+  letter-spacing: 0.35px;
+  color: #2b3c61;
+}
+
+.attr-stat-chip .value {
+  grid-area: value;
+  font-size: 14px;
+  font-weight: 700;
+  color: #10213e;
+}
+
+.stat-chip-level {
+  background: linear-gradient(130deg, #f3f8ff, #dfe8ff);
+  border-color: #bfccff;
+}
+
+.stat-chip-xp {
+  background: linear-gradient(130deg, #f0fffb, #d9f6eb);
+  border-color: #a9e8cf;
+}
+
+.stat-chip-points {
+  background: linear-gradient(130deg, #fff8f0, #ffe8cb);
+  border-color: #ffc489;
 }
 
 .attrs-scroll {
@@ -266,7 +343,7 @@
   flex-direction: column;
   gap: 10px;
   scrollbar-width: thin;
-  scrollbar-color: var(--green-mid) rgba(44, 165, 77, 0.18);
+  scrollbar-color: #ff7f66 rgba(255, 127, 102, 0.22);
 }
 
 .attrs-scroll::-webkit-scrollbar {
@@ -274,12 +351,12 @@
 }
 
 .attrs-scroll::-webkit-scrollbar-track {
-  background: rgba(44, 165, 77, 0.14);
+  background: rgba(255, 127, 102, 0.15);
   border-radius: 10px;
 }
 
 .attrs-scroll::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--green-light), var(--green-dark));
+  background: linear-gradient(180deg, #ffa480, #ff6b57);
   border-radius: 10px;
   border: 2px solid rgba(255, 255, 255, 0.65);
 }
