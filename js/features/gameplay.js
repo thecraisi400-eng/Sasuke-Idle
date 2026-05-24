@@ -35,6 +35,9 @@ const G = {
   skills: { strength: 0, speed: 0, luck: 0, endurance: 0 }
 };
 
+window.G = G;
+
+
 // =============================================
 // SISTEMA DE TIEMPO
 // =============================================
