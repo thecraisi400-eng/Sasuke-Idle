@@ -289,7 +289,10 @@ function computeGPS() {
   let baseDamage = G.axeDamage;
   if (Date.now() < G.whetstoneBoostUntil) baseDamage *= 2;
   const perHitExpected = baseDamage * (1 + G.axeCritChance) * (1 + G.axeDoubleChance);
-  let base = perHitExpected * G.axeAttackSpeed;
+  const permanentSpeed = (G.attrPermanentAttackSpeedMultiplier || 1);
+  const permanentCrit = (G.attrPermanentCritChanceBonus || 0);
+  const expectedWithPermanentCrit = perHitExpected * (1 + permanentCrit);
+  let base = expectedWithPermanentCrit * G.axeAttackSpeed * permanentSpeed;
   base *= (G.attrPermanentDpsMultiplier || 1);
   base *= (1 + G.skills.speed * 0.15);
   base *= (1 + G.skills.endurance * 0.25);
