@@ -1756,14 +1756,13 @@ const buyAxeUpgrade = window.buyAxeUpgrade;
 const useWhetstone = window.useWhetstone;
 
 function renderAttrsModal() {
-  if (typeof window.renderAtributosModal === 'function') return window.renderAtributosModal(G);
   return '<p class="modal-section-title" style="text-align:center">Mejoras de Atributos</p>';
 }
 
 function buyAttrUpgrade(i) {
   if (typeof window.buyAtributoUpgrade === 'function') {
-    window.buyAtributoUpgrade(i, G);
   }
+  if (window.showToast) showToast('⚠️ Esta mejora no está disponible ahora mismo.');
 }
 
 function renderShopModal() {
