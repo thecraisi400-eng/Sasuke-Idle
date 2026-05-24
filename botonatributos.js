@@ -1,6 +1,5 @@
 (function(){
   function ensureAttrState() {
-    const state = typeof window.getGameState === 'function' ? window.getGameState() : window.G;
     if (!state) return null;
     state.attrLevel = 1;
     state.attrXp = 0;
