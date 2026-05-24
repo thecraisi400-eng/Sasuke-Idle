@@ -43,29 +43,38 @@ function randomChoice(arr) {
 loadAttrState();
 
 window.renderAttrsModal = function renderAttrsModal() {
-  let html = `<p class="modal-section-title" style="text-align:center;">Mejoras de Atributos</p>
-  <div class="stat-row"><span class="label">Nivel</span><span class="value">1</span></div>
-  <div class="stat-row"><span class="label">XP</span><span class="value">0 / 100</span></div>
-  <div class="stat-row"><span class="label">Puntos Disponibles</span><span class="value">0</span></div>
-  <br>`;
+  let html = `<section class="attrs-panel">
+    <p class="modal-section-title attrs-title">Mejoras de Atributos</p>
+
+    <div class="attrs-summary">
+      <div class="stat-row"><span class="label">Nivel</span><span class="value">1</span></div>
+      <div class="stat-row"><span class="label">XP</span><span class="value">0 / 100</span></div>
+      <div class="stat-row"><span class="label">Puntos Disponibles</span><span class="value">0</span></div>
+    </div>
+
+    <div class="attrs-scroll" role="region" aria-label="Lista de mejoras de atributos">`;
 
   window.ATTR_UPGRADES.forEach((u, i) => {
     if (u.empty) {
-      html += `<div class="upgrade-item" style="min-height:84px"></div>`;
+      html += `<div class="upgrade-item upgrade-item-empty"><div class="empty-slot-text">Espacio bloqueado</div></div>`;
       return;
     }
 
-    html += `<div class="upgrade-item">
+    html += `<div class="upgrade-item attr-upgrade-item">
       <div class="upgrade-icon">${u.icon}</div>
       <div class="upgrade-info">
         <div class="upgrade-name">${u.name}</div>
         <div class="upgrade-desc">${u.desc}</div>
-        <div class="upgrade-cost">Costo: ${Math.ceil(u.pointsCost)} punto(s)</div>
-        <div class="upgrade-cost">Multiplicador actual: x${u.bonus.toFixed(2)}</div>
+        <div class="upgrade-meta-row">
+          <div class="upgrade-cost">Costo: ${Math.ceil(u.pointsCost)} punto(s)</div>
+          <div class="upgrade-cost">x${u.bonus.toFixed(2)}</div>
+        </div>
       </div>
       <button class="upgrade-btn" disabled onclick="buyAttrUpgrade(${i})">Sin puntos</button>
     </div>`;
   });
+
+  html += `</div></section>`;
   return html;
 };
 
