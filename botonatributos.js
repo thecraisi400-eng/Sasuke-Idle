@@ -40,6 +40,15 @@ function randomChoice(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function getNextAttrPreview(u) {
+  const nextLevel = u.level + 1;
+  const nextCostMin = Math.ceil(u.pointsCost * 1.5);
+  const nextCostMax = Math.ceil(u.pointsCost * 3.5);
+  const nextBonusMin = u.level === 0 ? 1.3 : u.bonus + 0.15;
+  const nextBonusMax = u.level === 0 ? 1.3 : u.bonus + 0.45;
+  return { nextLevel, nextCostMin, nextCostMax, nextBonusMin, nextBonusMax };
+}
+
 loadAttrState();
 
 window.renderAttrsModal = function renderAttrsModal() {
@@ -47,9 +56,23 @@ window.renderAttrsModal = function renderAttrsModal() {
     <p class="modal-section-title attrs-title">Mejoras de Atributos</p>
 
     <div class="attrs-summary">
-      <div class="stat-row"><span class="label">Nivel</span><span class="value">1</span></div>
-      <div class="stat-row"><span class="label">XP</span><span class="value">0 / 100</span></div>
-      <div class="stat-row"><span class="label">Puntos Disponibles</span><span class="value">0</span></div>
+      <div class="attrs-stats-scroll" role="region" aria-label="Resumen de estadísticas del personaje">
+        <article class="attr-stat-chip stat-chip-level">
+          <span class="stat-chip-emoji" aria-hidden="true">🧬</span>
+          <span class="label">Nivel</span>
+          <span class="value">1</span>
+        </article>
+        <article class="attr-stat-chip stat-chip-xp">
+          <span class="stat-chip-emoji" aria-hidden="true">✨</span>
+          <span class="label">XP</span>
+          <span class="value">0 / 100</span>
+        </article>
+        <article class="attr-stat-chip stat-chip-points">
+          <span class="stat-chip-emoji" aria-hidden="true">🎯</span>
+          <span class="label">Puntos</span>
+          <span class="value">0</span>
+        </article>
+      </div>
     </div>
 
     <div class="attrs-scroll" role="region" aria-label="Lista de mejoras de atributos">`;
@@ -60,7 +83,9 @@ window.renderAttrsModal = function renderAttrsModal() {
       return;
     }
 
-    html += `<div class="upgrade-item attr-upgrade-item">
+    const preview = getNextAttrPreview(u);
+
+    html += `<div class="upgrade-item attr-upgrade-item carbon-scroll-card">
       <div class="upgrade-icon">${u.icon}</div>
       <div class="upgrade-info">
         <div class="upgrade-name">${u.name}</div>
@@ -68,6 +93,28 @@ window.renderAttrsModal = function renderAttrsModal() {
         <div class="upgrade-meta-row">
           <div class="upgrade-cost">Costo: ${Math.ceil(u.pointsCost)} punto(s)</div>
           <div class="upgrade-cost">x${u.bonus.toFixed(2)}</div>
+        </div>
+        <div class="carbon-stats-scroll" role="region" aria-label="Estadísticas de ${u.name}">
+          <article class="carbon-stat-mini mini-cost">
+            <span class="mini-emoji" aria-hidden="true">🎟️</span>
+            <span class="mini-label">Costo actual</span>
+            <span class="mini-value">${Math.ceil(u.pointsCost)} pts</span>
+          </article>
+          <article class="carbon-stat-mini mini-current">
+            <span class="mini-emoji" aria-hidden="true">⚔️</span>
+            <span class="mini-label">Actual (${u.level})</span>
+            <span class="mini-value">x${u.bonus.toFixed(2)}</span>
+          </article>
+          <article class="carbon-stat-mini mini-next">
+            <span class="mini-emoji" aria-hidden="true">🚀</span>
+            <span class="mini-label">Próximo (${preview.nextLevel})</span>
+            <span class="mini-value">x${preview.nextBonusMin.toFixed(2)} - x${preview.nextBonusMax.toFixed(2)}</span>
+          </article>
+          <article class="carbon-stat-mini mini-growth">
+            <span class="mini-emoji" aria-hidden="true">📈</span>
+            <span class="mini-label">Costo siguiente</span>
+            <span class="mini-value">${preview.nextCostMin} - ${preview.nextCostMax} pts</span>
+          </article>
         </div>
       </div>
       <button class="upgrade-btn" disabled onclick="buyAttrUpgrade(${i})">Sin puntos</button>
