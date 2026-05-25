@@ -25,22 +25,42 @@
     G.xpNeeded = 100;
     if (typeof G.attributePoints !== 'number') G.attributePoints = 0;
 
-    let html = `<p class="modal-section-title" style="text-align:center;">Mejoras de Atributos</p>
-    <div class="stat-row"><span class="label">Nivel</span><span class="value">1</span></div>
-    <div class="stat-row"><span class="label">XP</span><span class="value">0 / 100</span></div>
-    <div class="stat-row"><span class="label">Puntos Disponibles</span><span class="value">${G.attributePoints}</span></div>
-    <br>`;
+    let html = `<section class="attrs-panel">
+      <div class="attrs-header-card">
+        <div class="attrs-header-title">✨ Centro de Atributos</div>
+        <p class="attrs-header-subtitle">Mejora tus estadísticas con una vista clara, profesional y fácil de leer.</p>
+      </div>
+
+      <div class="attrs-stats-grid">
+        <div class="attrs-stat-chip">
+          <span class="chip-emoji">⭐</span>
+          <div><span class="chip-label">Nivel</span><strong class="chip-value">1</strong></div>
+        </div>
+        <div class="attrs-stat-chip">
+          <span class="chip-emoji">🧠</span>
+          <div><span class="chip-label">XP</span><strong class="chip-value">0 / 100</strong></div>
+        </div>
+        <div class="attrs-stat-chip attrs-stat-chip--points">
+          <span class="chip-emoji">🎯</span>
+          <div><span class="chip-label">Puntos disponibles</span><strong class="chip-value">${G.attributePoints}</strong></div>
+        </div>
+      </div>
+    </section>`;
 
     ATTR_UPGRADES.forEach((u, i) => {
       const canAfford = G.attributePoints >= u.cost;
-      html += `<div class="upgrade-item">
+      html += `<div class="upgrade-item attr-upgrade-card">
         <div class="upgrade-icon">${u.emoji}</div>
         <div class="upgrade-info">
           <div class="upgrade-name">${u.name}</div>
           <div class="upgrade-desc">${u.desc}</div>
-          <div class="upgrade-cost">⭐ <strong>Nivel ${u.level}</strong> &nbsp;|&nbsp; 🎯 <strong>${u.cost}</strong> punto(s) &nbsp;|&nbsp; ⚡ <strong>x${u.effect.toFixed(2)}</strong></div>
+          <div class="attr-metrics">
+            <span class="metric-pill">⭐ Nivel <strong>${u.level}</strong></span>
+            <span class="metric-pill">🎯 Costo <strong>${u.cost}</strong></span>
+            <span class="metric-pill">⚡ Potencia <strong>x${u.effect.toFixed(2)}</strong></span>
+          </div>
         </div>
-        <button class="upgrade-btn" ${!canAfford ? 'disabled' : ''} onclick="buyAttrUpgrade(${i})">${canAfford ? 'Mejorar' : 'Sin puntos'}</button>
+        <button class="upgrade-btn attr-upgrade-btn" ${!canAfford ? 'disabled' : ''} onclick="buyAttrUpgrade(${i})">${canAfford ? '🚀 Mejorar' : '🔒 Sin puntos'}</button>
       </div>`;
     });
 
