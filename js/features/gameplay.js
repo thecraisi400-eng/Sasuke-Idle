@@ -253,14 +253,7 @@ function lerpHex(c1, c2, t) {
 const AXE_UPGRADES = window.AXE_UPGRADES;
 
 
-const ATTR_UPGRADES = [
-  { id:'at1', name:'Fuerza I',      desc:'+10% Oro/seg',        cost:100,  costCurrency:'gold',    pct:0.10, owned:false },
-  { id:'at2', name:'Fuerza II',     desc:'+25% Oro/seg',        cost:500,  costCurrency:'gold',    pct:0.25, owned:false },
-  { id:'at3', name:'Resistencia I', desc:'+15% Oro/click',      cost:300,  costCurrency:'gold',    pct:0.15, owned:false },
-  { id:'at4', name:'Agilidad',      desc:'+0.5 Oro/seg base',   cost:30,   costCurrency:'crystal', flat:0.5, owned:false },
-  { id:'at5', name:'Maestría',      desc:'+50% todo el oro',    cost:100,  costCurrency:'crystal', pct:0.50, all:true, owned:false },
-];
-
+const attrSystem = window.attrSystem;
 const MISSIONS = [
   { id:'m1', name:'Primer Golpe',    desc:'Haz tu primer click en el leñador.',   goal:1,    stat:'totalClicks',     reward:10,   rewardType:'gold' },
   { id:'m2', name:'Leñador Novato',  desc:'Acumula 100 clics totales.',           goal:100,  stat:'totalClicks',     reward:100,  rewardType:'gold' },
@@ -294,10 +287,7 @@ function computeGPS() {
   if (Date.now() < G.whetstoneBoostUntil) baseDamage *= 2;
   const perHitExpected = baseDamage * (1 + G.axeCritChance) * (1 + G.axeDoubleChance);
   let base = perHitExpected * G.axeAttackSpeed;
-  if (ATTR_UPGRADES[0].owned) base *= 1.10;
-  if (ATTR_UPGRADES[1].owned) base *= 1.25;
-  if (ATTR_UPGRADES[3].owned) base += 0.5;
-  if (ATTR_UPGRADES[4].owned) base *= 1.50;
+  base = attrSystem.applyAttrToGPS(base);
   base *= (1 + G.skills.speed * 0.15);
   base *= (1 + G.skills.endurance * 0.25);
   base *= G.prestigeMultiplier;
@@ -306,8 +296,7 @@ function computeGPS() {
 
 function computeGPC() {
   let base = G.axeGoldPerClick;
-  if (ATTR_UPGRADES[2].owned) base *= 1.15;
-  if (ATTR_UPGRADES[4].owned) base *= 1.50;
+  base = attrSystem.applyAttrToGPC(base);
   base *= (1 + G.skills.strength * 0.20);
   base *= G.prestigeMultiplier;
   if (G.skills.luck > 0 && Math.random() < G.skills.luck * 0.10) base *= 2;
@@ -321,7 +310,7 @@ function saveGame() {
   const save = {
     G: { ...G },
     AXE_UPGRADES: AXE_UPGRADES.map(u => u.owned),
-    ATTR_UPGRADES: ATTR_UPGRADES.map(u => u.owned),
+    ATTR_UPGRADES: attrSystem.exportAttrSave(),
     missionClaimed: { ...missionClaimed },
     TIME: { gameMinutes: TIME.gameMinutes, day: TIME.day }
   };
@@ -335,7 +324,7 @@ function loadGame() {
     const save = JSON.parse(raw);
     Object.assign(G, save.G);
     if (save.AXE_UPGRADES) save.AXE_UPGRADES.forEach((v,i) => { AXE_UPGRADES[i].owned = v; });
-    if (save.ATTR_UPGRADES) save.ATTR_UPGRADES.forEach((v,i) => { ATTR_UPGRADES[i].owned = v; });
+    if (save.ATTR_UPGRADES) attrSystem.importAttrSave(save.ATTR_UPGRADES);
     if (save.missionClaimed) Object.assign(missionClaimed, save.missionClaimed);
     G.crystals = 0;
     if (save.TIME) {
@@ -1737,7 +1726,7 @@ function closeModalOutside(e) {
 function renderModal(type) {
   switch(type) {
     case 'axe': return renderAxeModal();
-    case 'attrs': return renderAttrsModal();
+    case 'attrs': return attrSystem.renderAttrsModal();
     case 'shop': return renderShopModal();
     case 'missions': return renderMissionsModal();
     case 'clans': return renderClansModal();
@@ -1754,43 +1743,6 @@ const renderAxeModal = window.renderAxeModal;
 const getAxeUpgradeGain = window.getAxeUpgradeGain;
 const buyAxeUpgrade = window.buyAxeUpgrade;
 const useWhetstone = window.useWhetstone;
-
-function renderAttrsModal() {
-  let html = `<p class="modal-section-title">Mejoras de Atributos</p>
-  <div class="stat-row"><span class="label">Nivel</span><span class="value">${G.level}</span></div>
-  <div class="stat-row"><span class="label">XP</span><span class="value">${Math.floor(G.xp)} / ${G.xpNeeded}</span></div>
-  <div class="stat-row"><span class="label">Multiplicador Prestigio</span><span class="value">x${G.prestigeMultiplier.toFixed(2)}</span></div>
-  <br>`;
-  ATTR_UPGRADES.forEach((u, i) => {
-    const canAfford = u.costCurrency === 'gold' ? G.gold >= u.cost : G.crystals >= u.cost;
-    const icon = u.costCurrency === 'gold' ? '🪙' : '💎';
-    html += `<div class="upgrade-item">
-      <div class="upgrade-icon">💪</div>
-      <div class="upgrade-info">
-        <div class="upgrade-name">${u.name} ${u.owned ? '✅' : ''}</div>
-        <div class="upgrade-desc">${u.desc}</div>
-        <div class="upgrade-cost">${u.owned ? 'Comprado' : `Costo: ${u.cost} ${icon}`}</div>
-      </div>
-      ${!u.owned ? `<button class="upgrade-btn" ${!canAfford ? 'disabled' : ''} onclick="buyAttrUpgrade(${i})">
-        ${canAfford ? 'Comprar' : 'Insuf.'}
-      </button>` : ''}
-    </div>`;
-  });
-  return html;
-}
-
-function buyAttrUpgrade(i) {
-  const u = ATTR_UPGRADES[i];
-  if (u.owned) return;
-  if (u.costCurrency === 'gold' && G.gold < u.cost) { showToast('💰 Oro insuficiente'); return; }
-  if (u.costCurrency === 'crystal' && G.crystals < u.cost) { showToast('💎 Cristales insuficientes'); return; }
-  if (u.costCurrency === 'gold') G.gold -= u.cost;
-  else G.crystals -= u.cost;
-  u.owned = true;
-  showToast(`✅ ¡${u.name} comprado!`);
-  updateUI();
-  openModal('attrs');
-}
 
 function renderShopModal() {
   let html = `<p class="modal-section-title">Tienda de Objetos</p>`;
@@ -1944,7 +1896,7 @@ function doPrestige() {
   G.whetstones = 0;
   G.whetstoneBoostUntil = 0;
   AXE_UPGRADES.forEach(u => u.owned = false);
-  ATTR_UPGRADES.forEach(u => u.owned = false);
+  attrSystem.resetAttrUpgrades();
   showToast(`🌟 ¡Prestigio! +${reward} 💎 Cristales. Multiplicador: x${G.prestigeMultiplier.toFixed(2)}`);
   checkMissions();
   updateUI();
@@ -2062,7 +2014,6 @@ window.openModal = openModal;
 window.closeModal = closeModal;
 window.closeModalOutside = closeModalOutside;
 window.buyAxeUpgrade = buyAxeUpgrade;
-window.buyAttrUpgrade = buyAttrUpgrade;
 window.buyShopItem = buyShopItem;
 window.buySkill = buySkill;
 window.doPrestige = doPrestige;
