@@ -38,7 +38,7 @@
         <div class="upgrade-info">
           <div class="upgrade-name">${u.name}</div>
           <div class="upgrade-desc">${u.desc}</div>
-          <div class="upgrade-cost">Nivel ${u.level} · Costo: ${u.cost} punto(s) · Multiplicador actual: x${u.effect.toFixed(2)}</div>
+          <div class="upgrade-cost">⭐ <strong>Nivel ${u.level}</strong> &nbsp;|&nbsp; 🎯 <strong>${u.cost}</strong> punto(s) &nbsp;|&nbsp; ⚡ <strong>x${u.effect.toFixed(2)}</strong></div>
         </div>
         <button class="upgrade-btn" ${!canAfford ? 'disabled' : ''} onclick="buyAttrUpgrade(${i})">${canAfford ? 'Mejorar' : 'Sin puntos'}</button>
       </div>`;
