@@ -60,9 +60,6 @@
 
   function renderAttrsModal() {
     const { G } = window;
-    G.level = 1;
-    G.xp = 0;
-    G.xpNeeded = 100;
     if (typeof G.attributePoints !== 'number') G.attributePoints = 0;
 
     let html = `<section class="attrs-panel">
@@ -74,11 +71,11 @@
       <div class="attrs-stats-grid">
         <div class="attrs-stat-chip">
           <span class="chip-emoji">⭐</span>
-          <div><span class="chip-label">Nivel</span><strong class="chip-value">1</strong></div>
+          <div><span class="chip-label">Nivel</span><strong class="chip-value">${G.level}</strong></div>
         </div>
         <div class="attrs-stat-chip">
           <span class="chip-emoji">🧠</span>
-          <div><span class="chip-label">XP</span><strong class="chip-value">0 / 100</strong></div>
+          <div><span class="chip-label">XP</span><strong class="chip-value">${Math.floor(G.xp)} / ${G.xpNeeded}</strong></div>
         </div>
         <div class="attrs-stat-chip attrs-stat-chip--points">
           <span class="chip-emoji">🎯</span>

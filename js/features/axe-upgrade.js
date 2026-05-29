@@ -1,15 +1,16 @@
 // Sistema separado para "MEJORAR HACHA"
 window.AXE_UPGRADES = [
-  { id:'edge', name:'FILO DEL HACHA', icon:'🪓', desc:'Sube notablemente el daño automático del hacha.', baseCost:10, costMult:1.70, level:0, type:'gold', effectStep:1.25 },
-  { id:'quality', name:'CALIDAD DEL FILO', icon:'⏱️', desc:'Aumenta la velocidad de golpe automático (+0.10/s).', baseCost:50, costMult:2.50, level:0, type:'gold', effectStep:0.10 },
-  { id:'crit', name:'HACHA CRÍTICOS', icon:'🎯', desc:'Sube +0.05% la probabilidad de golpe crítico x2.', baseCost:60, costMult:2.80, level:0, type:'gold', effectStep:0.0005 },
-  { id:'double', name:'HACHA DOBLE FILO', icon:'🪓', desc:'Sube +0.05% la probabilidad de doble golpe.', baseCost:100, costMult:3.50, level:0, type:'gold', effectStep:0.0005 },
+  { id:'edge', name:'FILO DEL HACHA', icon:'🪓', desc:'Sube notablemente el daño automático del hacha.', baseCost:10, costMult:1.55, level:0, type:'gold', effectStep:1.25 },
+  { id:'quality', name:'CALIDAD DEL FILO', icon:'⏱️', desc:'Aumenta la velocidad de golpe automático (+0.10/s).', baseCost:50, costMult:1.90, level:0, type:'gold', effectStep:0.10 },
+  { id:'crit', name:'HACHA CRÍTICOS', icon:'🎯', desc:'Sube +0.05% la probabilidad de golpe crítico x2.', baseCost:60, costMult:2.10, level:0, type:'gold', effectStep:0.0005 },
+  { id:'double', name:'HACHA DOBLE FILO', icon:'🪓', desc:'Sube +0.05% la probabilidad de doble golpe.', baseCost:100, costMult:2.35, level:0, type:'gold', effectStep:0.0005 },
   { id:'stone', name:'PIEDRA DE AFILAR', icon:'☢️', desc:'Consumible: duplica el daño automático por 5 minutos.', baseCost:1, level:0, type:'item', effectStep:1 },
 ];
 
 window.axeUpgradeCost = function axeUpgradeCost(u) {
   const multiplier = u.costMult ?? 1.85;
-  return Math.floor(u.baseCost * Math.pow(multiplier, u.level));
+  const difficultyCostMul = window.getDifficultyConfig ? window.getDifficultyConfig().costMul : 1;
+  return Math.floor(u.baseCost * Math.pow(multiplier * difficultyCostMul, u.level));
 };
 
 window.renderAxeModal = function renderAxeModal() {
@@ -74,9 +75,10 @@ window.buyAxeUpgrade = function buyAxeUpgrade(i) {
 
 window.useWhetstone = function useWhetstone() {
   if (G.whetstones <= 0) { showToast('☢️ Sin piedra de afilar'); return; }
+  const duration = window.getDifficultyConfig ? window.getDifficultyConfig().whetstoneDurationMs : 5 * 60 * 1000;
   G.whetstones -= 1;
-  G.whetstoneBoostUntil = Date.now() + (5 * 60 * 1000);
-  showToast('☢️ Daño automático x2 por 5 minutos');
+  G.whetstoneBoostUntil = Date.now() + duration;
+  showToast(`☢️ Daño automático x2 por ${Math.round(duration / 60000)} minutos`);
   updateUI();
   openModal('axe');
 };

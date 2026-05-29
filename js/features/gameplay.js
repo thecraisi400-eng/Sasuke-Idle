@@ -4,10 +4,12 @@
 // =============================================
 const G = {
   gold: 0,
-  crystals: 0,   // CAMBIO 2: siempre empieza en 0
+  crystals: 0,
   level: 1,
   xp: 0,
   xpNeeded: 100,
+  difficulty: 'medium',
+  logTier: 0,
   prestigeMultiplier: 1,
   prestigeCount: 0,
 
@@ -20,6 +22,7 @@ const G = {
   axeDoubleChance: 0,
   whetstones: 0,
   whetstoneBoostUntil: 0,
+  eventGoldBoostUntil: 0,
 
   lumberLevel: 1,
   lumberBonus: 0,
@@ -32,6 +35,7 @@ const G = {
   totalPrestige: 0,
 
   skillPoints: 0,
+  attributePoints: 0,
   skills: { strength: 0, speed: 0, luck: 0, endurance: 0 }
 };
 
@@ -252,6 +256,45 @@ function lerpHex(c1, c2, t) {
 }
 
 // Upgrade definitions moved to mejorarhacha.js
+const DIFFICULTIES = {
+  easy: {
+    id: 'easy', name: 'Fácil', hpMul: 1.24, goldMul: 1.18, costMul: 0.90,
+    gpsMul: 1.15, prestigeReq: 4, prestigeStep: 0.12, crystalMul: 1.20,
+    missionRewardMul: 1.20, whetstoneDurationMs: 6 * 60 * 1000,
+  },
+  medium: {
+    id: 'medium', name: 'Medio', hpMul: 1.32, goldMul: 1.16, costMul: 1.00,
+    gpsMul: 1.00, prestigeReq: 5, prestigeStep: 0.10, crystalMul: 1.00,
+    missionRewardMul: 1.00, whetstoneDurationMs: 5 * 60 * 1000,
+  },
+  hard: {
+    id: 'hard', name: 'Difícil', hpMul: 1.42, goldMul: 1.13, costMul: 1.12,
+    gpsMul: 0.90, prestigeReq: 7, prestigeStep: 0.09, crystalMul: 0.85,
+    missionRewardMul: 0.85, whetstoneDurationMs: 4 * 60 * 1000,
+  },
+  impossible: {
+    id: 'impossible', name: 'Imposible', hpMul: 1.56, goldMul: 1.09, costMul: 1.30,
+    gpsMul: 0.78, prestigeReq: 10, prestigeStep: 0.08, crystalMul: 0.65,
+    missionRewardMul: 0.70, whetstoneDurationMs: 3 * 60 * 1000,
+  },
+};
+
+function getDifficultyConfig() {
+  return DIFFICULTIES[G.difficulty] || DIFFICULTIES.medium;
+}
+
+function setDifficulty(id) {
+  if (!DIFFICULTIES[id]) return;
+  G.difficulty = id;
+  syncLogFromTier();
+  showToast(`⚙️ Dificultad: ${DIFFICULTIES[id].name}`);
+  updateUI();
+  openModal('settings');
+}
+
+window.getDifficultyConfig = getDifficultyConfig;
+window.DIFFICULTIES = DIFFICULTIES;
+
 const AXE_UPGRADES = window.AXE_UPGRADES;
 
 
@@ -293,6 +336,7 @@ function computeGPS() {
   base *= (1 + G.skills.speed * 0.15);
   base *= (1 + G.skills.endurance * 0.25);
   base *= G.prestigeMultiplier;
+  base *= getDifficultyConfig().gpsMul;
   return base;
 }
 
@@ -311,7 +355,7 @@ function computeGPC() {
 function saveGame() {
   const save = {
     G: { ...G },
-    AXE_UPGRADES: AXE_UPGRADES.map(u => u.owned),
+    AXE_UPGRADES: AXE_UPGRADES.map(u => ({ id: u.id, level: u.level || 0 })),
     ATTR_UPGRADES: attrSystem.exportAttrSave(),
     missionClaimed: { ...missionClaimed },
     TIME: { gameMinutes: TIME.gameMinutes, day: TIME.day }
@@ -325,15 +369,63 @@ function loadGame() {
     if (!raw) return;
     const save = JSON.parse(raw);
     Object.assign(G, save.G);
-    if (save.AXE_UPGRADES) save.AXE_UPGRADES.forEach((v,i) => { AXE_UPGRADES[i].owned = v; });
+    if (save.AXE_UPGRADES) importAxeSave(save.AXE_UPGRADES);
     if (save.ATTR_UPGRADES) attrSystem.importAttrSave(save.ATTR_UPGRADES);
     if (save.missionClaimed) Object.assign(missionClaimed, save.missionClaimed);
-    G.crystals = 0;
+    if (!DIFFICULTIES[G.difficulty]) G.difficulty = 'medium';
+    if (typeof G.logTier !== 'number') G.logTier = Math.max(0, G.level - 1);
+    if (typeof G.attributePoints !== 'number') G.attributePoints = 0;
+    syncLogFromTier();
     if (save.TIME) {
       TIME.gameMinutes = save.TIME.gameMinutes;
       TIME.day = save.TIME.day;
     }
   } catch(e) {}
+}
+
+
+function importAxeSave(values) {
+  AXE_UPGRADES.forEach(u => { u.level = 0; });
+  if (!Array.isArray(values)) {
+    recalculateAxeStatsFromUpgrades();
+    return;
+  }
+
+  values.forEach((value, i) => {
+    const savedId = value && typeof value === 'object' ? value.id : null;
+    const target = savedId ? AXE_UPGRADES.find(u => u.id === savedId) : AXE_UPGRADES[i];
+    if (!target) return;
+    target.level = typeof value === 'object' ? Number(value.level) || 0 : 0;
+  });
+  recalculateAxeStatsFromUpgrades();
+}
+
+function recalculateAxeStatsFromUpgrades() {
+  G.axeGoldPerClick = 1;
+  G.axeGoldPerSec = 0.5;
+  G.axeDamage = 0.5;
+  G.axeAttackSpeed = 1;
+  G.axeCritChance = 0;
+  G.axeDoubleChance = 0;
+
+  AXE_UPGRADES.forEach(u => {
+    const level = Number(u.level) || 0;
+    for (let lvl = 1; lvl <= level; lvl++) {
+      if (u.id === 'edge') G.axeDamage += u.effectStep * (1 + lvl * 0.18);
+      if (u.id === 'quality') G.axeAttackSpeed += u.effectStep;
+      if (u.id === 'crit') G.axeCritChance = Math.min(1, G.axeCritChance + u.effectStep);
+      if (u.id === 'double') G.axeDoubleChance = Math.min(1, G.axeDoubleChance + u.effectStep);
+    }
+  });
+}
+
+function syncLogFromTier() {
+  const cfg = getDifficultyConfig();
+  const tier = Math.max(0, Number(G.logTier) || 0);
+  currentLogMaxHP = BASE_LOG_HP * Math.pow(cfg.hpMul, tier);
+  currentLogGoldReward = BASE_LOG_GOLD * Math.pow(cfg.goldMul, tier);
+  logHP = Math.min(logHP || currentLogMaxHP, currentLogMaxHP);
+  logHPDisplay = Math.min(logHPDisplay || currentLogMaxHP, currentLogMaxHP);
 }
 
 // =============================================
@@ -369,10 +461,17 @@ function updateUI() {
 }
 
 function checkLevelUp() {
+  let leveled = false;
   while (G.xp >= G.xpNeeded) {
     G.xp -= G.xpNeeded;
     G.level += 1;
+    G.skillPoints += 1;
+    if (G.level % 5 === 0) G.attributePoints += 1;
     G.xpNeeded = Math.floor(G.xpNeeded * 1.5);
+    leveled = true;
+  }
+  if (leveled) {
+    showToast(`⭐ Nivel ${G.level}: +1 punto de habilidad${G.level % 5 === 0 ? ' y +1 punto de atributo' : ''}`);
   }
 }
 
@@ -381,9 +480,10 @@ function checkMissions() {
     if (missionClaimed[m.id]) return;
     if (G[m.stat] >= m.goal) {
       missionClaimed[m.id] = true;
-      if (m.rewardType === 'gold') { G.gold += m.reward; G.totalGoldEarned += m.reward; }
-      else G.crystals = 0;
-      showToast(`✅ Misión "${m.name}" completada! +${m.reward} ${m.rewardType === 'gold' ? 'Oro' : 'Cristales'}`);
+      const reward = Math.max(1, Math.floor(m.reward * getDifficultyConfig().missionRewardMul));
+      if (m.rewardType === 'gold') { G.gold += reward; G.totalGoldEarned += reward; }
+      else G.crystals += reward;
+      showToast(`✅ Misión "${m.name}" completada! +${reward} ${m.rewardType === 'gold' ? 'Oro' : 'Cristales'}`);
     }
   });
 }
@@ -426,9 +526,7 @@ let chopAngle = 0;
 let chopDir = 1;
 
 const BASE_LOG_HP = 10;
-const LOG_HP_MULTIPLIER = 1.40;
 const BASE_LOG_GOLD = 10;
-const LOG_GOLD_MULTIPLIER = 1.15;
 
 let currentLogMaxHP = BASE_LOG_HP;
 let currentLogGoldReward = BASE_LOG_GOLD;
@@ -447,7 +545,8 @@ let logPileClickable = false;
 let pileClickEffect = null;
 
 function getGoldPerLog() {
-  return currentLogGoldReward;
+  const eventMultiplier = Date.now() < G.eventGoldBoostUntil ? 2 : 1;
+  return currentLogGoldReward * eventMultiplier;
 }
 
 function damageLog(amount) {
@@ -462,7 +561,12 @@ function triggerLogBreak() {
   shakeTimer = 25;
   shakeIntensity = 6;
 
-  G.level++;
+  G.logTier++;
+  G.xp += 25 + Math.floor(G.logTier * 2);
+  if (G.logTier % 5 === 0) {
+    G.attributePoints += 1;
+    showToast('🎯 +1 punto de atributo por dominio de troncos');
+  }
   showNextLevelBanner();
   updateUI();
 
@@ -491,8 +595,9 @@ function triggerLogBreak() {
   };
 
   setTimeout(() => {
-    currentLogMaxHP *= LOG_HP_MULTIPLIER;
-    currentLogGoldReward *= LOG_GOLD_MULTIPLIER;
+    const cfg = getDifficultyConfig();
+    currentLogMaxHP = BASE_LOG_HP * Math.pow(cfg.hpMul, G.logTier);
+    currentLogGoldReward = BASE_LOG_GOLD * Math.pow(cfg.goldMul, G.logTier);
     logHP = currentLogMaxHP;
     logHPDisplay = currentLogMaxHP;
   }, 300);
@@ -1690,6 +1795,25 @@ document.getElementById('top-section').addEventListener('click', e => {
     updateUI();
     return;
   }
+
+  const { logX, logY } = getSceneAnchors(W, H);
+  const trunkDx = clickX - logX;
+  const trunkDy = clickY - logY;
+  const trunkRadius = 70;
+  if (Math.sqrt(trunkDx * trunkDx + trunkDy * trunkDy) < trunkRadius) {
+    const damage = computeGPC();
+    G.totalClicks += 1;
+    damageLog(damage);
+    const hit = document.createElement('div');
+    hit.className = 'click-burst';
+    hit.textContent = `-${fmtNum(damage)} 🪓`;
+    hit.style.left = (clickX - 20) + 'px';
+    hit.style.top = (clickY - 20) + 'px';
+    document.getElementById('top-section').appendChild(hit);
+    setTimeout(() => hit.remove(), 800);
+    checkMissions();
+    updateUI();
+  }
 });
 
 // =============================================
@@ -1771,7 +1895,7 @@ function buyShopItem(i) {
   if (item.costCurrency === 'crystal' && G.crystals < item.cost) { showToast('💎 Cristales insuficientes'); return; }
   if (item.costCurrency === 'gold') G.gold -= item.cost;
   else G.crystals -= item.cost;
-  if (item.crystals) { showToast('ℹ️ Las monedas de cristal están desactivadas.'); G.crystals = 0; }
+  if (item.crystals) { G.crystals += item.crystals; showToast(`💎 +${item.crystals} Cristales obtenidos!`); }
   if (item.gold) { G.gold += item.gold; G.totalGoldEarned += item.gold; showToast(`🪙 +${fmtNum(item.gold)} Oro obtenido!`); }
   updateUI();
   openModal('shop');
@@ -1790,7 +1914,7 @@ function renderMissionsModal() {
       <div class="mission-progress"><div class="mission-bar" style="width:${pct}%"></div></div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
         <span style="font-size:10px;color:#888">${fmtNum(Math.min(val,m.goal))} / ${fmtNum(m.goal)}</span>
-        <span class="mission-reward">+${m.reward} ${rewardIcon}</span>
+        <span class="mission-reward">+${Math.max(1, Math.floor(m.reward * getDifficultyConfig().missionRewardMul))} ${rewardIcon}</span>
       </div>
     </div>`;
   });
@@ -1817,7 +1941,7 @@ function renderSkillsModal() {
   <p class="modal-section-title">Árbol de Habilidades</p>`;
   SKILLS_TREE.forEach(sk => {
     const lvl = G.skills[sk.stat];
-    const canUp = G.skillPoints > 0 && lvl < sk.maxLvl;
+    const canUp = G.skillPoints >= sk.costPer && lvl < sk.maxLvl;
     html += `<div class="upgrade-item">
       <div class="upgrade-icon">⭐</div>
       <div class="upgrade-info">
@@ -1843,9 +1967,18 @@ function buySkill(stat, cost) {
   openModal('skills');
 }
 
+function startGoldEvent() {
+  G.eventGoldBoostUntil = Date.now() + (30 * 60 * 1000);
+  showToast('🌙 Noche de los Leñadores: oro x2 por 30 minutos');
+  updateUI();
+  openModal('events');
+}
+
 function renderEventsModal() {
+  const goldEventActive = Date.now() < G.eventGoldBoostUntil;
+  const remainingMinutes = goldEventActive ? Math.ceil((G.eventGoldBoostUntil - Date.now()) / 60000) : 0;
   const events = [
-    { name:'🌙 Noche de los Leñadores', desc:'x2 Oro durante 30 minutos', active:true },
+    { name:'🌙 Noche de los Leñadores', desc:`x2 Oro por tronco durante 30 minutos${goldEventActive ? ` · Restan ${remainingMinutes} min` : ''}`, active:true, action:'startGoldEvent()' },
     { name:'❄️ Invierno Helado', desc:'Cristales dobles al hacer Prestigio', active:false },
     { name:'🔥 Fiebre de Oro', desc:'+50% Oro/seg durante 1 hora', active:false },
   ];
@@ -1855,57 +1988,69 @@ function renderEventsModal() {
       <div style="flex:1">
         <div class="upgrade-name">${ev.name}</div>
         <div class="upgrade-desc">${ev.desc}</div>
-        <div style="font-size:11px;margin-top:4px;color:${ev.active?'#2d6a2d':'#aaa'}">${ev.active?'✅ Activo ahora':'🔒 Próximamente'}</div>
+        <div style="font-size:11px;margin-top:4px;color:${ev.active?'#2d6a2d':'#aaa'}">${ev.active?'✅ Disponible':'🔒 Próximamente'}</div>
       </div>
-      ${ev.active?`<button class="upgrade-btn" onclick="showToast('¡Evento activado!')">Participar</button>`:''}
+      ${ev.active?`<button class="upgrade-btn" onclick="${ev.action}" ${goldEventActive ? 'disabled' : ''}>${goldEventActive ? 'Activo' : 'Participar'}</button>`:''}
     </div>`;
   });
   return html;
 }
 
 function renderPrestigeModal() {
+  const cfg = getDifficultyConfig();
+  const crystalPreview = Math.max(1, Math.floor((G.level + G.logTier / 5) * cfg.crystalMul));
   return `<div class="prestige-box">
     <h3>👑 Prestigio</h3>
-    <p>Reinicia tu progreso (Oro, Nivel, Mejoras) para obtener:<br>
-    <strong style="color:#f5c518;font-size:16px">Multiplicador de Oro permanente (+10%)</strong></p>
-    <div style="font-size:12px;color:#aaa;margin-bottom:12px">Prestigios realizados: ${G.prestigeCount}</div>
+    <p>Reinicia tu progreso de ciclo para obtener:<br>
+    <strong style="color:#f5c518;font-size:16px">+${Math.round(cfg.prestigeStep * 100)}% Oro permanente y ~${crystalPreview} 💎</strong></p>
+    <div style="font-size:12px;color:#aaa;margin-bottom:12px">Requisito: Nivel ${cfg.prestigeReq} · Prestigios realizados: ${G.prestigeCount}</div>
     <button class="prestige-confirm-btn" onclick="doPrestige()">⚡ Hacer Prestigio</button>
   </div>
   <p class="modal-section-title">Tus Estadísticas</p>
   <div class="stat-row"><span class="label">Oro total ganado</span><span class="value">${fmtNum(G.totalGoldEarned)} 🪙</span></div>
   <div class="stat-row"><span class="label">Clicks totales</span><span class="value">${G.totalClicks.toLocaleString()}</span></div>
   <div class="stat-row"><span class="label">Prestigios</span><span class="value">${G.prestigeCount}</span></div>
+  <div class="stat-row"><span class="label">Troncos dominados</span><span class="value">${G.logTier}</span></div>
   <div class="stat-row"><span class="label">Multiplicador actual</span><span class="value">x${G.prestigeMultiplier.toFixed(2)}</span></div>
   <div class="stat-row"><span class="label">Tiempo de juego</span><span class="value">Día ${TIME.day} · ${getTimeLabel()}</span></div>`;
 }
 
 function doPrestige() {
-  if (G.level < 5) { showToast('⚠️ Necesitas al menos Nivel 5 para Prestigiar'); return; }
-  G.crystals = 0;
+  const cfg = getDifficultyConfig();
+  if (G.level < cfg.prestigeReq) {
+    showToast(`⚠️ Necesitas Nivel ${cfg.prestigeReq} para Prestigiar en ${cfg.name}`);
+    return;
+  }
+
+  const crystalReward = Math.max(1, Math.floor((G.level + G.logTier / 5) * cfg.crystalMul));
+  G.crystals += crystalReward;
   G.gold = 0;
   G.level = 1;
   G.xp = 0;
   G.xpNeeded = 100;
-  G.prestigeMultiplier = +(G.prestigeMultiplier * 1.1).toFixed(2);
+  G.logTier = 0;
+  G.skillPoints = 0;
+  G.attributePoints += 1;
+  G.prestigeMultiplier = +(G.prestigeMultiplier * (1 + cfg.prestigeStep)).toFixed(2);
   G.prestigeCount++;
   G.totalPrestige++;
-  G.axeGoldPerClick = 1;
-  G.axeGoldPerSec = 0.5;
-  G.axeDamage = 0.5;
-  G.axeAttackSpeed = 1;
-  G.axeCritChance = 0;
-  G.axeDoubleChance = 0;
   G.whetstones = 0;
   G.whetstoneBoostUntil = 0;
-  AXE_UPGRADES.forEach(u => u.owned = false);
+  G.eventGoldBoostUntil = 0;
+  AXE_UPGRADES.forEach(u => { u.level = 0; });
+  recalculateAxeStatsFromUpgrades();
   attrSystem.resetAttrUpgrades();
-  showToast(`🌟 ¡Prestigio! +${reward} 💎 Cristales. Multiplicador: x${G.prestigeMultiplier.toFixed(2)}`);
+  syncLogFromTier();
+  showToast(`🌟 ¡Prestigio! +${crystalReward} 💎 · Multiplicador x${G.prestigeMultiplier.toFixed(2)}`);
   checkMissions();
   updateUI();
   closeModal();
 }
 
 function renderSettingsModal() {
+  const difficultyButtons = Object.values(DIFFICULTIES).map(cfg => `
+    <button class="upgrade-btn" style="font-size:11px;${G.difficulty === cfg.id ? 'background:linear-gradient(135deg,#3a8a3a,#2d6a2d)' : ''}" onclick="setDifficulty('${cfg.id}')">${cfg.name}</button>
+  `).join('');
   return `<p class="modal-section-title">Preferencias</p>
   <div class="settings-row">
     <span class="setting-label">🔊 Sonido</span>
@@ -1914,6 +2059,11 @@ function renderSettingsModal() {
   <div class="settings-row">
     <span class="setting-label">🔔 Notificaciones</span>
     <button class="toggle ${G.notifications?'on':''}" onclick="toggleSetting('notifications',this)"></button>
+  </div>
+  <p class="modal-section-title" style="margin-top:12px">Dificultad</p>
+  <div class="upgrade-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+    <div style="font-size:12px;color:#555">Actual: <strong>${getDifficultyConfig().name}</strong>. Cambia HP, oro, costes, DPS y requisito de prestigio.</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">${difficultyButtons}</div>
   </div>
   <p class="modal-section-title" style="margin-top:12px">Datos del Juego</p>
   <div class="upgrade-item" style="flex-direction:column;gap:8px">
@@ -2019,6 +2169,10 @@ window.buyAxeUpgrade = buyAxeUpgrade;
 window.buyShopItem = buyShopItem;
 window.buySkill = buySkill;
 window.doPrestige = doPrestige;
+window.setDifficulty = setDifficulty;
+window.startGoldEvent = startGoldEvent;
+window.updateUI = updateUI;
+window.showToast = showToast;
 window.toggleSetting = toggleSetting;
 window.resetGame = resetGame;
 
