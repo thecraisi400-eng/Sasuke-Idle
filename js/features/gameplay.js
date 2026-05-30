@@ -5,6 +5,19 @@
 const G = {
   gold: 0,
   crystals: 0,   // CAMBIO 2: siempre empieza en 0
+  difficulty: 'medium',
+  treesChopped: 0,
+  totalTreesChopped: 0,
+  combo: 0,
+  bestCombo: 0,
+  attributePoints: 0,
+  woodRare: 0,
+  prestigeEssence: 0,
+  goldAtLastPrestige: 0,
+  whetstonesBoughtToday: 0,
+  lastRewardDay: 1,
+  clanId: '',
+  clanBonus: { dps: 0, gold: 0 },
   level: 1,
   xp: 0,
   xpNeeded: 100,
@@ -13,8 +26,8 @@ const G = {
 
   axeLevel: 1,
   axeGoldPerClick: 1,
-  axeGoldPerSec: 0.5,
-  axeDamage: 0.5,
+  axeGoldPerSec: 0.8,
+  axeDamage: 0.8,
   axeAttackSpeed: 1,
   axeCritChance: 0,
   axeDoubleChance: 0,
@@ -96,6 +109,7 @@ function updateTimeSystem() {
     const newDay = Math.floor(TIME.gameMinutes / 1440);
     if (newDay > prevDay) {
       TIME.day = newDay + 1;
+      G.whetstonesBoughtToday = 0;
     }
 
     document.getElementById('day-display').textContent = `Día: ${TIME.day}`;
@@ -257,21 +271,22 @@ const AXE_UPGRADES = window.AXE_UPGRADES;
 
 const attrSystem = window.attrSystem;
 const MISSIONS = [
-  { id:'m1', name:'Primer Golpe',    desc:'Haz tu primer click en el leñador.',   goal:1,    stat:'totalClicks',     reward:10,   rewardType:'gold' },
-  { id:'m2', name:'Leñador Novato',  desc:'Acumula 100 clics totales.',           goal:100,  stat:'totalClicks',     reward:100,  rewardType:'gold' },
-  { id:'m3', name:'Trabajador',      desc:'Acumula 1,000 clics totales.',         goal:1000, stat:'totalClicks',     reward:500,  rewardType:'gold' },
-  { id:'m4', name:'Riqueza Inicial', desc:'Gana 1,000 Oro total.',               goal:1000, stat:'totalGoldEarned', reward:5,    rewardType:'crystal' },
-  { id:'m5', name:'Millonario',      desc:'Gana 100,000 Oro total.',             goal:100000,stat:'totalGoldEarned',reward:20,   rewardType:'crystal' },
-  { id:'m6', name:'Renacido',        desc:'Realiza 1 Prestigio.',                goal:1,    stat:'totalPrestige',   reward:50,   rewardType:'crystal' },
+  { id:'m1', name:'Primer Tronco',    desc:'Tala tu primer árbol.',             goal:1,      stat:'totalTreesChopped', reward:10,   rewardType:'gold' },
+  { id:'m2', name:'Leñador Novato',   desc:'Tala 25 árboles totales.',          goal:25,     stat:'totalTreesChopped', reward:1,    rewardType:'attribute' },
+  { id:'m3', name:'Cadena de Tala',   desc:'Alcanza combo x10.',                goal:10,     stat:'bestCombo',         reward:1,    rewardType:'crystal' },
+  { id:'m4', name:'Riqueza Inicial',  desc:'Gana 1,000 Oro total.',             goal:1000,   stat:'totalGoldEarned',   reward:2,    rewardType:'crystal' },
+  { id:'m5', name:'Coleccionista',    desc:'Obtén 10 maderas raras.',           goal:10,     stat:'woodRare',          reward:2,    rewardType:'attribute' },
+  { id:'m6', name:'Millonario',       desc:'Gana 100,000 Oro total.',           goal:100000, stat:'totalGoldEarned',   reward:10,   rewardType:'crystal' },
+  { id:'m7', name:'Renacido',         desc:'Realiza 1 Prestigio.',              goal:1,      stat:'totalPrestige',     reward:3,    rewardType:'attribute' },
 ];
 const missionClaimed = {};
 
 const SHOP_ITEMS = [
-  { id:'sh1', name:'Bolsa de Cristales',   desc:'Obtén 10 Cristales al instante.',    cost:500,  costCurrency:'gold',    crystals:10 },
-  { id:'sh2', name:'Caja de Cristales',    desc:'Obtén 50 Cristales al instante.',    cost:2000, costCurrency:'gold',    crystals:50 },
-  { id:'sh3', name:'Cofre de Cristales',   desc:'Obtén 200 Cristales al instante.',   cost:8000, costCurrency:'gold',    crystals:200 },
-  { id:'sh4', name:'Poción de Oro',        desc:'+5,000 Oro instantáneo.',            cost:20,   costCurrency:'crystal', gold:5000 },
-  { id:'sh5', name:'Elixir del Bosque',    desc:'+20,000 Oro instantáneo.',           cost:50,   costCurrency:'crystal', gold:20000 },
+  { id:'sh1', name:'Piedra de Afilar',      desc:'Obtén 1 Piedra de Afilar para ventanas de burst.', cost:250,  costCurrency:'gold',    whetstones:1 },
+  { id:'sh2', name:'Kit de Tutorial',       desc:'+60 Oro para evitar esperas iniciales.',           cost:1,    costCurrency:'crystal', gold:60 },
+  { id:'sh3', name:'Poción de Oro',         desc:'+5,000 Oro instantáneo.',                          cost:20,   costCurrency:'crystal', gold:5000 },
+  { id:'sh4', name:'Elixir del Bosque',     desc:'+20,000 Oro instantáneo.',                         cost:50,   costCurrency:'crystal', gold:20000 },
+  { id:'sh5', name:'Manual de Atributos',   desc:'+1 punto de atributo.',                            cost:15,   costCurrency:'crystal', attributePoints:1 },
 ];
 
 const SKILLS_TREE = [
@@ -284,16 +299,36 @@ const SKILLS_TREE = [
 // =============================================
 // COMPUTED VALUES
 // =============================================
+function computeDamageBreakdown() {
+  const weather = getCurrentWeather();
+  const critChance = Math.min(0.45, (G.axeCritChance + (attrSystem.getCritBonus?.() || 0)) * weather.crit);
+  const doubleChance = Math.min(0.35, G.axeDoubleChance);
+  let stoneMultiplier = 1;
+  if (Date.now() < G.whetstoneBoostUntil) stoneMultiplier = 2;
+
+  const critMultiplier = 1 + critChance;
+  const doubleMultiplier = 1 + doubleChance;
+  const rawHit = G.axeDamage * stoneMultiplier * G.prestigeMultiplier;
+  let dps = rawHit * G.axeAttackSpeed * critMultiplier * doubleMultiplier;
+  dps = attrSystem.applyAttrToGPS(dps);
+  dps *= (1 + G.skills.speed * 0.15);
+  dps *= (1 + G.skills.endurance * 0.25);
+  dps *= weather.dps;
+  dps *= (1 + (G.clanBonus?.dps || 0));
+
+  return {
+    rawHit,
+    attackSpeed: G.axeAttackSpeed,
+    critChance,
+    doubleChance,
+    stoneMultiplier,
+    weather,
+    dps,
+  };
+}
+
 function computeGPS() {
-  let baseDamage = G.axeDamage;
-  if (Date.now() < G.whetstoneBoostUntil) baseDamage *= 2;
-  const perHitExpected = baseDamage * (1 + G.axeCritChance) * (1 + G.axeDoubleChance);
-  let base = perHitExpected * G.axeAttackSpeed;
-  base = attrSystem.applyAttrToGPS(base);
-  base *= (1 + G.skills.speed * 0.15);
-  base *= (1 + G.skills.endurance * 0.25);
-  base *= G.prestigeMultiplier;
-  return base;
+  return computeDamageBreakdown().dps;
 }
 
 function computeGPC() {
@@ -305,16 +340,44 @@ function computeGPC() {
   return Math.max(1, Math.floor(base));
 }
 
+function getGoldMultiplierBonus() {
+  return (attrSystem.getGoldBonus?.() || 0) + (G.clanBonus?.gold || 0) + G.combo * 0.002;
+}
+
+function getCurrentWeather() {
+  const cycle = TIME.day % 4;
+  if (cycle === 1) return { id: 'sun', name: '☀️ Sol Dorado', dps: 1, gold: 1.25, rare: 0, xp: 1, crit: 1 };
+  if (cycle === 2) return { id: 'rain', name: '🌧️ Lluvia de Savia', dps: 0.90, gold: 1, rare: 0.05, xp: 1, crit: 1 };
+  if (cycle === 3) return { id: 'fog', name: '🌫️ Niebla Espesa', dps: 1, gold: 1, rare: 0, xp: 1.25, crit: 0.80 };
+  return { id: 'wind', name: '🍃 Viento Ligero', dps: 1.10, gold: 1, rare: 0, xp: 1, crit: 1 };
+}
+
+function isBossTree() {
+  return G.level > 1 && G.level % 15 === 0;
+}
+
+function getTreeHpMultiplier() {
+  if (!isBossTree()) return 1;
+  const armorIgnore = attrSystem.getAttrEffectValue?.('anti_bark') || 0;
+  return Math.max(2.5, 4 * (1 - armorIgnore));
+}
+
+function getTreeGoldMultiplier() {
+  return (isBossTree() ? 3 : 1) * getCurrentWeather().gold;
+}
+
 // =============================================
 // SAVE / LOAD
 // =============================================
 function saveGame() {
   const save = {
+    version: 2,
     G: { ...G },
-    AXE_UPGRADES: AXE_UPGRADES.map(u => u.owned),
+    AXE_UPGRADES: AXE_UPGRADES.map(u => ({ id: u.id, level: u.level })),
     ATTR_UPGRADES: attrSystem.exportAttrSave(),
     missionClaimed: { ...missionClaimed },
-    TIME: { gameMinutes: TIME.gameMinutes, day: TIME.day }
+    TIME: { gameMinutes: TIME.gameMinutes, day: TIME.day },
+    LOG: { currentLogMaxHP, currentLogGoldReward, logHP, logHPDisplay }
   };
   try { localStorage.setItem('lenador_idle_v1', JSON.stringify(save)); } catch(e){}
 }
@@ -322,16 +385,44 @@ function saveGame() {
 function loadGame() {
   try {
     const raw = localStorage.getItem('lenador_idle_v1');
-    if (!raw) return;
+    if (!raw) {
+      G.xpNeeded = BALANCE.xpNeededForLevel(G.level);
+      window.applyAxeUpgradeStatsFromLevels?.();
+      return;
+    }
     const save = JSON.parse(raw);
     Object.assign(G, save.G);
-    if (save.AXE_UPGRADES) save.AXE_UPGRADES.forEach((v,i) => { AXE_UPGRADES[i].owned = v; });
+    G.difficulty = G.difficulty || 'medium';
+    G.attributePoints = Number(G.attributePoints) || 0;
+    G.treesChopped = Number(G.treesChopped) || 0;
+    G.totalTreesChopped = Number(G.totalTreesChopped) || 0;
+    G.combo = Number(G.combo) || 0;
+    G.bestCombo = Number(G.bestCombo) || 0;
+    G.woodRare = Number(G.woodRare) || 0;
+    G.prestigeEssence = Number(G.prestigeEssence) || 0;
+    G.goldAtLastPrestige = Number(G.goldAtLastPrestige) || 0;
+    G.whetstonesBoughtToday = Number(G.whetstonesBoughtToday) || 0;
+    G.lastRewardDay = Number(G.lastRewardDay) || 1;
+    G.clanId = G.clanId || '';
+    G.clanBonus = G.clanBonus || { dps: 0, gold: 0 };
+    if (save.AXE_UPGRADES) {
+      save.AXE_UPGRADES.forEach((value, i) => {
+        const target = AXE_UPGRADES.find(u => u.id === value?.id) || AXE_UPGRADES[i];
+        if (target) target.level = Number(value?.level ?? value) || 0;
+      });
+    }
     if (save.ATTR_UPGRADES) attrSystem.importAttrSave(save.ATTR_UPGRADES);
     if (save.missionClaimed) Object.assign(missionClaimed, save.missionClaimed);
-    G.crystals = 0;
     if (save.TIME) {
       TIME.gameMinutes = save.TIME.gameMinutes;
       TIME.day = save.TIME.day;
+    }
+    G.xpNeeded = BALANCE.xpNeededForLevel(G.level);
+    window.applyAxeUpgradeStatsFromLevels?.();
+    syncCurrentLogStats();
+    if (save.LOG?.logHP) {
+      logHP = Math.min(currentLogMaxHP, save.LOG.logHP);
+      logHPDisplay = Math.min(currentLogMaxHP, save.LOG.logHPDisplay || logHP);
     }
   } catch(e) {}
 }
@@ -369,21 +460,38 @@ function updateUI() {
 }
 
 function checkLevelUp() {
+  let leveled = false;
   while (G.xp >= G.xpNeeded) {
     G.xp -= G.xpNeeded;
     G.level += 1;
-    G.xpNeeded = Math.floor(G.xpNeeded * 1.5);
+    G.xpNeeded = BALANCE.xpNeededForLevel(G.level);
+    G.attributePoints += 1;
+    G.skillPoints += G.level % 5 === 0 ? 1 : 0;
+    leveled = true;
+    const unlock = BALANCE.UNLOCKS[G.level];
+    if (unlock) showToast(`🎁 Nivel ${G.level}: ${unlock}`);
+    if (G.level === 5 && G.crystals === 0) G.crystals += 1;
   }
+  if (leveled) {
+    showNextLevelBanner();
+    syncCurrentLogStats();
+  }
+}
+
+function grantMissionReward(m) {
+  if (m.rewardType === 'gold') { G.gold += m.reward; G.totalGoldEarned += m.reward; }
+  if (m.rewardType === 'crystal') G.crystals += m.reward;
+  if (m.rewardType === 'attribute') G.attributePoints += m.reward;
 }
 
 function checkMissions() {
   MISSIONS.forEach(m => {
     if (missionClaimed[m.id]) return;
-    if (G[m.stat] >= m.goal) {
+    if ((G[m.stat] || 0) >= m.goal) {
       missionClaimed[m.id] = true;
-      if (m.rewardType === 'gold') { G.gold += m.reward; G.totalGoldEarned += m.reward; }
-      else G.crystals = 0;
-      showToast(`✅ Misión "${m.name}" completada! +${m.reward} ${m.rewardType === 'gold' ? 'Oro' : 'Cristales'}`);
+      grantMissionReward(m);
+      const label = m.rewardType === 'gold' ? 'Oro' : m.rewardType === 'crystal' ? 'Cristales' : 'Punto(s) de atributo';
+      showToast(`✅ Misión "${m.name}" completada! +${m.reward} ${label}`);
     }
   });
 }
@@ -425,10 +533,8 @@ let animFrame = 0;
 let chopAngle = 0;
 let chopDir = 1;
 
-const BASE_LOG_HP = 10;
-const LOG_HP_MULTIPLIER = 1.40;
-const BASE_LOG_GOLD = 10;
-const LOG_GOLD_MULTIPLIER = 1.15;
+const BASE_LOG_HP = 12;
+const BASE_LOG_GOLD = 3;
 
 let currentLogMaxHP = BASE_LOG_HP;
 let currentLogGoldReward = BASE_LOG_GOLD;
@@ -446,8 +552,20 @@ let logPileClickable = false;
 
 let pileClickEffect = null;
 
+function syncCurrentLogStats() {
+  currentLogMaxHP = Math.round(BALANCE.treeHp(G.level, TIME.day, G.difficulty) * getTreeHpMultiplier());
+  currentLogGoldReward = Math.floor(BALANCE.treeGold(G.level, G.difficulty, getGoldMultiplierBonus()) * getTreeGoldMultiplier());
+  logHP = Math.min(logHP || currentLogMaxHP, currentLogMaxHP);
+  logHPDisplay = Math.min(logHPDisplay || currentLogMaxHP, currentLogMaxHP);
+}
+
 function getGoldPerLog() {
-  return currentLogGoldReward;
+  return Math.floor(BALANCE.treeGold(G.level, G.difficulty, getGoldMultiplierBonus()) * getTreeGoldMultiplier());
+}
+
+function getXpPerLog() {
+  const bossMult = isBossTree() ? 2.5 : 1;
+  return Math.max(8, Math.floor(14 * Math.pow(1.08, Math.max(0, G.level - 1)) * getCurrentWeather().xp * bossMult));
 }
 
 function damageLog(amount) {
@@ -462,16 +580,41 @@ function triggerLogBreak() {
   shakeTimer = 25;
   shakeIntensity = 6;
 
-  G.level++;
-  showNextLevelBanner();
-  updateUI();
+  const now = Date.now();
+  G.combo = now - (G.lastTreeBreakAt || 0) <= 15000 ? G.combo + 1 : 1;
+  G.bestCombo = Math.max(G.bestCombo || 0, G.combo);
+  G.lastTreeBreakAt = now;
+  G.treesChopped += 1;
+  G.totalTreesChopped += 1;
 
   const goldEarned = getGoldPerLog();
+  const xpEarned = getXpPerLog();
+  G.xp += xpEarned;
   logPileGold += goldEarned;
+
+  const diff = BALANCE.getDifficulty(G.difficulty);
+  const rareChance = Math.min(0.60, diff.rareChance + getCurrentWeather().rare + (attrSystem.getRareBonus?.() || 0));
+  if (Math.random() < rareChance) {
+    G.woodRare += 1;
+    logPileGold += Math.floor(goldEarned * 0.5);
+  }
+  if (Math.random() < diff.crystalChance || G.totalTreesChopped === 5) {
+    G.crystals += 1;
+    showToast('💎 ¡Cristal encontrado en la savia!');
+  }
+  if (G.totalTreesChopped % 20 === 0) G.whetstones += 1;
+  if (isBossTree()) {
+    G.crystals += 1;
+    G.whetstones += 1;
+    showToast('🌳 ¡Árbol legendario vencido! +1 💎 +1 ☢️');
+  }
 
   collectedLogs++;
   logPileVisible = true;
   logPileClickable = true;
+
+  checkLevelUp();
+  updateUI();
 
   const W = canvas.width, H = canvas.height;
   const { groundY, logX, logY } = getSceneAnchors(W, H);
@@ -491,8 +634,7 @@ function triggerLogBreak() {
   };
 
   setTimeout(() => {
-    currentLogMaxHP *= LOG_HP_MULTIPLIER;
-    currentLogGoldReward *= LOG_GOLD_MULTIPLIER;
+    syncCurrentLogStats();
     logHP = currentLogMaxHP;
     logHPDisplay = currentLogMaxHP;
   }, 300);
@@ -1630,8 +1772,10 @@ function gameLoop() {
   accumulator += dt;
   if (accumulator >= 1) {
     accumulator -= 1;
-    G.xp += 1;
     damageLog(computeGPS());
+    if (G.difficulty === 'impossible' && logHP > 0) {
+      logHP = Math.min(currentLogMaxHP, logHP + currentLogMaxHP * 0.003);
+    }
     checkLevelUp();
     checkMissions();
     updateUI();
@@ -1644,6 +1788,7 @@ function gameLoop() {
 // CLICK INTERACTION
 // =============================================
 document.getElementById('top-section').addEventListener('click', e => {
+  G.totalClicks += 1;
   const rect = document.getElementById('top-section').getBoundingClientRect();
   const clickX = e.clientX - rect.left;
   const clickY = e.clientY - rect.top;
@@ -1745,6 +1890,7 @@ const renderAxeModal = window.renderAxeModal;
 const getAxeUpgradeGain = window.getAxeUpgradeGain;
 const buyAxeUpgrade = window.buyAxeUpgrade;
 const useWhetstone = window.useWhetstone;
+const buyWhetstone = window.buyWhetstone;
 
 function renderShopModal() {
   let html = `<p class="modal-section-title">Tienda de Objetos</p>`;
@@ -1771,7 +1917,9 @@ function buyShopItem(i) {
   if (item.costCurrency === 'crystal' && G.crystals < item.cost) { showToast('💎 Cristales insuficientes'); return; }
   if (item.costCurrency === 'gold') G.gold -= item.cost;
   else G.crystals -= item.cost;
-  if (item.crystals) { showToast('ℹ️ Las monedas de cristal están desactivadas.'); G.crystals = 0; }
+
+  if (item.whetstones) { G.whetstones += item.whetstones; showToast(`☢️ +${item.whetstones} Piedra de Afilar`); }
+  if (item.attributePoints) { G.attributePoints += item.attributePoints; showToast(`🎯 +${item.attributePoints} punto de atributo`); }
   if (item.gold) { G.gold += item.gold; G.totalGoldEarned += item.gold; showToast(`🪙 +${fmtNum(item.gold)} Oro obtenido!`); }
   updateUI();
   openModal('shop');
@@ -1783,7 +1931,7 @@ function renderMissionsModal() {
     const val = G[m.stat];
     const pct = Math.min(100, (val / m.goal * 100)).toFixed(0);
     const done = missionClaimed[m.id];
-    const rewardIcon = m.rewardType === 'gold' ? '🪙' : '💎';
+    const rewardIcon = m.rewardType === 'gold' ? '🪙' : m.rewardType === 'crystal' ? '💎' : '🎯';
     html += `<div class="mission-item">
       <div class="mission-name">${done ? '✅ ' : ''}${m.name}</div>
       <div class="mission-desc">${m.desc}</div>
@@ -1797,19 +1945,38 @@ function renderMissionsModal() {
   return html;
 }
 
+const CLANS = [
+  { id:'forest', name:'🌲 BosqueEterno', level:50, members:30, dps:0.03, gold:0.02 },
+  { id:'axes', name:'⚔️ HachasDeFuego', level:38, members:25, dps:0.05, gold:0.00 },
+  { id:'crystals', name:'💎 CristalesMágicos', level:25, members:18, dps:0.00, gold:0.05 },
+];
+
 function renderClansModal() {
+  const currentClan = CLANS.find(c => c.id === G.clanId);
   return `<p class="modal-section-title">Sistema de Clanes</p>
   <div style="background:#f0f8f0;border-radius:12px;padding:16px;text-align:center;margin-bottom:12px">
-    <div style="font-size:40px;margin-bottom:8px">🌲</div>
-    <div style="font-family:'Fredoka One',cursive;font-size:18px;color:#2d6a2d">Sin Clan</div>
-    <div style="font-size:12px;color:#888;margin-top:4px">Únete a un clan para bonificaciones extra</div>
-    <button class="upgrade-btn" style="margin-top:12px" onclick="showToast('🔜 Clanes: próximamente!')">Buscar Clan</button>
+    <div style="font-size:40px;margin-bottom:8px">${currentClan ? currentClan.name.split(' ')[0] : '🌲'}</div>
+    <div style="font-family:'Fredoka One',cursive;font-size:18px;color:#2d6a2d">${currentClan ? currentClan.name : 'Sin Clan'}</div>
+    <div style="font-size:12px;color:#888;margin-top:4px">${currentClan ? `Bonus activo: +${(currentClan.dps * 100).toFixed(0)}% DPS · +${(currentClan.gold * 100).toFixed(0)}% oro` : 'Únete a un clan para bonificaciones grupales ligeras.'}</div>
   </div>
   <p class="modal-section-title">Clanes Destacados</p>
-  ${['🌲 BosqueEterno - Lv50 (30 miembros)','⚔️ HachasDeFuego - Lv38 (25 miembros)','💎 CristalesMágicos - Lv25 (18 miembros)'].map(c=>`<div class="upgrade-item" style="cursor:pointer" onclick="showToast('🔜 Clanes próximamente!')">
-    <div style="flex:1;font-family:'Fredoka One',cursive;font-size:13px;color:#333">${c}</div>
-    <button class="upgrade-btn" style="font-size:11px">Unirse</button>
+  ${CLANS.map(c=>`<div class="upgrade-item">
+    <div style="flex:1">
+      <div class="upgrade-name">${c.name} - Lv${c.level}</div>
+      <div class="upgrade-desc">${c.members} miembros · +${(c.dps * 100).toFixed(0)}% DPS · +${(c.gold * 100).toFixed(0)}% oro</div>
+    </div>
+    <button class="upgrade-btn" onclick="joinClan('${c.id}')">${G.clanId === c.id ? 'Activo' : 'Unirse'}</button>
   </div>`).join('')}`;
+}
+
+function joinClan(id) {
+  const clan = CLANS.find(c => c.id === id);
+  if (!clan) return;
+  G.clanId = clan.id;
+  G.clanBonus = { dps: clan.dps, gold: clan.gold };
+  showToast(`🤝 Te uniste a ${clan.name}`);
+  updateUI();
+  openModal('clans');
 }
 
 function renderSkillsModal() {
@@ -1844,68 +2011,85 @@ function buySkill(stat, cost) {
 }
 
 function renderEventsModal() {
+  const weather = getCurrentWeather();
+  const bossActive = isBossTree();
   const events = [
-    { name:'🌙 Noche de los Leñadores', desc:'x2 Oro durante 30 minutos', active:true },
-    { name:'❄️ Invierno Helado', desc:'Cristales dobles al hacer Prestigio', active:false },
-    { name:'🔥 Fiebre de Oro', desc:'+50% Oro/seg durante 1 hora', active:false },
+    { name: weather.name, desc: `DPS x${weather.dps.toFixed(2)} · Oro x${weather.gold.toFixed(2)} · XP x${weather.xp.toFixed(2)} · Rareza +${(weather.rare * 100).toFixed(0)}%`, active: true },
+    { name:'🌳 Árbol legendario', desc:'Activo cada 15 niveles: HP x4, oro x3, +1 cristal y +1 piedra al vencerlo.', active: bossActive },
+    { name:'🔥 Combo de Tala', desc:`Combo actual x${G.combo}: +${(G.combo * 0.2).toFixed(1)}% oro mientras sigas talando sin pausas largas.`, active:G.combo > 1 },
+    { name:'🏁 Modo Imposible', desc:'Los árboles regeneran 0.3% de su vida por segundo.', active:G.difficulty === 'impossible' },
   ];
-  let html = `<p class="modal-section-title">Eventos Activos</p>`;
+  let html = `<p class="modal-section-title">Eventos y Modificadores</p>`;
   events.forEach(ev => {
     html += `<div class="upgrade-item" style="border-color:${ev.active?'#3a8a3a':'#ddd'}">
       <div style="flex:1">
         <div class="upgrade-name">${ev.name}</div>
         <div class="upgrade-desc">${ev.desc}</div>
-        <div style="font-size:11px;margin-top:4px;color:${ev.active?'#2d6a2d':'#aaa'}">${ev.active?'✅ Activo ahora':'🔒 Próximamente'}</div>
+        <div style="font-size:11px;margin-top:4px;color:${ev.active?'#2d6a2d':'#aaa'}">${ev.active?'✅ Activo ahora':'🔒 Inactivo ahora'}</div>
       </div>
-      ${ev.active?`<button class="upgrade-btn" onclick="showToast('¡Evento activado!')">Participar</button>`:''}
     </div>`;
   });
   return html;
 }
 
 function renderPrestigeModal() {
+  const canPrestige = G.level >= 20 || G.totalTreesChopped >= 150;
+  const runGold = Math.max(0, G.totalGoldEarned - (G.goldAtLastPrestige || 0));
+  const projectedEssence = Math.max(1, Math.floor(Math.sqrt(runGold) / 100) + Math.floor(G.treesChopped / 100));
+  const projectedMultiplier = 1 + 0.12 * Math.pow(G.prestigeEssence + projectedEssence, 0.85) * (1 + (attrSystem.getPrestigeBonus?.() || 0));
   return `<div class="prestige-box">
     <h3>👑 Prestigio</h3>
-    <p>Reinicia tu progreso (Oro, Nivel, Mejoras) para obtener:<br>
-    <strong style="color:#f5c518;font-size:16px">Multiplicador de Oro permanente (+10%)</strong></p>
-    <div style="font-size:12px;color:#aaa;margin-bottom:12px">Prestigios realizados: ${G.prestigeCount}</div>
-    <button class="prestige-confirm-btn" onclick="doPrestige()">⚡ Hacer Prestigio</button>
+    <p>Reinicia Oro, Nivel y mejoras de hacha para obtener esencia permanente.<br>
+    <strong style="color:#f5c518;font-size:16px">+${projectedEssence} esencia · x${projectedMultiplier.toFixed(2)} multiplicador proyectado</strong></p>
+    <div style="font-size:12px;color:#aaa;margin-bottom:12px">Requisito: Nivel 20 o 150 árboles talados.</div>
+    <button class="prestige-confirm-btn" ${!canPrestige ? 'disabled' : ''} onclick="doPrestige()">⚡ Hacer Prestigio</button>
   </div>
   <p class="modal-section-title">Tus Estadísticas</p>
-  <div class="stat-row"><span class="label">Oro total ganado</span><span class="value">${fmtNum(G.totalGoldEarned)} 🪙</span></div>
-  <div class="stat-row"><span class="label">Clicks totales</span><span class="value">${G.totalClicks.toLocaleString()}</span></div>
-  <div class="stat-row"><span class="label">Prestigios</span><span class="value">${G.prestigeCount}</span></div>
+  <div class="stat-row"><span class="label">Oro de esta run</span><span class="value">${fmtNum(runGold)} 🪙</span></div>
+  <div class="stat-row"><span class="label">Árboles de esta run</span><span class="value">${fmtNum(G.treesChopped)} 🌲</span></div>
+  <div class="stat-row"><span class="label">Árboles totales</span><span class="value">${fmtNum(G.totalTreesChopped)} 🌲</span></div>
+  <div class="stat-row"><span class="label">Esencia de prestigio</span><span class="value">${fmtNum(G.prestigeEssence)} 👑</span></div>
   <div class="stat-row"><span class="label">Multiplicador actual</span><span class="value">x${G.prestigeMultiplier.toFixed(2)}</span></div>
   <div class="stat-row"><span class="label">Tiempo de juego</span><span class="value">Día ${TIME.day} · ${getTimeLabel()}</span></div>`;
 }
 
 function doPrestige() {
-  if (G.level < 5) { showToast('⚠️ Necesitas al menos Nivel 5 para Prestigiar'); return; }
-  G.crystals = 0;
+  if (G.level < 20 && G.totalTreesChopped < 150) { showToast('⚠️ Necesitas Nivel 20 o 150 árboles para Prestigiar'); return; }
+  const runGold = Math.max(0, G.totalGoldEarned - (G.goldAtLastPrestige || 0));
+  const reward = Math.max(1, Math.floor(Math.sqrt(runGold) / 100) + Math.floor(G.treesChopped / 100));
+  G.prestigeEssence += reward;
   G.gold = 0;
+  G.goldAtLastPrestige = G.totalGoldEarned;
   G.level = 1;
   G.xp = 0;
-  G.xpNeeded = 100;
-  G.prestigeMultiplier = +(G.prestigeMultiplier * 1.1).toFixed(2);
+  G.xpNeeded = BALANCE.xpNeededForLevel(1);
+  G.prestigeMultiplier = +(1 + 0.12 * Math.pow(G.prestigeEssence, 0.85) * (1 + (attrSystem.getPrestigeBonus?.() || 0))).toFixed(2);
   G.prestigeCount++;
   G.totalPrestige++;
+  G.treesChopped = 0;
+  G.combo = 0;
   G.axeGoldPerClick = 1;
-  G.axeGoldPerSec = 0.5;
-  G.axeDamage = 0.5;
-  G.axeAttackSpeed = 1;
-  G.axeCritChance = 0;
-  G.axeDoubleChance = 0;
+  G.axeGoldPerSec = BALANCE.getDifficulty(G.difficulty).baseDps;
   G.whetstones = 0;
   G.whetstoneBoostUntil = 0;
-  AXE_UPGRADES.forEach(u => u.owned = false);
+  G.whetstonesBoughtToday = 0;
+  AXE_UPGRADES.forEach(u => { u.level = 0; });
+  window.applyAxeUpgradeStatsFromLevels?.();
+  syncCurrentLogStats();
+  logHP = currentLogMaxHP;
+  logHPDisplay = currentLogMaxHP;
   attrSystem.resetAttrUpgrades();
-  showToast(`🌟 ¡Prestigio! +${reward} 💎 Cristales. Multiplicador: x${G.prestigeMultiplier.toFixed(2)}`);
+  showToast(`🌟 ¡Prestigio! +${reward} esencia. Multiplicador: x${G.prestigeMultiplier.toFixed(2)}`);
   checkMissions();
   updateUI();
   closeModal();
 }
 
 function renderSettingsModal() {
+  const breakdown = computeDamageBreakdown();
+  const difficultyButtons = Object.values(BALANCE.DIFFICULTIES).map(diff => `
+    <button class="upgrade-btn" style="font-size:11px;${G.difficulty === diff.id ? 'filter:brightness(1.15);outline:2px solid #f5c518;' : ''}" onclick="setDifficulty('${diff.id}')">${diff.name}</button>`).join('');
+
   return `<p class="modal-section-title">Preferencias</p>
   <div class="settings-row">
     <span class="setting-label">🔊 Sonido</span>
@@ -1915,6 +2099,21 @@ function renderSettingsModal() {
     <span class="setting-label">🔔 Notificaciones</span>
     <button class="toggle ${G.notifications?'on':''}" onclick="toggleSetting('notifications',this)"></button>
   </div>
+
+  <p class="modal-section-title" style="margin-top:12px">Dificultad</p>
+  <div class="upgrade-item" style="flex-direction:column;align-items:stretch;gap:8px">
+    <div style="font-size:12px;color:#666">Actual: <strong>${BALANCE.getDifficulty(G.difficulty).name}</strong>. Cambiarla recalcula vida/recompensas sin borrar progreso.</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">${difficultyButtons}</div>
+  </div>
+
+  <p class="modal-section-title" style="margin-top:12px">Desglose de DPS</p>
+  <div class="stat-row"><span class="label">Daño por golpe</span><span class="value">${breakdown.rawHit.toFixed(2)}</span></div>
+  <div class="stat-row"><span class="label">Golpes/s</span><span class="value">${breakdown.attackSpeed.toFixed(2)}</span></div>
+  <div class="stat-row"><span class="label">Crítico / Doble</span><span class="value">${(breakdown.critChance * 100).toFixed(2)}% / ${(breakdown.doubleChance * 100).toFixed(2)}%</span></div>
+  <div class="stat-row"><span class="label">Combo</span><span class="value">x${G.combo} · mejor x${G.bestCombo}</span></div>
+  <div class="stat-row"><span class="label">Árbol actual</span><span class="value">${isBossTree() ? 'Legendario · ' : ''}${Math.ceil(logHP)} / ${Math.ceil(currentLogMaxHP)} HP</span></div>
+  <div class="stat-row"><span class="label">Clima</span><span class="value">${breakdown.weather.name}</span></div>
+
   <p class="modal-section-title" style="margin-top:12px">Datos del Juego</p>
   <div class="upgrade-item" style="flex-direction:column;gap:8px">
     <div style="font-size:13px;color:#555">¿Quieres borrar todo tu progreso? Esta acción es irreversible.</div>
@@ -1922,19 +2121,24 @@ function renderSettingsModal() {
   </div>
   <p class="modal-section-title" style="margin-top:12px">Acerca del Juego</p>
   <div style="font-size:12px;color:#777;line-height:1.6">
-    <strong>Leñador Idle v1.0</strong><br>
-    El leñador auto-golpea el tronco con su DPS. Al romper un palo, subes de nivel.<br>
+    <strong>Leñador Idle v1.1 Balance</strong><br>
+    El leñador auto-golpea el tronco con DPS esperado, crítico, doble golpe, combo, piedra y prestigio unificados.<br>
     Haz clic en la madera acumulada para reclamar el Oro.<br>
-    ¡Realiza Prestigio para obtener Cristales y multiplicadores!<br><br>
-    <strong>Sistema de Tiempo:</strong> Cada segundo real = 1 minuto de juego.<br>
-    🌅 6:00 AM – Sale el sol (desde la izquierda)<br>
-    🌇 5:00 PM – Empieza el atardecer<br>
-    🌆 6:00 PM – El sol se oculta completamente<br>
-    🌙 7:00 PM – Sale la luna llena (desde la izquierda) + estrellas<br>
-    🌑 4:00 AM – La luna desaparece<br>
-    🌄 5:00 AM – Amanecer, el sol empieza a salir<br>
-    Cada medianoche suma 1 día al contador.
+    Cada nivel otorga puntos de atributo y cada 5 niveles otorga punto de habilidad.<br><br>
+    <strong>Sistema de Tiempo:</strong> Cada segundo real = 1 minuto de juego. Cada medianoche suma 1 día al contador visual y reinicia compras diarias de piedra.
   </div>`;
+}
+
+function setDifficulty(id) {
+  if (!BALANCE.DIFFICULTIES[id]) return;
+  G.difficulty = id;
+  window.applyAxeUpgradeStatsFromLevels?.();
+  syncCurrentLogStats();
+  logHP = currentLogMaxHP;
+  logHPDisplay = currentLogMaxHP;
+  showToast(`⚙️ Dificultad: ${BALANCE.getDifficulty(id).name}`);
+  updateUI();
+  openModal('settings');
 }
 
 function toggleSetting(key, btn) {
@@ -1990,6 +2194,7 @@ function startGame() {
 
   updateAppHeight();
   loadGame();
+  syncCurrentLogStats();
   resizeCanvas();
 
   document.getElementById('day-display').textContent = `Día: ${TIME.day}`;
@@ -2016,9 +2221,12 @@ window.openModal = openModal;
 window.closeModal = closeModal;
 window.closeModalOutside = closeModalOutside;
 window.buyAxeUpgrade = buyAxeUpgrade;
+window.buyWhetstone = buyWhetstone;
 window.buyShopItem = buyShopItem;
 window.buySkill = buySkill;
+window.joinClan = joinClan;
 window.doPrestige = doPrestige;
+window.setDifficulty = setDifficulty;
 window.toggleSetting = toggleSetting;
 window.resetGame = resetGame;
 
