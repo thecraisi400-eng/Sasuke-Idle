@@ -30,6 +30,8 @@ window.applyAxeUpgradeStatsFromLevels = function applyAxeUpgradeStatsFromLevels(
   G.axeAttackSpeed = 1;
   G.axeCritChance = 0;
   G.axeDoubleChance = 0;
+  G.axeCritRating = 0;
+  G.axeDoubleRating = 0;
 
   window.AXE_UPGRADES.forEach(u => {
     if (u.id === 'edge') {
@@ -40,8 +42,14 @@ window.applyAxeUpgradeStatsFromLevels = function applyAxeUpgradeStatsFromLevels(
       G.axeDamage += damage;
     }
     if (u.id === 'quality') G.axeAttackSpeed += u.effectStep * u.level;
-    if (u.id === 'crit') G.axeCritChance = Math.min(u.cap || 0.45, u.effectStep * u.level);
-    if (u.id === 'double') G.axeDoubleChance = Math.min(u.cap || 0.35, u.effectStep * u.level);
+    if (u.id === 'crit') {
+      G.axeCritRating = (u.ratingStep || u.effectStep || 5) * u.level;
+      G.axeCritChance = window.BALANCE?.critFromRating?.(G.axeCritRating) || 0;
+    }
+    if (u.id === 'double') {
+      G.axeDoubleRating = (u.ratingStep || u.effectStep || 4) * u.level;
+      G.axeDoubleChance = window.BALANCE?.doubleFromRating?.(G.axeDoubleRating) || 0;
+    }
   });
 };
 
@@ -73,8 +81,8 @@ window.renderAxeModal = function renderAxeModal() {
       effectText = `Daño: +${nextGain.toFixed(2)} · Actual: ${G.axeDamage.toFixed(2)}`;
     }
     if (u.id === 'quality') effectText = `Velocidad: +${u.effectStep.toFixed(2)} golpes/s · Actual: ${G.axeAttackSpeed.toFixed(2)}`;
-    if (u.id === 'crit') effectText = `Crítico: +${(u.effectStep * 100).toFixed(2)}% · Actual: ${(G.axeCritChance * 100).toFixed(2)}%`;
-    if (u.id === 'double') effectText = `Doble golpe: +${(u.effectStep * 100).toFixed(2)}% · Actual: ${(G.axeDoubleChance * 100).toFixed(2)}%`;
+    if (u.id === 'crit') effectText = `Crítico: +${u.effectStep} rating · Actual: ${(G.axeCritChance * 100).toFixed(1)}%`;
+    if (u.id === 'double') effectText = `Doble golpe: +${u.effectStep} rating · Actual: ${(G.axeDoubleChance * 100).toFixed(1)}%`;
 
     html += `<div class="upgrade-item">
       <div class="upgrade-icon">${u.icon}</div>
@@ -117,7 +125,7 @@ window.buyWhetstone = function buyWhetstone() {
 window.useWhetstone = function useWhetstone() {
   if (G.whetstones <= 0) { showToast('☢️ Sin piedra de afilar'); return; }
   if (Date.now() < G.whetstoneBoostUntil) { showToast('☢️ Ya hay una piedra activa'); return; }
-  const bonusDuration = (window.attrSystem?.getAttrLevel?.('perfect_sharpening') || 0) * 20 * 1000;
+  const bonusDuration = (window.attrSystem?.getAttrLevel?.('sharpening_ritual') || 0) * 15 * 1000;
   G.whetstones -= 1;
   G.whetstoneBoostUntil = Date.now() + (5 * 60 * 1000) + bonusDuration;
   showToast('☢️ Daño automático x2 por 5 minutos');
