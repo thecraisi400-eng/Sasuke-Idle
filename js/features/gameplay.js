@@ -3,6 +3,8 @@
 // CAMBIO 2: crystals comienza en 0
 // =============================================
 const G = {
+  saveVersion: 2,
+  statsVersion: 2,
   gold: 0,
   crystals: 0,   // CAMBIO 2: siempre empieza en 0
   difficulty: 'medium',
@@ -31,6 +33,8 @@ const G = {
   axeAttackSpeed: 1,
   axeCritChance: 0,
   axeDoubleChance: 0,
+  axeCritRating: 0,
+  axeDoubleRating: 0,
   whetstones: 0,
   whetstoneBoostUntil: 0,
 
@@ -299,45 +303,46 @@ const SKILLS_TREE = [
 // =============================================
 // COMPUTED VALUES
 // =============================================
-function computeDamageBreakdown() {
-  const weather = getCurrentWeather();
-  const critChance = Math.min(0.45, (G.axeCritChance + (attrSystem.getCritBonus?.() || 0)) * weather.crit);
-  const doubleChance = Math.min(0.35, G.axeDoubleChance);
-  let stoneMultiplier = 1;
-  if (Date.now() < G.whetstoneBoostUntil) stoneMultiplier = 2;
-
-  const critMultiplier = 1 + critChance;
-  const doubleMultiplier = 1 + doubleChance;
-  const rawHit = G.axeDamage * stoneMultiplier * G.prestigeMultiplier;
-  let dps = rawHit * G.axeAttackSpeed * critMultiplier * doubleMultiplier;
-  dps = attrSystem.applyAttrToGPS(dps);
-  dps *= (1 + G.skills.speed * 0.15);
-  dps *= (1 + G.skills.endurance * 0.25);
-  dps *= weather.dps;
-  dps *= (1 + (G.clanBonus?.dps || 0));
-
+function getStatsContext(overrides = {}) {
   return {
-    rawHit,
-    attackSpeed: G.axeAttackSpeed,
-    critChance,
-    doubleChance,
-    stoneMultiplier,
-    weather,
-    dps,
+    difficulty: G.difficulty,
+    day: TIME.day,
+    weather: getCurrentWeather(),
+    isBoss: isBossTree(),
+    now: Date.now(),
+    currentTreeHp: typeof logHP === 'number' ? logHP : 0,
+    treeHp: typeof currentLogMaxHP === 'number' ? currentLogMaxHP : 0,
+    attributes: attrSystem.getAttrLevels?.() || {},
+    axeUpgrades: window.AXE_UPGRADES || [],
+    balance: BALANCE,
+    ...overrides,
+  };
+}
+
+function getStatsSnapshot(overrides = {}) {
+  return window.STAT_ENGINE.computeAll(G, getStatsContext(overrides));
+}
+
+function computeDamageBreakdown() {
+  const stats = getStatsSnapshot();
+  return {
+    rawHit: stats.combat.damagePerHit,
+    attackSpeed: stats.combat.hitsPerSecond,
+    critChance: stats.combat.critChance,
+    doubleChance: stats.combat.doubleHitChance,
+    stoneMultiplier: stats.combat.activeBurstMultiplier,
+    weather: getCurrentWeather(),
+    dps: stats.combat.expectedDps,
+    stats,
   };
 }
 
 function computeGPS() {
-  return computeDamageBreakdown().dps;
+  return getStatsSnapshot().combat.expectedDps;
 }
 
 function computeGPC() {
-  let base = G.axeGoldPerClick;
-  base = attrSystem.applyAttrToGPC(base);
-  base *= (1 + G.skills.strength * 0.20);
-  base *= G.prestigeMultiplier;
-  if (G.skills.luck > 0 && Math.random() < G.skills.luck * 0.10) base *= 2;
-  return Math.max(1, Math.floor(base));
+  return getStatsSnapshot().rewards.goldPerTree;
 }
 
 function getGoldMultiplierBonus() {
@@ -357,13 +362,12 @@ function isBossTree() {
 }
 
 function getTreeHpMultiplier() {
-  if (!isBossTree()) return 1;
-  const armorIgnore = attrSystem.getAttrEffectValue?.('anti_bark') || 0;
-  return Math.max(2.5, 4 * (1 - armorIgnore));
+  const tree = getStatsSnapshot().tree;
+  return tree.baseHp > 0 ? tree.finalHp / tree.baseHp : 1;
 }
 
 function getTreeGoldMultiplier() {
-  return (isBossTree() ? 3 : 1) * getCurrentWeather().gold;
+  return 1;
 }
 
 // =============================================
@@ -371,6 +375,8 @@ function getTreeGoldMultiplier() {
 // =============================================
 function saveGame() {
   const save = {
+    saveVersion: 2,
+    statsVersion: 2,
     version: 2,
     G: { ...G },
     AXE_UPGRADES: AXE_UPGRADES.map(u => ({ id: u.id, level: u.level })),
@@ -386,11 +392,14 @@ function loadGame() {
   try {
     const raw = localStorage.getItem('lenador_idle_v1');
     if (!raw) {
+      G.saveVersion = 2;
+      G.statsVersion = 2;
       G.xpNeeded = BALANCE.xpNeededForLevel(G.level);
       window.applyAxeUpgradeStatsFromLevels?.();
       return;
     }
-    const save = JSON.parse(raw);
+    const parsedSave = JSON.parse(raw);
+    const save = window.SAVE_MIGRATIONS?.migrateSave(parsedSave) || parsedSave;
     Object.assign(G, save.G);
     G.difficulty = G.difficulty || 'medium';
     G.attributePoints = Number(G.attributePoints) || 0;
@@ -417,6 +426,8 @@ function loadGame() {
       TIME.gameMinutes = save.TIME.gameMinutes;
       TIME.day = save.TIME.day;
     }
+    G.saveVersion = 2;
+    G.statsVersion = 2;
     G.xpNeeded = BALANCE.xpNeededForLevel(G.level);
     window.applyAxeUpgradeStatsFromLevels?.();
     syncCurrentLogStats();
@@ -466,6 +477,7 @@ function checkLevelUp() {
     G.level += 1;
     G.xpNeeded = BALANCE.xpNeededForLevel(G.level);
     G.attributePoints += 1;
+    if (G.level % 10 === 0) G.attributePoints += 1;
     G.skillPoints += G.level % 5 === 0 ? 1 : 0;
     leveled = true;
     const unlock = BALANCE.UNLOCKS[G.level];
@@ -553,19 +565,19 @@ let logPileClickable = false;
 let pileClickEffect = null;
 
 function syncCurrentLogStats() {
-  currentLogMaxHP = Math.round(BALANCE.treeHp(G.level, TIME.day, G.difficulty) * getTreeHpMultiplier());
-  currentLogGoldReward = Math.floor(BALANCE.treeGold(G.level, G.difficulty, getGoldMultiplierBonus()) * getTreeGoldMultiplier());
+  const stats = getStatsSnapshot();
+  currentLogMaxHP = stats.tree.finalHp;
+  currentLogGoldReward = stats.rewards.goldPerTree;
   logHP = Math.min(logHP || currentLogMaxHP, currentLogMaxHP);
   logHPDisplay = Math.min(logHPDisplay || currentLogMaxHP, currentLogMaxHP);
 }
 
 function getGoldPerLog() {
-  return Math.floor(BALANCE.treeGold(G.level, G.difficulty, getGoldMultiplierBonus()) * getTreeGoldMultiplier());
+  return getStatsSnapshot().rewards.goldPerTree;
 }
 
 function getXpPerLog() {
-  const bossMult = isBossTree() ? 2.5 : 1;
-  return Math.max(8, Math.floor(14 * Math.pow(1.08, Math.max(0, G.level - 1)) * getCurrentWeather().xp * bossMult));
+  return getStatsSnapshot().rewards.xpPerTree;
 }
 
 function damageLog(amount) {
@@ -592,13 +604,13 @@ function triggerLogBreak() {
   G.xp += xpEarned;
   logPileGold += goldEarned;
 
-  const diff = BALANCE.getDifficulty(G.difficulty);
-  const rareChance = Math.min(0.60, diff.rareChance + getCurrentWeather().rare + (attrSystem.getRareBonus?.() || 0));
+  const rewardStats = getStatsSnapshot().rewards;
+  const rareChance = rewardStats.rareWoodChance;
   if (Math.random() < rareChance) {
     G.woodRare += 1;
     logPileGold += Math.floor(goldEarned * 0.5);
   }
-  if (Math.random() < diff.crystalChance || G.totalTreesChopped === 5) {
+  if (Math.random() < rewardStats.crystalChance || G.totalTreesChopped === 5) {
     G.crystals += 1;
     showToast('💎 ¡Cristal encontrado en la savia!');
   }
@@ -2033,10 +2045,12 @@ function renderEventsModal() {
 }
 
 function renderPrestigeModal() {
-  const canPrestige = G.level >= 20 || G.totalTreesChopped >= 150;
-  const runGold = Math.max(0, G.totalGoldEarned - (G.goldAtLastPrestige || 0));
-  const projectedEssence = Math.max(1, Math.floor(Math.sqrt(runGold) / 100) + Math.floor(G.treesChopped / 100));
-  const projectedMultiplier = 1 + 0.12 * Math.pow(G.prestigeEssence + projectedEssence, 0.85) * (1 + (attrSystem.getPrestigeBonus?.() || 0));
+  const stats = getStatsSnapshot();
+  const prestige = stats.prestige;
+  const canPrestige = prestige.canPrestige;
+  const runGold = prestige.sources.runGold;
+  const projectedEssence = prestige.nextPrestigeReward;
+  const projectedMultiplier = prestige.projectedMultiplier;
   return `<div class="prestige-box">
     <h3>👑 Prestigio</h3>
     <p>Reinicia Oro, Nivel y mejoras de hacha para obtener esencia permanente.<br>
@@ -2049,21 +2063,22 @@ function renderPrestigeModal() {
   <div class="stat-row"><span class="label">Árboles de esta run</span><span class="value">${fmtNum(G.treesChopped)} 🌲</span></div>
   <div class="stat-row"><span class="label">Árboles totales</span><span class="value">${fmtNum(G.totalTreesChopped)} 🌲</span></div>
   <div class="stat-row"><span class="label">Esencia de prestigio</span><span class="value">${fmtNum(G.prestigeEssence)} 👑</span></div>
-  <div class="stat-row"><span class="label">Multiplicador actual</span><span class="value">x${G.prestigeMultiplier.toFixed(2)}</span></div>
+  <div class="stat-row"><span class="label">Multiplicador actual</span><span class="value">x${prestige.multiplier.toFixed(2)}</span></div>
   <div class="stat-row"><span class="label">Tiempo de juego</span><span class="value">Día ${TIME.day} · ${getTimeLabel()}</span></div>`;
 }
 
 function doPrestige() {
   if (G.level < 20 && G.totalTreesChopped < 150) { showToast('⚠️ Necesitas Nivel 20 o 150 árboles para Prestigiar'); return; }
-  const runGold = Math.max(0, G.totalGoldEarned - (G.goldAtLastPrestige || 0));
-  const reward = Math.max(1, Math.floor(Math.sqrt(runGold) / 100) + Math.floor(G.treesChopped / 100));
+  const prestige = getStatsSnapshot().prestige;
+  const runGold = prestige.sources.runGold;
+  const reward = prestige.nextPrestigeReward;
   G.prestigeEssence += reward;
   G.gold = 0;
   G.goldAtLastPrestige = G.totalGoldEarned;
   G.level = 1;
   G.xp = 0;
   G.xpNeeded = BALANCE.xpNeededForLevel(1);
-  G.prestigeMultiplier = +(1 + 0.12 * Math.pow(G.prestigeEssence, 0.85) * (1 + (attrSystem.getPrestigeBonus?.() || 0))).toFixed(2);
+  G.prestigeMultiplier = +window.STAT_ENGINE.computePrestige(G, getStatsContext()).multiplier.toFixed(2);
   G.prestigeCount++;
   G.totalPrestige++;
   G.treesChopped = 0;
@@ -2108,8 +2123,10 @@ function renderSettingsModal() {
 
   <p class="modal-section-title" style="margin-top:12px">Desglose de DPS</p>
   <div class="stat-row"><span class="label">Daño por golpe</span><span class="value">${breakdown.rawHit.toFixed(2)}</span></div>
-  <div class="stat-row"><span class="label">Golpes/s</span><span class="value">${breakdown.attackSpeed.toFixed(2)}</span></div>
-  <div class="stat-row"><span class="label">Crítico / Doble</span><span class="value">${(breakdown.critChance * 100).toFixed(2)}% / ${(breakdown.doubleChance * 100).toFixed(2)}%</span></div>
+  <div class="stat-row"><span class="label">Golpes/s</span><span class="value">${breakdown.attackSpeed.toFixed(2)} / cap ${breakdown.stats.combat.capSpeed}</span></div>
+  <div class="stat-row"><span class="label">Crítico / Doble</span><span class="value">${(breakdown.critChance * 100).toFixed(1)}% / ${(breakdown.doubleChance * 100).toFixed(1)}%</span></div>
+  <div class="stat-row"><span class="label">Oro / XP por árbol</span><span class="value">${fmtNum(breakdown.stats.rewards.goldPerTree)} 🪙 / ${fmtNum(breakdown.stats.rewards.xpPerTree)} XP</span></div>
+  <div class="stat-row"><span class="label">Tiempo estimado</span><span class="value">${breakdown.stats.combat.timeToChopSeconds.toFixed(1)} s</span></div>
   <div class="stat-row"><span class="label">Combo</span><span class="value">x${G.combo} · mejor x${G.bestCombo}</span></div>
   <div class="stat-row"><span class="label">Árbol actual</span><span class="value">${isBossTree() ? 'Legendario · ' : ''}${Math.ceil(logHP)} / ${Math.ceil(currentLogMaxHP)} HP</span></div>
   <div class="stat-row"><span class="label">Clima</span><span class="value">${breakdown.weather.name}</span></div>
@@ -2227,6 +2244,8 @@ window.buySkill = buySkill;
 window.joinClan = joinClan;
 window.doPrestige = doPrestige;
 window.setDifficulty = setDifficulty;
+window.getStatsContext = getStatsContext;
+window.getStatsSnapshot = getStatsSnapshot;
 window.toggleSetting = toggleSetting;
 window.resetGame = resetGame;
 
