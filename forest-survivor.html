@@ -46,11 +46,11 @@ canvas{display:block;width:100%;height:100%;}
 #alert{position:absolute;top:28%;width:100%;text-align:center;color:#cc0000;font-size:28px;font-weight:900;text-shadow:0 0 15px rgba(255,0,0,0.5);opacity:0;pointer-events:none;transition:opacity .3s;z-index:20;letter-spacing:1px;}
 
 /* Bottom Panel */
-#bp{width:100%;height:160px;background:var(--panel);border-top:2px solid var(--border);display:flex;flex-direction:row;justify-content:space-around;align-items:center;padding:8px;gap:6px;z-index:15;}
-.sbtn{background:#f8fdf0;border:1.5px solid #a0c870;border-radius:10px;flex:1;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;color:var(--text);cursor:pointer;transition:all .18s;padding:6px 4px;gap:3px;}
-.sbtn:active{transform:scale(.94);}
-.sbtn.off{opacity:.42;cursor:not-allowed;border-color:#c0d8a0;}
-.sbtn:not(.off):hover{border-color:var(--gold);background:#edffd8;}
+#bp{width:100%;height:160px;background:linear-gradient(180deg,#f8fbf4,#eef6e7);border-top:2px solid #111;display:flex;flex-direction:row;justify-content:space-around;align-items:center;padding:8px;gap:6px;z-index:15;}
+.sbtn{background:linear-gradient(180deg,#ffffff,#f3f8ef);border:2px solid #111;border-radius:12px;box-shadow:0 3px 0 rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.95);flex:1;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;color:var(--text);cursor:pointer;transition:all .18s;padding:6px 4px;gap:3px;}
+.sbtn:active{transform:scale(.94);box-shadow:0 1px 0 rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.95);}
+.sbtn.off{opacity:.42;cursor:not-allowed;border-color:#111;background:linear-gradient(180deg,#fafafa,#edf1ea);}
+.sbtn:not(.off):hover{border-color:#111;background:linear-gradient(180deg,#ffffff,#eaf7df);box-shadow:0 3px 0 rgba(0,0,0,.24),0 0 0 2px rgba(200,146,10,.18) inset;}
 .si{font-size:22px;line-height:1;}
 .st{font-size:10px;font-weight:700;text-align:center;color:#2a6010;line-height:1.2;}
 .sv{font-size:11px;color:#1a4a08;font-weight:600;}
@@ -152,7 +152,7 @@ canvas{display:block;width:100%;height:100%;}
     <div class="sbtn" id="bArmor" onclick="G.buy('armor')">
       <div class="si">🛡️</div>
       <div class="st" id="tArmor">Armadura</div>
-      <div class="sv" id="vArmor">+3 ARM</div>
+      <div class="sv" id="vArmor">+2 ARM</div>
       <div class="sc" id="cArmor">💰 18</div>
     </div>
     <div class="sbtn" id="bRegen" onclick="G.buy('regen')">
@@ -239,7 +239,7 @@ class Player{
   constructor(x,y){
     this.x=x;this.y=y;this.radius=22;
     this.baseMaxHp=120;this.baseDmg=22;
-    this.regenRate=0;this.armor=0;this.critChance=0.05;this.critMult=2.0;
+    this.regenRate=0;this.armor=10;this.maxArmor=10;this.critChance=0.05;this.critMult=2.0;
     this.lifesteal=0;this.slowChance=0;
     this.maxHp=this.baseMaxHp;this.hp=this.maxHp;
     this.dmgMult=1.0;this.atkSpdMult=1.0;
@@ -255,9 +255,11 @@ class Player{
   get atkCd(){return Math.max(8,this.baseAtk/this.atkSpdMult);}
 
   takeDamage(raw){
-    const absorbed=Math.min(this.armor,raw);
-    let dmg=raw-absorbed;
-    if(this.shieldHp>0){
+    let dmg=raw;
+    if(this.armor>0){
+      this.armor=Math.max(0,this.armor-1);
+      dmg=0;
+    } else if(this.shieldHp>0){
       this.shieldHp-=dmg;
       if(this.shieldHp<0){dmg=-this.shieldHp;this.shieldHp=0;}
       else dmg=0;
@@ -272,9 +274,6 @@ class Player{
     if(this.shootAnim>0)this.shootAnim--;
     if(this.regenRate>0&&this.hp<this.maxHp){
       this.hp=Math.min(this.maxHp,this.hp+this.regenRate/FPS);
-    }
-    if(this.maxShield>0&&this.shieldHp<this.maxShield){
-      this.shieldHp=Math.min(this.maxShield,this.shieldHp+this.maxShield/(FPS*30));
     }
     if(this.atkTimer<=0&&game.enemies.length>0){
       this.shoot(game);this.atkTimer=this.atkCd;this.shootAnim=8;
@@ -617,8 +616,81 @@ const ENEMY_DEFS={
   }
 };
 
-// ─── 10 unique enemy types for wave rotation ────────────────────────────────
-const WAVE_ENEMY_POOL=['wolf','goblin','troll','bat','slime','skeleton','spider','wisp','golem','harpy','wraith'];
+// ─── Infinite animal enemy roster ───────────────────────────────────────────
+const ANIMAL_ENEMY_NAMES=[
+  'Ratas','Murcielagos','Culebras','Águilas','Tiburones','Leones','Lobos','Halcones','Arañas','Escorpiones','Búhos','Panteras','Cuervos','Coyotes','Tigres','Hienas','Caimanes','Víboras','Jaguares','Buitres','Pirañas','Guepardos','Iguanas','Osos','Leopardos','Cóndores','Serpientes','Escolopendras','Zorros','Barracudas','Pumas','Avispas','Alacranes','Mantarrayas','Orcas','Delfines','Linces','Garzas','Gaviotas','Cangrejos','Calamares','Pulpos','Medusas','Morenas','Anguilas','Salamandras','Sapos','Ranas','Camaleones','Lagartos','Geckos','Tortugas','Cocodrilos','Gatos','Perros','Caballos','Ciervos','Alces','Búfalos','Jabalíes','Cerdos','Conejos','Liebres','Ardillas','Castores','Nutrias','Focas','Morsas','Pingüinos','Pelícanos','Flamencos','Cisnes','Patos'
+];
+
+function hashName(name){let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))>>>0;return h;}
+function animalGroup(name){
+  if(/Águilas|Halcones|Búhos|Cuervos|Buitres|Cóndores|Garzas|Gaviotas|Pelícanos|Flamencos|Cisnes|Patos|Pingüinos/.test(name))return'bird';
+  if(/Tiburones|Pirañas|Barracudas|Mantarrayas|Orcas|Delfines|Cangrejos|Calamares|Pulpos|Medusas|Morenas|Anguilas|Focas|Morsas/.test(name))return'aquatic';
+  if(/Culebras|Caimanes|Víboras|Iguanas|Serpientes|Salamandras|Sapos|Ranas|Camaleones|Lagartos|Geckos|Tortugas|Cocodrilos/.test(name))return'reptile';
+  if(/Arañas|Escorpiones|Escolopendras|Avispas|Alacranes/.test(name))return'bug';
+  return'mammal';
+}
+function hsl(h,s,l){return`hsl(${h},${s}%,${l}%)`;}
+function animalPalette(name,group){
+  const h=hashName(name);
+  if(group==='bird')return[hsl(18+h%45,45,34),hsl(35+h%35,58,62),'#24150a'];
+  if(group==='aquatic')return[hsl(188+h%55,50,40),hsl(195+h%45,65,66),'#062837'];
+  if(group==='reptile')return[hsl(78+h%62,45,34),hsl(95+h%45,55,50),'#18320c'];
+  if(group==='bug')return[hsl(8+h%42,38,27),hsl(22+h%55,62,48),'#160907'];
+  return[hsl(22+h%34,40,38),hsl(28+h%42,45,58),'#2b180a'];
+}
+function makeAnimalEnemyDef(name){
+  const group=animalGroup(name), h=hashName(name), pal=animalPalette(name,group);
+  const small=/Ratas|Murcielagos|Arañas|Escorpiones|Víboras|Pirañas|Iguanas|Escolopendras|Avispas|Alacranes|Anguilas|Sapos|Ranas|Geckos|Gatos|Conejos|Liebres|Ardillas|Patos/.test(name);
+  const large=/Tiburones|Leones|Tigres|Caimanes|Jaguares|Osos|Orcas|Cocodrilos|Caballos|Alces|Búfalos|Morsas/.test(name);
+  const r=small?10+h%4:large?17+h%7:13+h%5;
+  const spdBase=group==='bird'?2.05:group==='aquatic'?1.55:group==='bug'?1.8:group==='reptile'?1.45:1.6;
+  return{r,hp:(small?28:large?82:48)+(h%24),spd:spdBase+(h%7)*.06,col:pal[0],dmg:(small?5:large?13:8)+(h%6),exp:small?2:large?5:3,gold:small?2:large?5:3,
+    draw(ctx,x,y,hp,maxHp,t){
+      const hurt=hp<maxHp*.3, bob=Math.sin(t*7+h%5)*1.5, flap=Math.sin(t*12+h%3)*8;
+      ctx.save();ctx.translate(x,y+bob);
+      ctx.shadowColor='rgba(0,0,0,.18)';ctx.shadowBlur=2;
+      const main=hurt?'#e86a5a':pal[0], light=pal[1], dark=pal[2];
+      if(group==='bird'){
+        ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(-r*2.2,-r*.7+flap,-r*2.8,r*.25);ctx.quadraticCurveTo(-r*1.25,r*.05,0,r*.45);ctx.fillStyle=main;ctx.fill();ctx.strokeStyle=dark;ctx.lineWidth=1.2;ctx.stroke();
+        ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(r*2.2,-r*.7+flap,r*2.8,r*.25);ctx.quadraticCurveTo(r*1.25,r*.05,0,r*.45);ctx.fill();ctx.stroke();
+        ctx.beginPath();ctx.ellipse(0,0,r*.72,r*.95,0,0,Math.PI*2);ctx.fillStyle=light;ctx.fill();ctx.stroke();
+        ctx.beginPath();ctx.arc(r*.18,-r*.95,r*.45,0,Math.PI*2);ctx.fillStyle=main;ctx.fill();ctx.stroke();
+        ctx.beginPath();ctx.moveTo(r*.55,-r*.95);ctx.lineTo(r*1.05,-r*.78);ctx.lineTo(r*.55,-r*.62);ctx.closePath();ctx.fillStyle='#d99a19';ctx.fill();
+        ctx.beginPath();ctx.arc(r*.25,-r*1.03,1.7,0,Math.PI*2);ctx.fillStyle='#050505';ctx.fill();
+      } else if(group==='aquatic'){
+        ctx.beginPath();ctx.moveTo(-r*1.2,0);ctx.quadraticCurveTo(0,-r*.9,r*1.35,-r*.12);ctx.quadraticCurveTo(0,r*.9,-r*1.2,0);ctx.fillStyle=main;ctx.fill();ctx.strokeStyle=dark;ctx.lineWidth=1.3;ctx.stroke();
+        ctx.beginPath();ctx.moveTo(-r*1.2,0);ctx.lineTo(-r*2,-r*.65);ctx.lineTo(-r*1.8,0);ctx.lineTo(-r*2,r*.65);ctx.closePath();ctx.fillStyle=light;ctx.fill();ctx.stroke();
+        ctx.beginPath();ctx.moveTo(-r*.05,-r*.65);ctx.lineTo(r*.35,-r*1.35);ctx.lineTo(r*.45,-r*.38);ctx.closePath();ctx.fill();ctx.stroke();
+        if(/Pulpos|Calamares|Medusas/.test(name)){for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(-r*.25+i*r*.18,r*.55);ctx.quadraticCurveTo(i*r*.35,r*1.35+Math.sin(t*8+i)*3,i*r*.28,r*1.8);ctx.strokeStyle=light;ctx.lineWidth=2;ctx.stroke();}}
+        ctx.beginPath();ctx.arc(r*.82,-r*.18,2,0,Math.PI*2);ctx.fillStyle='#050505';ctx.fill();
+      } else if(group==='reptile'){
+        if(/Culebras|Víboras|Serpientes|Anguilas/.test(name)){ctx.strokeStyle=main;ctx.lineWidth=r*.72;ctx.lineCap='round';ctx.beginPath();for(let i=0;i<5;i++){const px=-r*1.8+i*r*.85,py=Math.sin(t*6+i)*r*.35;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();ctx.strokeStyle=dark;ctx.lineWidth=1;ctx.stroke();ctx.beginPath();ctx.ellipse(r*1.7,0,r*.65,r*.45,0,0,Math.PI*2);ctx.fillStyle=light;ctx.fill();ctx.stroke();}
+        else{ctx.beginPath();ctx.ellipse(0,0,r*1.25,r*.62,0,0,Math.PI*2);ctx.fillStyle=main;ctx.fill();ctx.strokeStyle=dark;ctx.lineWidth=1.4;ctx.stroke();ctx.beginPath();ctx.ellipse(r*1.15,-r*.12,r*.55,r*.38,0,0,Math.PI*2);ctx.fillStyle=light;ctx.fill();ctx.stroke();for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(-r*.7+i*r*.45,r*.45);ctx.lineTo(-r*.95+i*r*.55,r*.95);ctx.strokeStyle=dark;ctx.lineWidth=2;ctx.stroke();}}
+        ctx.beginPath();ctx.arc(r*1.32,-r*.25,2,0,Math.PI*2);ctx.fillStyle='#f7d23b';ctx.fill();
+      } else if(group==='bug'){
+        ctx.beginPath();ctx.ellipse(0,0,r*.9,r*.75,0,0,Math.PI*2);ctx.fillStyle=main;ctx.fill();ctx.strokeStyle=dark;ctx.lineWidth=1.2;ctx.stroke();
+        ctx.beginPath();ctx.ellipse(r*.78,-r*.05,r*.55,r*.48,0,0,Math.PI*2);ctx.fillStyle=light;ctx.fill();ctx.stroke();
+        for(let i=-3;i<=3;i++){ctx.beginPath();ctx.moveTo(i*r*.22,r*.35);ctx.lineTo(i*r*.35,r*.95+Math.abs(i));ctx.moveTo(i*r*.22,-r*.35);ctx.lineTo(i*r*.35,-r*.95-Math.abs(i));ctx.strokeStyle=dark;ctx.lineWidth=1.4;ctx.stroke();}
+        if(/Escorpiones|Alacranes/.test(name)){ctx.beginPath();ctx.moveTo(-r*.8,0);ctx.quadraticCurveTo(-r*1.8,-r*1.2,-r*.7,-r*1.7);ctx.strokeStyle=dark;ctx.lineWidth=3;ctx.stroke();}
+        if(/Avispas/.test(name)){ctx.globalAlpha=.55;ctx.beginPath();ctx.ellipse(-r*.25,-r*.85,r*.75,r*.35,-.4,0,Math.PI*2);ctx.fillStyle='#dff6ff';ctx.fill();ctx.beginPath();ctx.ellipse(r*.25,-r*.85,r*.75,r*.35,.4,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}
+        ctx.beginPath();ctx.arc(r*1.05,-r*.15,1.8,0,Math.PI*2);ctx.fillStyle='#050505';ctx.fill();
+      } else {
+        ctx.beginPath();ctx.ellipse(0,0,r*1.25,r*.72,0,0,Math.PI*2);ctx.fillStyle=main;ctx.fill();ctx.strokeStyle=dark;ctx.lineWidth=1.4;ctx.stroke();
+        ctx.beginPath();ctx.ellipse(r*1.15,-r*.18,r*.62,r*.48,0,0,Math.PI*2);ctx.fillStyle=light;ctx.fill();ctx.stroke();
+        ctx.beginPath();ctx.moveTo(r*.82,-r*.55);ctx.lineTo(r*.72,-r*1.05);ctx.lineTo(r*1.08,-r*.62);ctx.closePath();ctx.fillStyle=dark;ctx.fill();
+        ctx.beginPath();ctx.moveTo(r*1.18,-r*.55);ctx.lineTo(r*1.32,-r*1.0);ctx.lineTo(r*1.42,-r*.50);ctx.closePath();ctx.fill();
+        for(let i=0;i<4;i++){const lx=-r*.8+i*r*.5, sw=Math.sin(t*8+i)*2;ctx.beginPath();ctx.moveTo(lx,r*.48);ctx.lineTo(lx+sw,r*1.05);ctx.strokeStyle=dark;ctx.lineWidth=2.6;ctx.lineCap='round';ctx.stroke();}
+        ctx.beginPath();ctx.moveTo(-r*1.15,-r*.05);ctx.quadraticCurveTo(-r*1.85,-r*.75,-r*1.55,-r*1.15);ctx.strokeStyle=dark;ctx.lineWidth=3;ctx.stroke();
+        ctx.beginPath();ctx.arc(r*1.38,-r*.28,2,0,Math.PI*2);ctx.fillStyle='#050505';ctx.fill();
+      }
+      ctx.restore();
+    }
+  };
+}
+ANIMAL_ENEMY_NAMES.forEach(name=>{ENEMY_DEFS[name]=makeAnimalEnemyDef(name);});
+
+// ─── Infinite wave rotation: each wave chooses 2 or 3 animals ───────────────
+const WAVE_ENEMY_POOL=[...ANIMAL_ENEMY_NAMES];
 
 class Enemy{
   constructor(x,y,type,waveMult=1){
@@ -634,12 +706,13 @@ class Enemy{
     this.anim=Math.random()*Math.PI*2;
     if(type==='boss')this.bossTimer=0;
     this.knockVx=0;this.knockVy=0;
-    this.shieldHp=0;this.maxShield=0;
+    this.shieldHp=0;this.maxShield=0;this.attackCd=0;
   }
   update(player){
     this.anim+=.016;
     const spd=this.slowed>0?this.speed*.45:this.speed;
     if(this.slowed>0)this.slowed--;
+    if(this.attackCd>0)this.attackCd--;
     if(this.knockVx||this.knockVy){
       this.x+=this.knockVx;this.y+=this.knockVy;
       this.knockVx*=.8;this.knockVy*=.8;
@@ -839,7 +912,7 @@ class Game{
     this.ctx=this.cv.getContext('2d');
     this.forest=new Forest();
     this.costs={dmg:10,hp:15,armor:18,regen:25,crit:20};
-    this.permStats={baseDmg:22,baseMaxHp:120,armor:0,regenRate:0,critChance:.05};
+    this.permStats={baseDmg:22,baseMaxHp:120,armor:10,maxArmor:10,regenRate:0,critChance:.05};
     this.gold=0;
     this.waveAnnounceEl=document.getElementById('wave-announce');
     this.waNumEl=document.getElementById('wa-num');
@@ -852,6 +925,7 @@ class Game{
     this.player.baseDmg=this.permStats.baseDmg;
     this.player.baseMaxHp=this.permStats.baseMaxHp;
     this.player.armor=this.permStats.armor;
+    this.player.maxArmor=this.permStats.maxArmor;
     this.player.regenRate=this.permStats.regenRate;
     this.player.critChance=this.permStats.critChance;
     this.player.maxHp=this.permStats.baseMaxHp;
@@ -884,7 +958,7 @@ class Game{
     this.gold-=cost;
     if(type==='dmg'){this.permStats.baseDmg+=5;this.player.baseDmg=this.permStats.baseDmg;this.costs.dmg=Math.floor(this.costs.dmg*1.55);}
     else if(type==='hp'){this.permStats.baseMaxHp+=25;this.player.baseMaxHp=this.permStats.baseMaxHp;this.player.maxHp=this.permStats.baseMaxHp;this.player.hp=Math.min(this.player.hp+25,this.player.maxHp);this.costs.hp=Math.floor(this.costs.hp*1.5);}
-    else if(type==='armor'){this.permStats.armor+=3;this.player.armor=this.permStats.armor;this.costs.armor=Math.floor(this.costs.armor*1.6);}
+    else if(type==='armor'){this.permStats.maxArmor+=2;this.player.maxArmor+=2;this.player.armor+=2;this.permStats.armor=this.permStats.maxArmor;this.costs.armor=Math.floor(this.costs.armor*1.6);}
     else if(type==='regen'){this.permStats.regenRate+=2;this.player.regenRate=this.permStats.regenRate;this.costs.regen=Math.floor(this.costs.regen*1.55);}
     else if(type==='crit'){this.permStats.critChance=Math.min(.95,this.permStats.critChance+.05);this.player.critChance=this.permStats.critChance;this.costs.crit=Math.floor(this.costs.crit*1.6);}
     this.updateShopUI();
@@ -900,7 +974,7 @@ class Game{
     };
     set('Dmg','Fuerza',`DMG: ${p.baseDmg}`,c.dmg);
     set('Hp','Vitalidad',`HP: ${p.baseMaxHp}`,c.hp);
-    set('Armor','Armadura',`ARM: ${p.armor}`,c.armor);
+    set('Armor','Armadura',`ESC: ${p.armor}`,c.armor);
     set('Regen','Regeneración',`+${p.regenRate}HP/s`,c.regen);
     set('Crit','Crítico',`${Math.round(p.critChance*100)}% Crit`,c.crit);
   }
@@ -959,74 +1033,49 @@ class Game{
     if(n<=2)return'Los enemigos se acercan...';
     if(n<=5)return'¡La oscuridad crece!';
     if(n<=9)return'¡Las hordas no paran!';
-    if(n%10===0)return`🔥 ¡${n} olas! +5 enemigos 🔥`;
+    if(n%10===0)return`🔥 ¡${n} olas infinitas! 🔥`;
     return'¡Prepárate para luchar!';
   }
 
   startNextWave(){
     this.waveNum++;
-    this.shieldWaveBonus=Math.floor(this.waveNum/2); // shields get stronger each wave
-    // Every 10 waves completed, +5 enemies per wave
-    const baseCount=10;
-    const bonusCount=Math.floor((this.waveNum-1)/10)*5;
-    const totalCount=baseCount+bonusCount;
-    // Determine which enemies to use — up to 10 unique types, no repeats in one wave
+    this.shieldWaveBonus=0;
+    const totalCount=3+Math.floor((this.waveNum-1)*0.75)+Math.floor((this.waveNum-1)/6);
     const pool=[...WAVE_ENEMY_POOL];
     const waveTypes=[];
-    const numTypes=Math.min(totalCount,pool.length);
+    const numTypes=Math.min(pool.length,2+Math.floor(Math.random()*2));
     for(let i=0;i<numTypes;i++){
       const idx=Math.floor(Math.random()*pool.length);
       waveTypes.push(pool.splice(idx,1)[0]);
     }
-    // Fill remaining with picks from waveTypes if totalCount>10
     const queue=[];
-    for(let i=0;i<totalCount;i++){queue.push(waveTypes[i%waveTypes.length]);}
-    // Build spawn queue with delays
-    this.waveSpawnQueue=queue.map((type,i)=>({type,delay:i*150}));
+    for(let i=0;i<totalCount;i++)queue.push(waveTypes[Math.floor(Math.random()*waveTypes.length)]);
+    const spawnGap=Math.max(420,950-this.waveNum*18);
+    this.waveSpawnQueue=queue.map((type,i)=>({type,delay:i*spawnGap}));
     this.waveActive=true;
     this.waveEnemiesLeft=totalCount;
     this.waveSpawnTimer=0;
-    this.waveMult=1+this.waveNum*0.12;
+    this.waveMult=1+this.waveNum*0.055;
     this.showWaveAnnounce(this.waveNum);
-    document.getElementById('wdisp').innerText=`Ola ${this.waveNum}`;
+    document.getElementById('wdisp').innerText=`Ola ${this.waveNum} ∞`;
     document.getElementById('wdisp').style.color='#2a6a08';
   }
 
   handleSpawns(){
-    if(this.bossUp)return;
     const sec=Math.floor(this.frames/FPS);
 
-    // Boss after wave 10
-    if(this.waveNum>=10&&!this.bossUp&&this.waveActive&&this.waveEnemiesLeft<=0&&this.enemies.length===0){
-      this.bossUp=true;
-      this.enemies=[];
-      document.getElementById('wdisp').innerText='⚠ ANCIANO CORRUPTO ⚠';
-      document.getElementById('wdisp').style.color='#ff4444';
-      this.showWaveAnnounce(0,true);
-      setTimeout(()=>{
-        this.enemies.push(new Enemy(CW/2,-60,'boss',this.waveMult));
-      },2500);
-      return;
-    }
-
-    // Boss warning at wave 9 cleared
-    if(this.waveNum===9&&!this.bossWarned&&this.waveActive&&this.waveEnemiesLeft<=0&&this.enemies.length===0){
-      this.bossWarned=true;
-    }
-
-    // Start first wave after a short delay
-    if(this.waveNum===0&&sec>=3){
+    // Start first wave with a calm opening so the player is not overwhelmed.
+    if(this.waveNum===0&&sec>=4){
       this.startNextWave();return;
     }
 
-    // Start next wave when current wave enemies are all dead
+    // Infinite waves: when a wave is fully cleared, rest briefly and continue forever.
     if(this.waveActive&&this.waveEnemiesLeft<=0&&this.enemies.length===0&&this.waveSpawnQueue.length===0){
       this.waveActive=false;
-      // Short break before next wave
-      setTimeout(()=>{if(!this.over&&!this.bossUp)this.startNextWave();},3000);
+      setTimeout(()=>{if(!this.over)this.startNextWave();},3600);
     }
 
-    // Spawn from queue
+    // Spawn from queue at a controlled pace.
     if(this.waveActive&&this.waveSpawnQueue.length>0){
       this.waveSpawnTimer++;
       while(this.waveSpawnQueue.length>0&&this.waveSpawnTimer*1000/FPS>=this.waveSpawnQueue[0].delay){
@@ -1068,7 +1117,6 @@ class Game{
             for(let k=0;k<18;k++)this.parts.push(new Particle(e.x,e.y,dcol,5,3,28,1));
             this.floats.push(new FloatText(e.x,e.y,'💰+'+e.gold,'#f0c030',12));
             this.enemies.splice(j,1);
-            if(e.type==='boss')this.triggerWin();
           }
           if(!p.active)break;
         }
@@ -1079,14 +1127,16 @@ class Game{
     for(let i=0;i<this.enemies.length;i++){
       const e=this.enemies[i];
       if(Math.hypot(e.x-this.player.x,e.y-this.player.y)<e.radius+this.player.radius){
-        const dmgPerFrame=e.damage*.017;
-        this.player.takeDamage(dmgPerFrame);
-        // Trigger screen shake proportional to enemy damage
-        if(this.frames%18===0){
+        if(e.attackCd<=0){
+          const armorBlocked=this.player.armor>0;
+          this.player.takeDamage(e.damage);
+          e.attackCd=50;
           const shakePower=Math.min(8, 2+e.damage/12);
           triggerShake(shakePower,22);
+          const txt=armorBlocked?'🛡️ -1':`-${e.damage}`;
+          this.floats.push(new FloatText(this.player.x-12,this.player.y-this.player.radius-10,txt,armorBlocked?'#4a9eff':'#ff5555',13));
+          for(let k=0;k<3;k++)this.parts.push(new Particle(this.player.x,this.player.y,armorBlocked?'#4a9eff':'#ff3333',3,2,15));
         }
-        if(Math.random()<.02){for(let k=0;k<3;k++)this.parts.push(new Particle(this.player.x,this.player.y,'#ff3333',3,2,15));}
       }
     }
 
@@ -1111,9 +1161,9 @@ class Game{
     else hpEl.style.background='linear-gradient(90deg,#2d8c3e,#5dd46e)';
     document.getElementById('xp-fill').style.width=(p.exp/p.expNext*100)+'%';
     document.getElementById('xplbl').innerText=`XP ${Math.floor(p.exp)}/${p.expNext} — Nv.${p.level}`;
-    const shpct=p.maxShield>0?(p.shieldHp/p.maxShield*100):0;
-    document.getElementById('armor-fill').style.width=shpct+'%';
-    document.getElementById('armorlbl').innerText=`Escudo ${Math.ceil(p.shieldHp)}${p.maxShield>0?'/'+p.maxShield:''}  ARM:${p.armor}`;
+    const armorPct=p.maxArmor>0?(p.armor/p.maxArmor*100):0;
+    document.getElementById('armor-fill').style.width=armorPct+'%';
+    document.getElementById('armorlbl').innerText=`🛡️ ${Math.ceil(p.armor)} / ${p.maxArmor} Armadura`;
     document.getElementById('c-dmg').innerText=Math.round(p.dmg);
     document.getElementById('c-spd').innerText=(p.atkSpdMult).toFixed(1)+'x';
     document.getElementById('c-crit').innerText=Math.round(p.critChance*100)+'%';
