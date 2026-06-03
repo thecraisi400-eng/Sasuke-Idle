@@ -251,12 +251,21 @@
     const world = new THREE.Group();
     scene.add(world);
 
-    const ISLAND_RADIUS = 321;
-    const BEACH_START = 264;
-    const COAST_START = 279;
+    const ISLAND_SCALE = 0.75;
+    const ISLAND_RADIUS = 321 * ISLAND_SCALE;
+    const BEACH_START = 264 * ISLAND_SCALE;
+    const COAST_START = 279 * ISLAND_SCALE;
     const OCEAN_RADIUS = 980;
     const WATER_LEVEL = -0.7;
-    const HEIGHT_SCALE = 2;
+    const HEIGHT_SCALE = 2.25;
+
+    function scaled(value) {
+      return value * ISLAND_SCALE;
+    }
+
+    function terrainSpace(x, z) {
+      return { x: x / ISLAND_SCALE, z: z / ISLAND_SCALE };
+    }
 
     function smoothstep(edge0, edge1, value) {
       const t = THREE.MathUtils.clamp((value - edge0) / (edge1 - edge0), 0, 1);
@@ -279,41 +288,67 @@
       return gaussian(x, z, centerX, centerZ, spread);
     }
 
+    function plateauBlend(x, z, centerX, centerZ, topRadius, edgeWidth) {
+      const distance = Math.hypot(x - centerX, z - centerZ);
+      return 1 - smoothstep(topRadius, topRadius + edgeWidth, distance);
+    }
+
+    function mountainRidge(x, z, centerX, centerZ, width, length, height, rotation = 0) {
+      const cos = Math.cos(rotation);
+      const sin = Math.sin(rotation);
+      const localX = (x - centerX) * cos - (z - centerZ) * sin;
+      const localZ = (x - centerX) * sin + (z - centerZ) * cos;
+      const ridgeShape = Math.exp(-(localX ** 2) / width) * Math.exp(-(localZ ** 2) / length);
+      const crags = 0.72 + Math.abs(Math.sin(localZ * 0.085)) * 0.36 + Math.max(0, Math.sin((localX - localZ) * 0.06)) * 0.22;
+      return ridgeShape * crags * height;
+    }
+
     function biomeAt(x, z) {
       const distance = Math.hypot(x, z);
       const height = terrainHeight(x, z);
+      const { x: terrainX, z: terrainZ } = terrainSpace(x, z);
       if (distance > BEACH_START || height < WATER_LEVEL + 1.25) return 'beach';
-      if (height > WATER_LEVEL + 31 || biomeBlend(x, z, -130, 120, 7200) > 0.62) return 'alpine';
-      if (height > WATER_LEVEL + 21) return 'rock';
-      if (biomeBlend(x, z, 162, 116, 9800) > 0.42) return 'desert';
-      if (biomeBlend(x, z, -166, -118, 10500) > 0.42) return 'swamp';
-      if (biomeBlend(x, z, -178, 152, 11200) > 0.38) return 'jungle';
-      if (biomeBlend(x, z, 128, -166, 8800) > 0.43) return 'tundra';
-      if (x > 62 && z < -42) return 'savanna';
-      if (x < -68 && z > 36) return 'forest';
-      if (plainsBlend(x, z) > 0.46) return 'plains';
+      if (height > WATER_LEVEL + 36 || biomeBlend(terrainX, terrainZ, -130, 120, 7200) > 0.62) return 'alpine';
+      if (height > WATER_LEVEL + 24) return 'rock';
+      if (biomeBlend(terrainX, terrainZ, 162, 116, 9800) > 0.42) return 'desert';
+      if (biomeBlend(terrainX, terrainZ, -166, -118, 10500) > 0.42) return 'swamp';
+      if (biomeBlend(terrainX, terrainZ, -178, 152, 11200) > 0.38) return 'jungle';
+      if (biomeBlend(terrainX, terrainZ, 128, -166, 8800) > 0.43) return 'tundra';
+      if (x > scaled(62) && z < scaled(-42)) return 'savanna';
+      if (x < scaled(-68) && z > scaled(36)) return 'forest';
+      if (plainsBlend(terrainX, terrainZ) > 0.46) return 'plains';
       return 'grassland';
     }
 
     function terrainHeight(x, z) {
       const distance = Math.hypot(x, z);
+      const { x: terrainX, z: terrainZ } = terrainSpace(x, z);
       const beachBlend = smoothstep(BEACH_START, ISLAND_RADIUS, distance);
       const inland = THREE.MathUtils.clamp((ISLAND_RADIUS - distance) / (ISLAND_RADIUS - COAST_START), 0, 1);
       const shorelineBlend = inland * inland * (3 - 2 * inland);
-      const rollingHills = Math.sin(x * 0.024) * 1.35 + Math.cos(z * 0.027) * 1.2 + Math.sin((x + z) * 0.015) * 1.75;
-      const sharpRidges = Math.abs(Math.sin((x - z) * 0.035)) * 2.2 + Math.max(0, Math.sin((x + z) * 0.03)) * 1.4;
-      const mountainA = gaussian(x, z, -118, 88, 2475) * 15.8;
-      const mountainB = gaussian(x, z, 108, -123, 2205) * 14.2;
-      const mountainC = gaussian(x, z, -196, 142, 3600) * 10.6;
-      const valleyA = gaussian(x, z, 15, 27, 11700) * 3.9;
-      const canyonA = Math.exp(-((x + z * 0.38 - 30) ** 2) / 105) * Math.exp(-((x * 0.3 - z - 27) ** 2) / 37125) * 7.2;
-      const wetlands = biomeBlend(x, z, -166, -118, 10500) * 2.8;
-      const dunes = biomeBlend(x, z, 162, 116, 9800) * (Math.sin(x * 0.052) + Math.cos(z * 0.047)) * 0.9;
-      const plains = plainsBlend(x, z);
-      const roughTerrain = 2.5 + rollingHills + sharpRidges + mountainA + mountainB + mountainC - valleyA - canyonA - wetlands + dunes;
-      const flatTerrain = 2.1 + Math.sin(x * 0.018) * 0.35 + Math.cos(z * 0.016) * 0.28;
-      const blendedTerrain = THREE.MathUtils.lerp(roughTerrain, flatTerrain, THREE.MathUtils.clamp(plains * 0.82, 0, 0.82));
-      const beachShelf = 0.42 + Math.sin(x * 0.018) * 0.12 + Math.cos(z * 0.017) * 0.1;
+      const rollingHills = Math.sin(terrainX * 0.024) * 1.35 + Math.cos(terrainZ * 0.027) * 1.2 + Math.sin((terrainX + terrainZ) * 0.015) * 1.75;
+      const sharpRidges = Math.abs(Math.sin((terrainX - terrainZ) * 0.035)) * 2.2 + Math.max(0, Math.sin((terrainX + terrainZ) * 0.03)) * 1.4;
+      const mountainA = gaussian(terrainX, terrainZ, -118, 88, 2475) * 17.4;
+      const mountainB = gaussian(terrainX, terrainZ, 108, -123, 2205) * 15.6;
+      const mountainC = gaussian(terrainX, terrainZ, -196, 142, 3600) * 12.4;
+      const mountainD = mountainRidge(terrainX, terrainZ, 42, 92, 940, 9800, 12.8, -0.55);
+      const mountainE = mountainRidge(terrainX, terrainZ, -62, -178, 760, 7200, 10.6, 0.78);
+      const plateauNorth = plateauBlend(terrainX, terrainZ, -36, 154, 25, 20);
+      const plateauEast = plateauBlend(terrainX, terrainZ, 178, 24, 22, 18);
+      const plateauSouth = plateauBlend(terrainX, terrainZ, -128, -132, 18, 16);
+      const plateauShelves = plateauNorth * 9.8 + plateauEast * 7.6 + plateauSouth * 6.3;
+      const valleyA = gaussian(terrainX, terrainZ, 15, 27, 11700) * 3.9;
+      const canyonA = Math.exp(-((terrainX + terrainZ * 0.38 - 30) ** 2) / 105) * Math.exp(-((terrainX * 0.3 - terrainZ - 27) ** 2) / 37125) * 7.2;
+      const wetlands = biomeBlend(terrainX, terrainZ, -166, -118, 10500) * 2.8;
+      const dunes = biomeBlend(terrainX, terrainZ, 162, 116, 9800) * (Math.sin(terrainX * 0.052) + Math.cos(terrainZ * 0.047)) * 0.9;
+      const plains = plainsBlend(terrainX, terrainZ);
+      const roughTerrain = 2.5 + rollingHills + sharpRidges + mountainA + mountainB + mountainC + mountainD + mountainE + plateauShelves - valleyA - canyonA - wetlands + dunes;
+      const plateauMask = Math.max(plateauNorth, plateauEast, plateauSouth);
+      const plateauLevel = 12.2 + plateauNorth * 4.5 + plateauEast * 2.2 + plateauSouth * 1.2;
+      const terracedTerrain = THREE.MathUtils.lerp(roughTerrain, plateauLevel, THREE.MathUtils.clamp(plateauMask * 0.86, 0, 0.86));
+      const flatTerrain = 2.1 + Math.sin(terrainX * 0.018) * 0.35 + Math.cos(terrainZ * 0.016) * 0.28;
+      const blendedTerrain = THREE.MathUtils.lerp(terracedTerrain, flatTerrain, THREE.MathUtils.clamp(plains * 0.82 * (1 - plateauMask), 0, 0.82));
+      const beachShelf = 0.42 + Math.sin(terrainX * 0.018) * 0.12 + Math.cos(terrainZ * 0.017) * 0.1;
       const islandTerrain = THREE.MathUtils.lerp(blendedTerrain, beachShelf, beachBlend);
       const height = WATER_LEVEL + 0.32 + shorelineBlend * islandTerrain * HEIGHT_SCALE;
       return Math.max(WATER_LEVEL + 0.12, height);
@@ -446,12 +481,12 @@
     const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x5c6171, roughness: 0.86 });
     const roadGroup = new THREE.Group();
     const roadAngle = -0.26;
-    const roadLength = 450;
+    const roadLength = scaled(450);
     const roadSegments = 60;
     for (let i = 0; i < roadSegments; i++) {
       const localZ = -roadLength / 2 + (i + 0.5) * (roadLength / roadSegments);
-      const x = 9 + Math.sin(roadAngle) * localZ;
-      const z = -3 + Math.cos(roadAngle) * localZ;
+      const x = scaled(9) + Math.sin(roadAngle) * localZ;
+      const z = scaled(-3) + Math.cos(roadAngle) * localZ;
       if (Math.hypot(x, z) > BEACH_START - 10) continue;
       const road = new THREE.Mesh(new THREE.BoxGeometry(8, 0.12, roadLength / roadSegments + 0.25), roadMaterial);
       road.position.set(x, groundY(x, z, 0.08), z);
@@ -532,7 +567,7 @@
       const z = Math.sin(angle) * radius;
       const biome = biomeAt(x, z);
       const maxSlope = biome === 'beach' || biome === 'plains' || biome === 'swamp' || biome === 'desert' ? 0.7 : 1.2;
-      if (Math.abs(x - 9) > 10 && Math.hypot(x + 38, z + 26) > 31 && terrainSlope(x, z) < maxSlope && biome !== 'rock' && biome !== 'alpine') {
+      if (Math.abs(x - scaled(9)) > scaled(10) && Math.hypot(x + scaled(38), z + scaled(26)) > scaled(31) && terrainSlope(x, z) < maxSlope && biome !== 'rock' && biome !== 'alpine') {
         const biomeScale = biome === 'beach' ? 0.9 : (biome === 'forest' || biome === 'jungle' ? 1.08 : (biome === 'desert' ? 0.78 : 1));
         createTree(x, z, (0.65 + Math.random() * 1.05) * biomeScale, biome);
         plantedTrees++;
@@ -570,7 +605,7 @@
       world.add(reliefCluster);
     }
 
-    [[-168, 105, 1.7], [156, -102, 1.45], [12, -186, 1.15], [204, 54, 1.05], [-238, -96, 1.25], [232, 136, 1.1]].forEach(([x, z, scale]) => createReliefCluster(x, z, scale));
+    [[-168, 105, 1.7], [156, -102, 1.45], [12, -186, 1.15], [204, 54, 1.05], [-238, -96, 1.25], [232, 136, 1.1], [-36, 154, 1.55], [178, 24, 1.35]].forEach(([x, z, scale]) => createReliefCluster(scaled(x), scaled(z), scale));
 
     const wallMaterials = [0xffd166, 0xef476f, 0x54c6eb, 0x9b5de5].map(color => new THREE.MeshStandardMaterial({ color, roughness: 0.65 }));
     const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x26324d, roughness: 0.72 });
@@ -605,12 +640,12 @@
       world.add(house);
     }
 
-    [[-52, 32], [-20, 48], [60, -44], [88, 24], [-76, -20], [124, -76], [-124, 84], [144, 60], [26, 118], [-152, -58], [206, 118], [-224, -122], [188, -168], [-196, 156], [42, 214]].forEach(([x, z], index) => createHouse(x, z, index));
+    [[-52, 32], [-20, 48], [60, -44], [88, 24], [-76, -20], [124, -76], [-124, 84], [144, 60], [26, 118], [-152, -58], [206, 118], [-224, -122], [188, -168], [-196, 156], [42, 214]].forEach(([x, z], index) => createHouse(scaled(x), scaled(z), index));
 
     const platformMaterial = new THREE.MeshStandardMaterial({ color: 0xd89a4b, roughness: 0.72 });
     for (let i = 0; i < 24; i++) {
-      const x = -123 + i * 12;
-      const z = 156 + Math.sin(i) * 22;
+      const x = scaled(-123 + i * 12);
+      const z = scaled(156 + Math.sin(i) * 22);
       if (Math.hypot(x, z) > ISLAND_RADIUS - 18 || terrainSlope(x, z) > 0.9) continue;
       const platform = new THREE.Mesh(new THREE.BoxGeometry(5, 0.6, 5), platformMaterial);
       platform.position.set(x, groundY(x, z, 0.3), z);
