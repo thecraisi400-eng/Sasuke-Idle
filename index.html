@@ -102,10 +102,10 @@
       width: min(300px, calc(100vw - 36px));
     }
 
-    #mode {
+    #mode,
+    #fps-counter {
       position: absolute;
       right: 18px;
-      top: 18px;
       padding: 10px 14px;
       border: 1px solid rgba(125, 218, 255, 0.35);
       border-radius: 999px;
@@ -117,6 +117,17 @@
       text-transform: uppercase;
       box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
       backdrop-filter: blur(10px);
+    }
+
+    #mode {
+      top: 18px;
+    }
+
+    #fps-counter {
+      top: 64px;
+      min-width: 86px;
+      text-align: center;
+      color: #b8ff91;
     }
 
     .stat {
@@ -203,6 +214,7 @@
     </div>
     <div id="crosshair"></div>
     <div id="mode">Modo: Tierra</div>
+    <div id="fps-counter">FPS: --</div>
     <div id="stats">
       <div class="stat shield"><span></span></div>
       <div class="stat health"><span></span></div>
@@ -222,6 +234,7 @@
 
     const blocker = document.getElementById('blocker');
     const modeLabel = document.getElementById('mode');
+    const fpsCounter = document.getElementById('fps-counter');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x7fc7ff);
     scene.fog = new THREE.FogExp2(0x8fd3ff, 0.0038);
@@ -229,9 +242,15 @@
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1900);
     camera.position.set(0, 2.2, 14);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const MAX_PIXEL_RATIO = 1.5;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+
+    function resizeRenderer() {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    resizeRenderer();
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
@@ -239,7 +258,7 @@
     const sun = new THREE.DirectionalLight(0xffffff, 2.2);
     sun.position.set(36, 58, 22);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(1024, 1024);
     sun.shadow.camera.left = -420;
     sun.shadow.camera.right = 420;
     sun.shadow.camera.top = 420;
@@ -394,7 +413,7 @@
     water.receiveShadow = true;
     world.add(water);
 
-    function createTerrainRingGeometry(innerRadius, outerRadius, rings = 14, segments = 256, offset = 0.035) {
+    function createTerrainRingGeometry(innerRadius, outerRadius, rings = 12, segments = 192, offset = 0.035) {
       const vertices = [];
       const indices = [];
       for (let ring = 0; ring <= rings; ring++) {
@@ -474,7 +493,7 @@
     }
 
     const groundMaterial = new THREE.MeshStandardMaterial({ roughness: 0.94, side: THREE.DoubleSide, vertexColors: true });
-    const ground = new THREE.Mesh(createIslandGeometry(ISLAND_RADIUS, 164, 336), groundMaterial);
+    const ground = new THREE.Mesh(createIslandGeometry(ISLAND_RADIUS, 128, 288), groundMaterial);
     ground.receiveShadow = true;
     world.add(ground);
 
@@ -482,7 +501,7 @@
     const roadGroup = new THREE.Group();
     const roadAngle = -0.26;
     const roadLength = scaled(450);
-    const roadSegments = 60;
+    const roadSegments = 44;
     for (let i = 0; i < roadSegments; i++) {
       const localZ = -roadLength / 2 + (i + 0.5) * (roadLength / roadSegments);
       const x = scaled(9) + Math.sin(roadAngle) * localZ;
@@ -559,7 +578,9 @@
 
     let plantedTrees = 0;
     let treeAttempts = 0;
-    while (plantedTrees < 680 && treeAttempts < 2800) {
+    const MAX_TREES = 520;
+    const MAX_TREE_ATTEMPTS = 2200;
+    while (plantedTrees < MAX_TREES && treeAttempts < MAX_TREE_ATTEMPTS) {
       treeAttempts++;
       const angle = Math.random() * Math.PI * 2;
       const radius = 18 + Math.random() * (ISLAND_RADIUS - 28);
@@ -665,6 +686,9 @@
     const keys = new Set();
     const velocity = new THREE.Vector3();
     const direction = new THREE.Vector3();
+    const forward = new THREE.Vector3();
+    const right = new THREE.Vector3();
+    const playerBodyOffset = new THREE.Vector3();
     const playerPosition = camera.position.clone();
     let yaw = 0;
     let pitch = 0;
@@ -734,8 +758,8 @@
       if (keys.has('KeyD')) direction.x -= 1;
       direction.normalize();
 
-      const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
-      const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+      forward.set(Math.sin(yaw), 0, Math.cos(yaw));
+      right.set(Math.cos(yaw), 0, -Math.sin(yaw));
       playerPosition.addScaledVector(forward, -direction.z * speed * delta);
       playerPosition.addScaledVector(right, direction.x * speed * delta);
 
@@ -772,12 +796,28 @@
       camera.rotation.set(smoothPitch, smoothYaw, 0, 'YXZ');
 
       playerBody.scale.y = isCrouching ? 0.58 : 1;
-      playerBody.position.copy(playerPosition).add(new THREE.Vector3(0, -currentEyeHeight + 0.55, 0));
+      playerBodyOffset.set(0, -currentEyeHeight + 0.55, 0);
+      playerBody.position.copy(playerPosition).add(playerBodyOffset);
+    }
+
+    let fpsFrames = 0;
+    let fpsElapsed = 0;
+
+    function updateFpsCounter(delta) {
+      fpsFrames++;
+      fpsElapsed += delta;
+      if (fpsElapsed < 0.25) return;
+
+      const fps = Math.round(fpsFrames / fpsElapsed);
+      fpsCounter.textContent = `FPS: ${fps}`;
+      fpsFrames = 0;
+      fpsElapsed = 0;
     }
 
     function animate() {
       const delta = Math.min(clock.getDelta(), 0.05);
       updatePlayer(delta);
+      updateFpsCounter(delta);
       water.material.opacity = 0.62 + Math.sin(clock.elapsedTime * 1.8) * 0.06;
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
@@ -786,7 +826,7 @@
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      resizeRenderer();
     });
 
     animate();
