@@ -207,7 +207,7 @@
   <div id="hud" aria-hidden="true">
     <div id="panel">
       <h1>Isla 3D</h1>
-      <p><strong>W/S</strong> adelante/atrás · <strong>A/D</strong> derecha/izquierda</p>
+      <p><strong>W/S</strong> adelante/atrás · <strong>A/D</strong> izquierda/derecha</p>
       <p><strong>Autoexploración</strong> activa: el personaje recorre toda la isla solo</p>
       <p><strong>O</strong> activar/desactivar exploración · <strong>Ratón</strong> mirar suave</p>
       <p><strong>WASD</strong> movimiento manual · <strong>P</strong> vuelo · <strong>Shift</strong> correr</p>
@@ -817,20 +817,20 @@
           playerPosition.z = nextZ;
           const lookX = playerPosition.x + moveX * AUTO_EXPLORE_LOOK_AHEAD;
           const lookZ = playerPosition.z + moveZ * AUTO_EXPLORE_LOOK_AHEAD;
-          yaw = Math.atan2(lookX - playerPosition.x, lookZ - playerPosition.z);
+          yaw = Math.atan2(playerPosition.x - lookX, playerPosition.z - lookZ);
           const terrainDelta = groundY(lookX, lookZ, currentEyeHeight) - groundY(playerPosition.x, playerPosition.z, currentEyeHeight);
           pitch = THREE.MathUtils.clamp(-terrainDelta * 0.035 - 0.08, -0.42, 0.28);
         }
       } else {
-        if (keys.has('KeyW')) direction.z -= 1;
-        if (keys.has('KeyS')) direction.z += 1;
-        if (keys.has('KeyA')) direction.x += 1;
-        if (keys.has('KeyD')) direction.x -= 1;
+        if (keys.has('KeyW')) direction.z += 1;
+        if (keys.has('KeyS')) direction.z -= 1;
+        if (keys.has('KeyA')) direction.x -= 1;
+        if (keys.has('KeyD')) direction.x += 1;
         direction.normalize();
 
-        forward.set(Math.sin(yaw), 0, Math.cos(yaw));
+        forward.set(-Math.sin(yaw), 0, -Math.cos(yaw));
         right.set(Math.cos(yaw), 0, -Math.sin(yaw));
-        playerPosition.addScaledVector(forward, -direction.z * speed * delta);
+        playerPosition.addScaledVector(forward, direction.z * speed * delta);
         playerPosition.addScaledVector(right, direction.x * speed * delta);
       }
 
