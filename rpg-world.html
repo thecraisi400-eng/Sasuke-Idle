@@ -53,7 +53,7 @@ body{background:#000;overflow:hidden;font-family:'Segoe UI',sans-serif;width:100
   <canvas id="minimapCanvas" width="160" height="160"></canvas>
   <div id="minimap" style="pointer-events:none;position:fixed;bottom:20px;right:20px;"></div>
   <div id="coordDisplay">X: 0 | Y: 0 | Zona: Praderas</div>
-  <div id="controls">🖱 Click para moverte | Scroll: Zoom | Mundo abierto realista: praderas, caminos, ríos y montañas</div>
+  <div id="controls">🎮 WASD para caminar libremente | Shift: correr | Click: marcar destino | Scroll: Zoom</div>
 </div>
 
 <script>
@@ -79,15 +79,16 @@ let worldImg  = null;
 
 // ─── CAMERA ─────────────────────────────────────────────────────────
 let cam = { x: WORLD_W/2 - canvas.width/2, y: WORLD_H/2 - canvas.height/2, zoom: 1 };
-const MIN_ZOOM = 0.4, MAX_ZOOM = 2.5;
+const MIN_ZOOM = 0.75, MAX_ZOOM = 1.45;
+const THIRD_PERSON = true;
 
 // ─── PLAYER ─────────────────────────────────────────────────────────
 let player = {
   wx: WORLD_W/2, wy: WORLD_H/2,
-  speed: 180, // pixels/sec
+  speed: 230, // pixels/sec
   targetX: WORLD_W/2, targetY: WORLD_H/2,
   moving: false,
-  angle: 0,
+  angle: -Math.PI/2,
   stepAnim: 0,
   path: [],
   hp: 100, maxHp: 100,
@@ -99,6 +100,47 @@ let player = {
 // ─── OBJECTS (trees, shrubs, animals) ───────────────────────────────
 let objects = [];
 let animals = [];
+
+// ─── THIRD-PERSON INPUT ─────────────────────────────────────────────
+const keys = {};
+window.addEventListener('keydown', (e)=>{
+  keys[e.key.toLowerCase()] = true;
+  if(['w','a','s','d','q','e','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(e.key.toLowerCase())) e.preventDefault();
+});
+window.addEventListener('keyup', (e)=>{ keys[e.key.toLowerCase()] = false; });
+
+function canStandAt(wx, wy){
+  let bx=Math.floor(wx/TILE), by=Math.floor(wy/TILE);
+  if(bx<0||by<0||bx>=COLS||by>=ROWS) return false;
+  return isWalkableBiome(biomeMap[by*COLS+bx]);
+}
+
+function tryMovePlayer(nx, ny){
+  if(canStandAt(nx, ny)){ player.wx=nx; player.wy=ny; return true; }
+  // Slide on one axis so rocks, riverbanks and cliffs feel solid but not sticky.
+  if(canStandAt(nx, player.wy)){ player.wx=nx; return true; }
+  if(canStandAt(player.wx, ny)){ player.wy=ny; return true; }
+  return false;
+}
+
+function updateKeyboardMovement(dt){
+  const forwardInput = (keys['w']||keys['arrowup'] ? 1 : 0) - (keys['s']||keys['arrowdown'] ? 1 : 0);
+  const sideInput = (keys['d']||keys['arrowright'] ? 1 : 0) - (keys['a']||keys['arrowleft'] ? 1 : 0);
+  if(forwardInput===0 && sideInput===0) return false;
+  const forwardX = Math.cos(player.angle), forwardY = Math.sin(player.angle);
+  const rightX = -Math.sin(player.angle), rightY = Math.cos(player.angle);
+  let dx = forwardX * forwardInput + rightX * sideInput;
+  let dy = forwardY * forwardInput + rightY * sideInput;
+  const len = Math.hypot(dx, dy) || 1;
+  dx /= len; dy /= len;
+  player.angle = Math.atan2(dy, dx);
+  const sprint = keys['shift'] ? 1.45 : 1;
+  const spd = player.speed * sprint * dt;
+  tryMovePlayer(player.wx + dx*spd, player.wy + dy*spd);
+  player.stepAnim += dt * sprint;
+  player.moving = false;
+  return true;
+}
 
 // ─── NOISE ──────────────────────────────────────────────────────────
 function smoothNoise(x, y, freq, seed){
@@ -127,6 +169,11 @@ const BIOME_COLORS = [
 ];
 const BIOME_NAMES = ['Agua profunda','Río','Ribera','Grava','Pradera','Pasto alto','Bosque','Risco','Nieve','Montaña','Humedal'];
 const BLOCKED_BIOMES = new Set([0, 1, 7, 8, 9]);
+const ROAD_PATHS = [
+  [[520, 3920], [1600, 3120], [2900, 3340], [4550, 2580], [5650, 3040]],
+  [[1250, 1200], [2150, 2100], [3000, 3050], [3660, 4620], [5020, 5350]],
+  [[940, 5060], [2050, 4300], [3150, 3800], [4680, 4380], [5520, 3820]]
+];
 
 // ─── REALISTIC TERRAIN HELPERS ───────────────────────────────────────
 function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
@@ -282,12 +329,7 @@ function paintWorldDetails(fCtx){
   fCtx.save();
   fCtx.lineCap = 'round';
   fCtx.lineJoin = 'round';
-  const roads = [
-    [[520, 3920], [1600, 3120], [2900, 3340], [4550, 2580], [5650, 3040]],
-    [[1250, 1200], [2150, 2100], [3000, 3050], [3660, 4620], [5020, 5350]],
-    [[940, 5060], [2050, 4300], [3150, 3800], [4680, 4380], [5520, 3820]]
-  ];
-  for(const road of roads){
+  for(const road of ROAD_PATHS){
     fCtx.strokeStyle = 'rgba(63, 43, 25, 0.30)';
     fCtx.lineWidth = 34;
     drawRoadPath(fCtx, road);
@@ -770,6 +812,187 @@ function updateAnimals(dt){
   }
 }
 
+function getThirdPersonCamera(){
+  return {
+    x: player.wx - Math.cos(player.angle)*180,
+    y: player.wy - Math.sin(player.angle)*180,
+    cos: Math.cos(player.angle),
+    sin: Math.sin(player.angle),
+    horizon: canvas.height * 0.34,
+    focal: 420 * cam.zoom,
+    height: 540 * cam.zoom,
+    far: 1550
+  };
+}
+
+function projectThirdPerson(wx, wy, vertical=0){
+  const c = getThirdPersonCamera();
+  const dx = wx - c.x, dy = wy - c.y;
+  const forward = dx*c.cos + dy*c.sin;
+  const side = -dx*c.sin + dy*c.cos;
+  if(forward < 24 || forward > c.far || Math.abs(side) > 1300) return null;
+  const scale = c.focal / (forward + c.focal);
+  return {
+    sx: canvas.width/2 + side*scale,
+    sy: c.horizon + (c.height - vertical)*scale,
+    scale, forward, side
+  };
+}
+
+function roadDistanceAt(wx, wy){
+  let best = Infinity;
+  for(const road of ROAD_PATHS){
+    for(let i=0;i<road.length-1;i++){
+      best = Math.min(best, distToSegment(wx, wy, road[i][0], road[i][1], road[i+1][0], road[i+1][1]));
+    }
+  }
+  return best;
+}
+
+function biomeColorAt(wx, wy){
+  const bx = Math.floor(wx/TILE), by = Math.floor(wy/TILE);
+  if(bx<0||by<0||bx>=COLS||by>=ROWS) return '#203820';
+  const roadDist = roadDistanceAt(wx, wy);
+  if(roadDist < 28) return roadDist < 18 ? '#b88d58' : '#806643';
+  return BIOME_COLORS[biomeMap[by*COLS+bx]];
+}
+
+function drawThirdPersonSky(c){
+  const sky = ctx.createLinearGradient(0,0,0,c.horizon+80);
+  sky.addColorStop(0,'#6fb7ff');
+  sky.addColorStop(0.55,'#b9dbff');
+  sky.addColorStop(1,'#f2e4c3');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.save();
+  ctx.globalAlpha = 0.92;
+  ctx.fillStyle = '#7c8079';
+  ctx.beginPath();
+  ctx.moveTo(0,c.horizon+44);
+  for(let x=0;x<=canvas.width;x+=90){
+    const peak = c.horizon + 10 + Math.sin(x*0.014 + player.wx*0.001)*28 + Math.sin(x*0.031)*13;
+    ctx.lineTo(x, peak);
+  }
+  ctx.lineTo(canvas.width,c.horizon+95);
+  ctx.lineTo(0,c.horizon+95);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 0.45;
+  ctx.fillStyle = '#e8edf2';
+  ctx.fillRect(0,c.horizon+68,canvas.width,30);
+  ctx.restore();
+}
+
+function drawThirdPersonTerrain(c){
+  const ground = ctx.createLinearGradient(0,c.horizon,0,canvas.height);
+  ground.addColorStop(0,'#6f8d50');
+  ground.addColorStop(0.45,'#5c8f3c');
+  ground.addColorStop(1,'#3e642a');
+  ctx.fillStyle = ground;
+  ctx.beginPath();
+  ctx.moveTo(0,c.horizon+70);
+  ctx.lineTo(canvas.width,c.horizon+70);
+  ctx.lineTo(canvas.width,canvas.height);
+  ctx.lineTo(0,canvas.height);
+  ctx.closePath();
+  ctx.fill();
+
+  const forwardX = c.cos, forwardY = c.sin;
+  const rightX = -c.sin, rightY = c.cos;
+  const stepD = 90, stepS = 100;
+  for(let d=c.far; d>=35; d-=stepD){
+    for(let side=-1200; side<=1200; side+=stepS){
+      const wx = c.x + forwardX*d + rightX*side;
+      const wy = c.y + forwardY*d + rightY*side;
+      const p1 = projectThirdPerson(wx, wy);
+      const p2 = projectThirdPerson(wx + rightX*stepS, wy + rightY*stepS);
+      const p3 = projectThirdPerson(wx + forwardX*stepD + rightX*stepS, wy + forwardY*stepD + rightY*stepS);
+      const p4 = projectThirdPerson(wx + forwardX*stepD, wy + forwardY*stepD);
+      if(!p1||!p2||!p3||!p4) continue;
+      ctx.globalAlpha = d > 1000 ? 0.48 : 0.78;
+      ctx.fillStyle = biomeColorAt(wx + rightX*stepS*0.5, wy + rightY*stepS*0.5);
+      ctx.beginPath();
+      ctx.moveTo(p1.sx,p1.sy); ctx.lineTo(p2.sx,p2.sy); ctx.lineTo(p3.sx,p3.sy); ctx.lineTo(p4.sx,p4.sy);
+      ctx.closePath(); ctx.fill();
+      if(d<650){
+        ctx.globalAlpha = 0.10;
+        ctx.strokeStyle = '#e6d59b';
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawThirdPersonObjects(){
+  const c = getThirdPersonCamera();
+  const visible = [];
+  for(const obj of objects){
+    const p = projectThirdPerson(obj.wx, obj.wy);
+    if(!p || p.sx < -160 || p.sx > canvas.width+160 || p.sy < -120 || p.sy > canvas.height+180) continue;
+    visible.push({obj,p});
+  }
+  visible.sort((a,b)=>b.p.forward-a.p.forward);
+  for(const {obj,p} of visible){
+    const sc = obj.scale * clamp(p.scale*3.0, 0.18, 2.45);
+    ctx.globalAlpha = clamp(1 - (p.forward-1050)/650, 0.35, 1);
+    ctx.fillStyle='rgba(0,0,0,0.24)';
+    ctx.beginPath(); ctx.ellipse(p.sx, p.sy, 16*sc, 5*sc, 0, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = clamp(1 - (p.forward-1250)/550, 0.42, 1);
+    drawTree(p.sx, p.sy, sc, obj.type, obj);
+  }
+  ctx.globalAlpha = 1;
+
+  for(const a of animals){
+    const p = projectThirdPerson(a.wx, a.wy);
+    if(!p) continue;
+    drawAnimal(a, p.sx, p.sy, clamp(p.scale*2.2, 0.35, 1.35));
+  }
+}
+
+function drawThirdPersonPlayer(){
+  const sx = canvas.width/2;
+  const sy = canvas.height - 98;
+  const sc = 2.35 * cam.zoom;
+  ctx.save();
+  ctx.translate(sx, sy);
+  ctx.scale(sc, sc);
+  const walk = Math.sin(player.stepAnim*9);
+  ctx.fillStyle='rgba(0,0,0,0.35)';
+  ctx.beginPath(); ctx.ellipse(0,29,18,6,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#2b2340'; ctx.lineWidth=5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-7,12); ctx.lineTo(-9+walk*3,29); ctx.moveTo(7,12); ctx.lineTo(9-walk*3,29); ctx.stroke();
+  ctx.fillStyle='#5c3f96';
+  ctx.fillRect(-13,-16,26,32);
+  ctx.fillStyle='#362358'; ctx.fillRect(-11,-10,22,11);
+  ctx.strokeStyle='#c9c9d1'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(14,-8); ctx.lineTo(24,-31); ctx.stroke();
+  ctx.fillStyle='#d2a37e'; ctx.beginPath(); ctx.arc(0,-27,10,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#221629'; ctx.beginPath(); ctx.arc(0,-31,11,Math.PI,0); ctx.fill();
+  ctx.restore();
+}
+
+function renderThirdPersonScene(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const c = getThirdPersonCamera();
+  drawThirdPersonSky(c);
+  drawThirdPersonTerrain(c);
+  drawThirdPersonObjects();
+
+  if(player.moving){
+    const p = projectThirdPerson(player.targetX, player.targetY);
+    if(p){
+      ctx.save();
+      ctx.globalAlpha=0.85;
+      ctx.fillStyle='#ffd96a';
+      ctx.beginPath(); ctx.arc(p.sx,p.sy,8*p.scale+3,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+  drawThirdPersonPlayer();
+}
+
 function gameLoop(timestamp){
   if(!gameRunning){ requestAnimationFrame(gameLoop); return; }
   let dt = Math.min((timestamp - lastTime)/1000, 0.05);
@@ -777,7 +1000,8 @@ function gameLoop(timestamp){
   waterTime += dt;
 
   // ── UPDATE PLAYER ─────
-  if(player.moving){
+  const keyboardMoved = updateKeyboardMovement(dt);
+  if(!keyboardMoved && player.moving){
     let dx = player.targetX - player.wx;
     let dy = player.targetY - player.wy;
     let dist = Math.sqrt(dx*dx+dy*dy);
@@ -798,8 +1022,7 @@ function gameLoop(timestamp){
       if(bx>=0&&by>=0&&bx<COLS&&by<ROWS){
         let b=biomeMap[by*COLS+bx];
         if(!isWalkableBiome(b)){ // water, cliffs, mountains: stop and go back
-          player.wx -= (dx/dist)*spd*2;
-          player.wy -= (dy/dist)*spd*2;
+          tryMovePlayer(player.wx - (dx/dist)*spd*2, player.wy - (dy/dist)*spd*2);
           player.moving = false;
         }
       }
@@ -833,79 +1056,9 @@ function gameLoop(timestamp){
     `X: ${Math.floor(player.wx)} | Y: ${Math.floor(player.wy)} | ${currentZone}`;
 
   // ── DRAW ─────
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.save();
-  ctx.scale(cam.zoom, cam.zoom);
-  ctx.translate(-cam.x, -cam.y);
-
-  // draw world
-  if(worldImg){
-    ctx.drawImage(worldImg, 0, 0, WORLD_W, WORLD_H);
+  if(THIRD_PERSON){
+    renderThirdPersonScene();
   }
-
-  // animated water overlay
-  let vx1 = Math.floor(cam.x), vy1 = Math.floor(cam.y);
-  let vx2 = Math.ceil(cam.x + canvas.width/cam.zoom);
-  let vy2 = Math.ceil(cam.y + canvas.height/cam.zoom);
-
-  // water shimmer
-  for(let wy2=vy1;wy2<vy2;wy2+=TILE*2){
-    for(let wx2=vx1;wx2<vx2;wx2+=TILE*2){
-      let bx=Math.floor(wx2/TILE), by=Math.floor(wy2/TILE);
-      if(bx<0||by<0||bx>=COLS||by>=ROWS) continue;
-      let b=biomeMap[by*COLS+bx];
-      if(b<=1){
-        let wave=Math.sin(wx2*0.02+waterTime*2)*0.15+Math.cos(wy2*0.015+waterTime*1.5)*0.1;
-        ctx.globalAlpha=0.1+wave*0.1;
-        ctx.fillStyle= b===0 ? '#1a4a8a' : '#2a6ab5';
-        ctx.fillRect(wx2,wy2,TILE*2,TILE*2);
-        ctx.globalAlpha=1;
-      }
-    }
-  }
-
-  // ── DRAW OBJECTS IN VIEW ──
-  for(let obj of objects){
-    if(obj.wx<vx1-60||obj.wx>vx2+60||obj.wy<vy1-100||obj.wy>vy2+60) continue;
-
-    // shadow
-    ctx.globalAlpha=0.2;
-    ctx.fillStyle='#000';
-    ctx.beginPath(); ctx.ellipse(obj.wx, obj.wy, 10*obj.scale, 4*obj.scale, 0, 0, Math.PI*2);
-    ctx.fill(); ctx.globalAlpha=1;
-
-    drawTree(obj.wx, obj.wy, obj.scale, obj.type, obj);
-  }
-
-  // ── DRAW ANIMALS ──
-  let pScale = 1/cam.zoom*1.8;
-  for(let a of animals){
-    if(a.wx<vx1-60||a.wx>vx2+60||a.wy<vy1-60||a.wy>vy2+60) continue;
-    drawAnimal(a, a.wx, a.wy, 1);
-  }
-
-  // ── DRAW PLAYER ──
-  drawPlayer(player.wx, player.wy, 1);
-
-  // path indicator
-  if(player.moving){
-    ctx.save();
-    ctx.globalAlpha=0.5;
-    ctx.strokeStyle='#ffd700';
-    ctx.lineWidth=2;
-    ctx.setLineDash([6,4]);
-    ctx.beginPath();
-    ctx.moveTo(player.wx, player.wy);
-    ctx.lineTo(player.targetX, player.targetY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.globalAlpha=0.8;
-    ctx.fillStyle='#ffd700';
-    ctx.beginPath(); ctx.arc(player.targetX, player.targetY, 6, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
-  }
-
-  ctx.restore();
 
   // minimap
   renderMinimap();
