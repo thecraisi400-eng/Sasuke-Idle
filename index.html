@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mundo 3D - Primera persona</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #071126;
+      color: #f7fbff;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 18px;
+      height: 18px;
+      transform: translate(-50%, -50%);
+    }
+
+    #crosshair::before,
+    #crosshair::after {
+      content: "";
+      position: absolute;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 2px;
+      box-shadow: 0 0 8px rgba(66, 209, 255, 0.8);
+    }
+
+    #crosshair::before {
+      top: 8px;
+      left: 0;
+      width: 18px;
+      height: 2px;
+    }
+
+    #crosshair::after {
+      top: 0;
+      left: 8px;
+      width: 2px;
+      height: 18px;
+    }
+
+    #panel {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      min-width: 260px;
+      padding: 16px 18px;
+      background: linear-gradient(135deg, rgba(10, 19, 42, 0.86), rgba(19, 44, 82, 0.72));
+      border: 1px solid rgba(125, 218, 255, 0.35);
+      border-radius: 18px;
+      box-shadow: 0 16px 60px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(12px);
+    }
+
+    #panel h1 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #91e7ff;
+    }
+
+    #panel p {
+      margin: 4px 0;
+      color: rgba(247, 251, 255, 0.82);
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+
+    #stats {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      display: grid;
+      gap: 8px;
+      width: min(300px, calc(100vw - 36px));
+    }
+
+    .stat {
+      height: 15px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      background: rgba(5, 10, 24, 0.6);
+      box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.38);
+    }
+
+    .stat span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    .shield span {
+      width: 78%;
+      background: linear-gradient(90deg, #2897ff, #67e1ff);
+    }
+
+    .health span {
+      width: 100%;
+      background: linear-gradient(90deg, #28c76f, #a7ff83);
+    }
+
+    #blocker {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: radial-gradient(circle at 50% 35%, rgba(45, 143, 255, 0.24), rgba(3, 7, 16, 0.92) 62%);
+      cursor: pointer;
+    }
+
+    #start-card {
+      max-width: 620px;
+      padding: 34px;
+      text-align: center;
+      border: 1px solid rgba(145, 231, 255, 0.38);
+      border-radius: 28px;
+      background: rgba(8, 17, 36, 0.78);
+      box-shadow: 0 24px 90px rgba(0, 0, 0, 0.48);
+      backdrop-filter: blur(16px);
+    }
+
+    #start-card h2 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 0.95;
+      text-transform: uppercase;
+      color: #ffffff;
+      text-shadow: 0 0 22px rgba(68, 195, 255, 0.65);
+    }
+
+    #start-card p {
+      margin: 0 auto 20px;
+      max-width: 480px;
+      color: rgba(255, 255, 255, 0.78);
+      line-height: 1.55;
+    }
+
+    #start-card strong {
+      display: inline-block;
+      padding: 12px 22px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #ffd447, #ff8c2a);
+      color: #1b1630;
+      box-shadow: 0 12px 30px rgba(255, 166, 35, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <div id="hud" aria-hidden="true">
+    <div id="panel">
+      <h1>Isla 3D</h1>
+      <p><strong>WASD</strong> mover · <strong>Ratón</strong> mirar</p>
+      <p><strong>Shift</strong> correr · <strong>Espacio</strong> saltar</p>
+      <p><strong>Esc</strong> liberar el cursor</p>
+    </div>
+    <div id="crosshair"></div>
+    <div id="stats">
+      <div class="stat shield"><span></span></div>
+      <div class="stat health"><span></span></div>
+    </div>
+  </div>
+
+  <div id="blocker">
+    <div id="start-card">
+      <h2>Battle Island</h2>
+      <p>Explora un prototipo 3D en primera persona: colinas, agua, árboles, casas y plataformas para moverte por un mundo estilo battle royale.</p>
+      <strong>Haz clic para entrar</strong>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.165.0/build/three.module.js';
+
+    const blocker = document.getElementById('blocker');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x7fc7ff);
+    scene.fog = new THREE.FogExp2(0x8fd3ff, 0.012);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 800);
+    camera.position.set(0, 2.2, 14);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
+
+    const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+    sun.position.set(36, 58, 22);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.left = -80;
+    sun.shadow.camera.right = 80;
+    sun.shadow.camera.top = 80;
+    sun.shadow.camera.bottom = -80;
+    scene.add(sun);
+
+    scene.add(new THREE.HemisphereLight(0xbce9ff, 0x55712e, 1.35));
+
+    const world = new THREE.Group();
+    scene.add(world);
+
+    const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x4ba048, roughness: 0.94 });
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(180, 180, 120, 120), groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    const positions = ground.geometry.attributes.position;
+    for (let i = 0; i < positions.count; i++) {
+      const x = positions.getX(i);
+      const y = positions.getY(i);
+      const height = Math.sin(x * 0.09) * 1.2 + Math.cos(y * 0.08) * 1.1 + Math.sin((x + y) * 0.04) * 1.8;
+      positions.setZ(i, height);
+    }
+    ground.geometry.computeVertexNormals();
+    world.add(ground);
+
+    const water = new THREE.Mesh(
+      new THREE.CircleGeometry(34, 96),
+      new THREE.MeshStandardMaterial({ color: 0x2d9cff, roughness: 0.18, metalness: 0.1, transparent: true, opacity: 0.7 })
+    );
+    water.rotation.x = -Math.PI / 2;
+    water.position.set(-38, -0.45, -26);
+    water.receiveShadow = true;
+    world.add(water);
+
+    const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x5c6171, roughness: 0.86 });
+    const road = new THREE.Mesh(new THREE.BoxGeometry(9, 0.08, 150), roadMaterial);
+    road.position.set(9, 0.1, -3);
+    road.rotation.y = -0.26;
+    road.receiveShadow = true;
+    world.add(road);
+
+    const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x7a4a24, roughness: 0.8 });
+    const leafMaterials = [0x1f7d3a, 0x2fa84f, 0x4bbf58].map(color => new THREE.MeshStandardMaterial({ color, roughness: 0.78 }));
+
+    function terrainHeight(x, z) {
+      return Math.sin(x * 0.09) * 1.2 + Math.cos(z * 0.08) * 1.1 + Math.sin((x + z) * 0.04) * 1.8;
+    }
+
+    function createTree(x, z, scale = 1) {
+      const tree = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * scale, 0.34 * scale, 2.6 * scale, 8), trunkMaterial);
+      trunk.position.y = 1.3 * scale;
+      trunk.castShadow = true;
+      tree.add(trunk);
+
+      const leaves = new THREE.Mesh(new THREE.ConeGeometry(1.35 * scale, 3.6 * scale, 10), leafMaterials[Math.floor(Math.random() * leafMaterials.length)]);
+      leaves.position.y = 3.35 * scale;
+      leaves.castShadow = true;
+      tree.add(leaves);
+
+      tree.position.set(x, terrainHeight(x, z), z);
+      world.add(tree);
+    }
+
+    for (let i = 0; i < 92; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 18 + Math.random() * 68;
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      if (Math.abs(x - 9) > 8 && Math.hypot(x + 38, z + 26) > 31) {
+        createTree(x, z, 0.75 + Math.random() * 0.8);
+      }
+    }
+
+    const wallMaterials = [0xffd166, 0xef476f, 0x54c6eb, 0x9b5de5].map(color => new THREE.MeshStandardMaterial({ color, roughness: 0.65 }));
+    const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x26324d, roughness: 0.72 });
+
+    function createHouse(x, z, colorIndex = 0) {
+      const house = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 6), wallMaterials[colorIndex % wallMaterials.length]);
+      base.position.y = 2;
+      base.castShadow = true;
+      base.receiveShadow = true;
+      house.add(base);
+
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(5.2, 2.6, 4), roofMaterial);
+      roof.position.y = 5.25;
+      roof.rotation.y = Math.PI / 4;
+      roof.castShadow = true;
+      house.add(roof);
+
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1.25, 2.2, 0.08), new THREE.MeshStandardMaterial({ color: 0x1c2338 }));
+      door.position.set(0, 1.1, 3.04);
+      house.add(door);
+
+      house.position.set(x, terrainHeight(x, z), z);
+      house.rotation.y = Math.random() * 0.5 - 0.25;
+      world.add(house);
+    }
+
+    [[-20, 12], [-8, 18], [22, -16], [34, 8], [-30, -6], [48, -30]].forEach(([x, z], index) => createHouse(x, z, index));
+
+    const platformMaterial = new THREE.MeshStandardMaterial({ color: 0xd89a4b, roughness: 0.72 });
+    for (let i = 0; i < 10; i++) {
+      const x = -26 + i * 6;
+      const z = 38 + Math.sin(i) * 7;
+      const platform = new THREE.Mesh(new THREE.BoxGeometry(5, 0.6, 5), platformMaterial);
+      platform.position.set(x, terrainHeight(x, z) + 1.5 + i * 0.2, z);
+      platform.castShadow = true;
+      platform.receiveShadow = true;
+      world.add(platform);
+    }
+
+    const playerBody = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.42, 1.15, 4, 10),
+      new THREE.MeshStandardMaterial({ color: 0x243bff, roughness: 0.5 })
+    );
+    playerBody.castShadow = true;
+    playerBody.visible = false;
+    scene.add(playerBody);
+
+    const keys = new Set();
+    const velocity = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+    let yaw = 0;
+    let pitch = 0;
+    let isLocked = false;
+    let canJump = false;
+
+    blocker.addEventListener('click', () => document.body.requestPointerLock());
+
+    document.addEventListener('pointerlockchange', () => {
+      isLocked = document.pointerLockElement === document.body;
+      blocker.style.display = isLocked ? 'none' : 'grid';
+    });
+
+    document.addEventListener('mousemove', event => {
+      if (!isLocked) return;
+      yaw -= event.movementX * 0.0022;
+      pitch -= event.movementY * 0.0022;
+      pitch = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, pitch));
+      camera.rotation.set(pitch, yaw, 0, 'YXZ');
+    });
+
+    document.addEventListener('keydown', event => {
+      keys.add(event.code);
+      if (event.code === 'Space' && canJump) {
+        velocity.y = 8.2;
+        canJump = false;
+      }
+    });
+
+    document.addEventListener('keyup', event => keys.delete(event.code));
+
+    const clock = new THREE.Clock();
+
+    function updatePlayer(delta) {
+      const speed = keys.has('ShiftLeft') || keys.has('ShiftRight') ? 15 : 8.5;
+      direction.set(0, 0, 0);
+      if (keys.has('KeyW')) direction.z -= 1;
+      if (keys.has('KeyS')) direction.z += 1;
+      if (keys.has('KeyA')) direction.x -= 1;
+      if (keys.has('KeyD')) direction.x += 1;
+      direction.normalize();
+
+      const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+      const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+      camera.position.addScaledVector(forward, -direction.z * speed * delta);
+      camera.position.addScaledVector(right, direction.x * speed * delta);
+
+      velocity.y -= 22 * delta;
+      camera.position.y += velocity.y * delta;
+
+      const groundY = terrainHeight(camera.position.x, camera.position.z) + 2.15;
+      if (camera.position.y < groundY) {
+        camera.position.y = groundY;
+        velocity.y = 0;
+        canJump = true;
+      }
+
+      const limit = 86;
+      camera.position.x = THREE.MathUtils.clamp(camera.position.x, -limit, limit);
+      camera.position.z = THREE.MathUtils.clamp(camera.position.z, -limit, limit);
+      playerBody.position.copy(camera.position).add(new THREE.Vector3(0, -0.95, 0));
+    }
+
+    function animate() {
+      const delta = Math.min(clock.getDelta(), 0.05);
+      updatePlayer(delta);
+      water.material.opacity = 0.62 + Math.sin(clock.elapsedTime * 1.8) * 0.06;
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+  </script>
+</body>
+</html>
