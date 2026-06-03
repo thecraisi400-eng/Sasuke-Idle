@@ -506,10 +506,15 @@
     const AUTO_EXPLORE_SPEED = 12.4;
     const AUTO_EXPLORE_LOOK_AHEAD = 10;
     const AUTO_EXPLORE_REACH_DISTANCE = 5.5;
+    const AUTO_EXPLORE_TURN_SPEED = 1.35;
+    const AUTO_EXPLORE_MIN_TURN_SPEED_FACTOR = 0.45;
     const CAMERA_POSITION_SMOOTHING = 16;
     const CAMERA_ROTATION_SMOOTHING = 24;
+    const AUTO_EXPLORE_CAMERA_ROTATION_SMOOTHING = 10;
     let autoExploreEnabled = true;
     let autoExploreWaypointIndex = 0;
+    let autoExploreHeadingYaw = yaw;
+    let wasAutoExploring = false;
 
     function createAutoExploreWaypoints() {
       const waypoints = [{ x: 0, z: 0 }];
@@ -534,6 +539,19 @@
 
     function hasManualMovementInput() {
       return keys.has('KeyW') || keys.has('KeyA') || keys.has('KeyS') || keys.has('KeyD');
+    }
+
+    function shortestAngleDelta(from, to) {
+      return THREE.MathUtils.euclideanModulo(to - from + Math.PI, Math.PI * 2) - Math.PI;
+    }
+
+    function rotateTowardsAngle(current, target, maxStep) {
+      const delta = shortestAngleDelta(current, target);
+      return current + THREE.MathUtils.clamp(delta, -maxStep, maxStep);
+    }
+
+    function dampAngle(current, target, smoothing, delta) {
+      return current + shortestAngleDelta(current, target) * (1 - Math.exp(-smoothing * delta));
     }
 
     document.addEventListener('click', () => {
@@ -564,6 +582,10 @@
       }
       if (event.code === 'KeyO' && !event.repeat) {
         autoExploreEnabled = !autoExploreEnabled;
+        if (autoExploreEnabled) {
+          autoExploreHeadingYaw = smoothYaw;
+          wasAutoExploring = false;
+        }
         velocity.x = 0;
         velocity.z = 0;
       }
@@ -600,19 +622,31 @@
         }
 
         if (targetDistance > 0.001) {
-          const moveX = (target.x - playerPosition.x) / targetDistance;
-          const moveZ = (target.z - playerPosition.z) / targetDistance;
-          const nextX = playerPosition.x + moveX * AUTO_EXPLORE_SPEED * delta;
-          const nextZ = playerPosition.z + moveZ * AUTO_EXPLORE_SPEED * delta;
+          const targetMoveX = (target.x - playerPosition.x) / targetDistance;
+          const targetMoveZ = (target.z - playerPosition.z) / targetDistance;
+          const targetHeadingYaw = Math.atan2(-targetMoveX, -targetMoveZ);
+          if (!wasAutoExploring) {
+            autoExploreHeadingYaw = yaw;
+          }
+
+          autoExploreHeadingYaw = rotateTowardsAngle(autoExploreHeadingYaw, targetHeadingYaw, AUTO_EXPLORE_TURN_SPEED * delta);
+          const turnAlignment = (Math.cos(shortestAngleDelta(autoExploreHeadingYaw, targetHeadingYaw)) + 1) * 0.5;
+          const turnSpeedFactor = THREE.MathUtils.lerp(AUTO_EXPLORE_MIN_TURN_SPEED_FACTOR, 1, turnAlignment);
+          const moveX = -Math.sin(autoExploreHeadingYaw);
+          const moveZ = -Math.cos(autoExploreHeadingYaw);
+          const travelDistance = AUTO_EXPLORE_SPEED * turnSpeedFactor * delta;
+          const nextX = playerPosition.x + moveX * travelDistance;
+          const nextZ = playerPosition.z + moveZ * travelDistance;
           playerPosition.x = nextX;
           playerPosition.z = nextZ;
           const lookX = playerPosition.x + moveX * AUTO_EXPLORE_LOOK_AHEAD;
           const lookZ = playerPosition.z + moveZ * AUTO_EXPLORE_LOOK_AHEAD;
-          yaw = Math.atan2(playerPosition.x - lookX, playerPosition.z - lookZ);
+          yaw = autoExploreHeadingYaw;
           const terrainDelta = groundY(lookX, lookZ, currentEyeHeight) - groundY(playerPosition.x, playerPosition.z, currentEyeHeight);
           pitch = THREE.MathUtils.clamp(-terrainDelta * 0.035 - 0.08, -0.42, 0.28);
         }
       } else {
+        wasAutoExploring = false;
         if (keys.has('KeyW')) direction.z += 1;
         if (keys.has('KeyS')) direction.z -= 1;
         if (keys.has('KeyA')) direction.x -= 1;
@@ -651,10 +685,13 @@
         }
       }
 
+      wasAutoExploring = isAutoExploring;
+
       const positionBlend = 1 - Math.exp(-CAMERA_POSITION_SMOOTHING * delta);
+      const rotationSmoothing = isAutoExploring ? AUTO_EXPLORE_CAMERA_ROTATION_SMOOTHING : CAMERA_ROTATION_SMOOTHING;
       camera.position.lerp(playerPosition, positionBlend);
-      smoothYaw = THREE.MathUtils.lerp(smoothYaw, yaw, 1 - Math.exp(-CAMERA_ROTATION_SMOOTHING * delta));
-      smoothPitch = THREE.MathUtils.lerp(smoothPitch, pitch, 1 - Math.exp(-CAMERA_ROTATION_SMOOTHING * delta));
+      smoothYaw = dampAngle(smoothYaw, yaw, rotationSmoothing, delta);
+      smoothPitch = THREE.MathUtils.lerp(smoothPitch, pitch, 1 - Math.exp(-rotationSmoothing * delta));
       camera.rotation.set(smoothPitch, smoothYaw, 0, 'YXZ');
 
       playerBody.scale.y = isCrouching ? 0.58 : 1;
