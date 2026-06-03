@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mundo 3D - Primera persona</title>
+  <title>Mundo 3D - Exploración automática</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23167bd8'/%3E%3Ccircle cx='32' cy='34' r='22' fill='%234ba048'/%3E%3Cpath d='M10 42c12-7 31-7 44 0v10H10z' fill='%23d9c17b'/%3E%3C/svg%3E" />
   <style>
     :root {
@@ -208,9 +208,10 @@
     <div id="panel">
       <h1>Isla 3D</h1>
       <p><strong>W/S</strong> adelante/atrás · <strong>A/D</strong> derecha/izquierda</p>
-      <p><strong>Ratón</strong> mirar suave · <strong>P</strong> activar/desactivar vuelo</p>
-      <p><strong>Shift</strong> correr · <strong>Ctrl/C</strong> agacharse o bajar volando</p>
-      <p><strong>Espacio</strong> saltar o subir volando · <strong>Esc</strong> liberar el cursor</p>
+      <p><strong>Autoexploración</strong> activa: el personaje recorre toda la isla solo</p>
+      <p><strong>O</strong> activar/desactivar exploración · <strong>Ratón</strong> mirar suave</p>
+      <p><strong>WASD</strong> movimiento manual · <strong>P</strong> vuelo · <strong>Shift</strong> correr</p>
+      <p><strong>Espacio</strong> saltar/subir · <strong>Ctrl/C</strong> agacharse/bajar · <strong>Esc</strong> liberar</p>
     </div>
     <div id="crosshair"></div>
     <div id="mode">Modo: Tierra</div>
@@ -224,7 +225,7 @@
   <div id="blocker">
     <div id="start-card">
       <h2>Battle Island</h2>
-      <p>Explora un prototipo 3D en primera persona: una gran isla delimitada por océano, playas, llanuras, biomas, relieves, bosques, casas y plataformas para moverte por un mundo estilo battle royale.</p>
+      <p>Observa cómo el personaje explora automáticamente una gran isla delimitada por océano, playas, llanuras, biomas, relieves, bosques, casas y plataformas. También puedes tomar el control manual cuando quieras.</p>
       <strong>Haz clic para entrar</strong>
     </div>
   </div>
@@ -705,8 +706,43 @@
     const CROUCH_SPEED = 4.8;
     const FLY_SPEED = 14.5;
     const FLY_SPRINT_SPEED = 24;
+    const AUTO_EXPLORE_SPEED = 12.4;
+    const AUTO_EXPLORE_LOOK_AHEAD = 10;
+    const AUTO_EXPLORE_REACH_DISTANCE = 5.5;
     const CAMERA_POSITION_SMOOTHING = 16;
     const CAMERA_ROTATION_SMOOTHING = 24;
+    let autoExploreEnabled = true;
+    let autoExploreWaypointIndex = 0;
+
+    function createAutoExploreWaypoints() {
+      const waypoints = [{ x: 0, z: 0 }];
+      const rings = [0.18, 0.34, 0.5, 0.66, 0.82, 0.95];
+      rings.forEach((ring, ringIndex) => {
+        const radius = (BEACH_START - 16) * ring;
+        const pointCount = 8 + ringIndex * 4;
+        const angleOffset = ringIndex * 0.47;
+        for (let i = 0; i < pointCount; i++) {
+          const angle = angleOffset + (i / pointCount) * Math.PI * 2;
+          waypoints.push({
+            x: Math.cos(angle) * radius,
+            z: Math.sin(angle) * radius
+          });
+        }
+      });
+      waypoints.push({ x: 0, z: 0 });
+      return waypoints;
+    }
+
+    const autoExploreWaypoints = createAutoExploreWaypoints();
+
+    function hasManualMovementInput() {
+      return keys.has('KeyW') || keys.has('KeyA') || keys.has('KeyS') || keys.has('KeyD');
+    }
+
+    function updateModeLabel() {
+      const movementMode = autoExploreEnabled ? 'Autoexploración' : (isFlying ? 'Vuelo' : 'Tierra');
+      modeLabel.textContent = `Modo: ${movementMode}`;
+    }
 
     blocker.addEventListener('click', () => document.body.requestPointerLock());
 
@@ -730,7 +766,13 @@
         isFlying = !isFlying;
         velocity.y = 0;
         canJump = !isFlying;
-        modeLabel.textContent = isFlying ? 'Modo: Vuelo' : 'Modo: Tierra';
+        updateModeLabel();
+      }
+      if (event.code === 'KeyO' && !event.repeat) {
+        autoExploreEnabled = !autoExploreEnabled;
+        velocity.x = 0;
+        velocity.z = 0;
+        updateModeLabel();
       }
       keys.add(event.code);
       const isCrouching = keys.has('ControlLeft') || keys.has('ControlRight') || keys.has('KeyC');
@@ -742,6 +784,8 @@
 
     document.addEventListener('keyup', event => keys.delete(event.code));
 
+    updateModeLabel();
+
     const clock = new THREE.Clock();
 
     function updatePlayer(delta) {
@@ -752,16 +796,43 @@
       currentEyeHeight = THREE.MathUtils.lerp(currentEyeHeight, isCrouching ? CROUCH_EYE_HEIGHT : STAND_EYE_HEIGHT, 1 - Math.exp(-12 * delta));
 
       direction.set(0, 0, 0);
-      if (keys.has('KeyW')) direction.z -= 1;
-      if (keys.has('KeyS')) direction.z += 1;
-      if (keys.has('KeyA')) direction.x += 1;
-      if (keys.has('KeyD')) direction.x -= 1;
-      direction.normalize();
+      const manualMovementInput = hasManualMovementInput();
+      const isAutoExploring = autoExploreEnabled && !manualMovementInput;
 
-      forward.set(Math.sin(yaw), 0, Math.cos(yaw));
-      right.set(Math.cos(yaw), 0, -Math.sin(yaw));
-      playerPosition.addScaledVector(forward, -direction.z * speed * delta);
-      playerPosition.addScaledVector(right, direction.x * speed * delta);
+      if (isAutoExploring) {
+        let target = autoExploreWaypoints[autoExploreWaypointIndex];
+        let targetDistance = Math.hypot(target.x - playerPosition.x, target.z - playerPosition.z);
+        if (targetDistance < AUTO_EXPLORE_REACH_DISTANCE) {
+          autoExploreWaypointIndex = (autoExploreWaypointIndex + 1) % autoExploreWaypoints.length;
+          target = autoExploreWaypoints[autoExploreWaypointIndex];
+          targetDistance = Math.hypot(target.x - playerPosition.x, target.z - playerPosition.z);
+        }
+
+        if (targetDistance > 0.001) {
+          const moveX = (target.x - playerPosition.x) / targetDistance;
+          const moveZ = (target.z - playerPosition.z) / targetDistance;
+          const nextX = playerPosition.x + moveX * AUTO_EXPLORE_SPEED * delta;
+          const nextZ = playerPosition.z + moveZ * AUTO_EXPLORE_SPEED * delta;
+          playerPosition.x = nextX;
+          playerPosition.z = nextZ;
+          const lookX = playerPosition.x + moveX * AUTO_EXPLORE_LOOK_AHEAD;
+          const lookZ = playerPosition.z + moveZ * AUTO_EXPLORE_LOOK_AHEAD;
+          yaw = Math.atan2(lookX - playerPosition.x, lookZ - playerPosition.z);
+          const terrainDelta = groundY(lookX, lookZ, currentEyeHeight) - groundY(playerPosition.x, playerPosition.z, currentEyeHeight);
+          pitch = THREE.MathUtils.clamp(-terrainDelta * 0.035 - 0.08, -0.42, 0.28);
+        }
+      } else {
+        if (keys.has('KeyW')) direction.z -= 1;
+        if (keys.has('KeyS')) direction.z += 1;
+        if (keys.has('KeyA')) direction.x += 1;
+        if (keys.has('KeyD')) direction.x -= 1;
+        direction.normalize();
+
+        forward.set(Math.sin(yaw), 0, Math.cos(yaw));
+        right.set(Math.cos(yaw), 0, -Math.sin(yaw));
+        playerPosition.addScaledVector(forward, -direction.z * speed * delta);
+        playerPosition.addScaledVector(right, direction.x * speed * delta);
+      }
 
       const playerRadius = Math.hypot(playerPosition.x, playerPosition.z);
       const maxRadius = ISLAND_RADIUS - 4;
