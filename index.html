@@ -521,6 +521,37 @@
       world.add(cluster);
     }
 
+    const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x6f756d, roughness: 0.96 });
+    const reliefGroundMaterial = new THREE.MeshStandardMaterial({ color: 0x4f9a48, roughness: 0.94 });
+    function createReliefCluster(x, z, scale = 1) {
+      const reliefCluster = new THREE.Group();
+      reliefCluster.position.set(x, groundY(x, z, -0.1), z);
+      reliefCluster.rotation.y = Math.random() * Math.PI;
+
+      const hill = new THREE.Mesh(new THREE.ConeGeometry(9 * scale, 4.8 * scale, 18), reliefGroundMaterial);
+      hill.position.y = 1.05 * scale;
+      hill.castShadow = true;
+      hill.receiveShadow = true;
+      reliefCluster.add(hill);
+
+      for (let i = 0; i < 5; i++) {
+        const rockRadius = (0.55 + Math.random() * 0.55) * scale;
+        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rockRadius), rockMaterial);
+        const angle = (i / 5) * Math.PI * 2 + Math.random() * 0.4;
+        const distance = (2.2 + Math.random() * 2.7) * scale;
+        const localX = Math.cos(angle) * distance;
+        const localZ = Math.sin(angle) * distance;
+        const localGround = groundY(x + localX, z + localZ, rockRadius * 0.52) - reliefCluster.position.y;
+        rock.position.set(localX, localGround, localZ);
+        rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+        rock.castShadow = true;
+        rock.receiveShadow = true;
+        reliefCluster.add(rock);
+      }
+
+      world.add(reliefCluster);
+    }
+
     [[-112, 70, 1.7], [104, -68, 1.45], [8, -124, 1.15], [136, 36, 1.05]].forEach(([x, z, scale]) => createReliefCluster(x, z, scale));
 
     const wallMaterials = [0xffd166, 0xef476f, 0x54c6eb, 0x9b5de5].map(color => new THREE.MeshStandardMaterial({ color, roughness: 0.65 }));
