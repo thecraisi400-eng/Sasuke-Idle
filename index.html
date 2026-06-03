@@ -485,6 +485,10 @@
         createTree(x, z, (0.65 + Math.random() * 1.05) * biomeScale, biome);
         plantedTrees++;
       }
+
+      cluster.position.set(x, groundY(x, z, -0.1), z);
+      cluster.rotation.y = Math.random() * Math.PI;
+      world.add(cluster);
     }
 
     const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x6f756d, roughness: 0.96 });
