@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mundo 3D - Primera persona</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23167bd8'/%3E%3Ccircle cx='32' cy='34' r='22' fill='%234ba048'/%3E%3Cpath d='M10 42c12-7 31-7 44 0v10H10z' fill='%23d9c17b'/%3E%3C/svg%3E" />
   <style>
     :root {
       color-scheme: dark;
@@ -491,37 +492,7 @@
       world.add(cluster);
     }
 
-    const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x6f756d, roughness: 0.96 });
-    const reliefGroundMaterial = new THREE.MeshStandardMaterial({ color: 0x4f9a48, roughness: 0.94 });
-    function createReliefCluster(x, z, scale = 1) {
-      const cluster = new THREE.Group();
-      const hill = new THREE.Mesh(new THREE.ConeGeometry(9 * scale, 4.8 * scale, 18), reliefGroundMaterial);
-      hill.position.y = 1.05 * scale;
-      hill.castShadow = true;
-      hill.receiveShadow = true;
-      cluster.add(hill);
-
-      for (let i = 0; i < 5; i++) {
-        const rockRadius = (0.55 + Math.random() * 0.55) * scale;
-        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rockRadius), rockMaterial);
-        const angle = (i / 5) * Math.PI * 2 + Math.random() * 0.4;
-        const distance = (2.2 + Math.random() * 2.7) * scale;
-        const localX = Math.cos(angle) * distance;
-        const localZ = Math.sin(angle) * distance;
-        const localGround = groundY(x + localX, z + localZ, rockRadius * 0.52) - groundY(x, z, -0.1);
-        rock.position.set(localX, localGround, localZ);
-        rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-        rock.castShadow = true;
-        rock.receiveShadow = true;
-        cluster.add(rock);
-      }
-
-      cluster.position.set(x, groundY(x, z, -0.1), z);
-      cluster.rotation.y = Math.random() * Math.PI;
-      world.add(cluster);
-    }
-
-    const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x6f756d, roughness: 0.96 });
+    const reliefRockMaterial = new THREE.MeshStandardMaterial({ color: 0x6f756d, roughness: 0.96 });
     const reliefGroundMaterial = new THREE.MeshStandardMaterial({ color: 0x4f9a48, roughness: 0.94 });
     function createReliefCluster(x, z, scale = 1) {
       const reliefCluster = new THREE.Group();
@@ -536,7 +507,7 @@
 
       for (let i = 0; i < 5; i++) {
         const rockRadius = (0.55 + Math.random() * 0.55) * scale;
-        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rockRadius), rockMaterial);
+        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rockRadius), reliefRockMaterial);
         const angle = (i / 5) * Math.PI * 2 + Math.random() * 0.4;
         const distance = (2.2 + Math.random() * 2.7) * scale;
         const localX = Math.cos(angle) * distance;
