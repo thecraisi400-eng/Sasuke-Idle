@@ -53,7 +53,7 @@ body{background:#000;overflow:hidden;font-family:'Segoe UI',sans-serif;width:100
   <canvas id="minimapCanvas" width="160" height="160"></canvas>
   <div id="minimap" style="pointer-events:none;position:fixed;bottom:20px;right:20px;"></div>
   <div id="coordDisplay">X: 0 | Y: 0 | Zona: Praderas</div>
-  <div id="controls">🖱 Click en el mapa para moverse automáticamente | Scroll: Zoom</div>
+  <div id="controls">🖱 Click para moverte | Scroll: Zoom | Mundo abierto realista: praderas, caminos, ríos y montañas</div>
 </div>
 
 <script>
@@ -66,8 +66,8 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 // ─── WORLD CONSTANTS ───────────────────────────────────────────────
-const WORLD_W = 4096;
-const WORLD_H = 4096;
+const WORLD_W = 6144;
+const WORLD_H = 6144;
 const TILE = 4;
 const COLS = WORLD_W / TILE;
 const ROWS = WORLD_H / TILE;
@@ -120,47 +120,87 @@ function fbm(x, y, octaves, seed){
 }
 
 // ─── BIOME COLORS ───────────────────────────────────────────────────
-// 0=deep water,1=water,2=shore,3=sand,4=grass,5=dark grass,6=forest,7=rock,8=snow,9=mountain,10=swamp
+// 0=deep water,1=river/lake,2=shore/wet bank,3=gravel,4=plain grass,5=tall grass,6=forest,7=cliff rock,8=snow,9=mountain,10=marsh
 const BIOME_COLORS = [
-  '#0a2a5e','#1a4a8a','#2a6ab5','#e8d5a3','#6ab04c','#4a9040','#2d6e2d',
-  '#7a7a7a','#e8e8e8','#9a9a9a','#4a6b4a'
+  '#123052','#2878a9','#76956f','#9b8462','#7cae4d','#5e9440','#2f6f34',
+  '#6f675e','#e8eadf','#938574','#4f6f52'
 ];
-const BIOME_NAMES = ['Océano','Mar','Costa','Playa','Praderas','Llanura','Bosque','Roca','Nieve','Montaña','Pantano'];
+const BIOME_NAMES = ['Agua profunda','Río','Ribera','Grava','Pradera','Pasto alto','Bosque','Risco','Nieve','Montaña','Humedal'];
+const BLOCKED_BIOMES = new Set([0, 1, 7, 8, 9]);
+
+// ─── REALISTIC TERRAIN HELPERS ───────────────────────────────────────
+function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+function smoothstep(edge0, edge1, x){
+  let t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
+function valueNoise01(x, y, freq, seed){ return (smoothNoise(x, y, freq, seed) + 1) * 0.5; }
+
+function distToSegment(px, py, ax, ay, bx, by){
+  const vx = bx - ax, vy = by - ay;
+  const wx = px - ax, wy = py - ay;
+  const c = clamp((wx * vx + wy * vy) / (vx * vx + vy * vy), 0, 1);
+  const dx = px - (ax + vx * c), dy = py - (ay + vy * c);
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function riverDistance(nx, ny){
+  // Curving rivers form a natural frontier around the playable plain.
+  let north = Math.abs(ny - (0.185 + Math.sin(nx * Math.PI * 2.6) * 0.025 + fbm(nx * 5.3, 7.7, 3, 611) * 0.018));
+  let south = Math.abs(ny - (0.815 + Math.sin(nx * Math.PI * 2.2 + 1.2) * 0.025 + fbm(nx * 4.8, 3.2, 3, 612) * 0.018));
+  let west  = Math.abs(nx - (0.175 + Math.sin(ny * Math.PI * 2.4 + 0.4) * 0.022 + fbm(5.1, ny * 5.1, 3, 613) * 0.016));
+  let east  = Math.abs(nx - (0.825 + Math.sin(ny * Math.PI * 2.1 + 2.1) * 0.022 + fbm(2.4, ny * 5.4, 3, 614) * 0.016));
+  const central = Math.min(
+    distToSegment(nx, ny, 0.20, 0.32, 0.50, 0.48),
+    distToSegment(nx, ny, 0.50, 0.48, 0.80, 0.36),
+    distToSegment(nx, ny, 0.47, 0.50, 0.38, 0.78)
+  );
+  return Math.min(north, south, west, east, central);
+}
+
+function terrainAt(nx, ny){
+  const edge = Math.min(nx, ny, 1 - nx, 1 - ny);
+  const rolling = valueNoise01(nx * 2.2, ny * 2.2, 1, 42) * 0.26 + valueNoise01(nx * 7.5, ny * 7.5, 1, 137) * 0.10;
+  const meadow = valueNoise01(nx * 17.0, ny * 17.0, 1, 999) * 0.035;
+  const mountainWall = Math.pow(1 - smoothstep(0.08, 0.29, edge), 2.4);
+  const peaks = Math.max(0, fbm(nx * 8.0 + 23, ny * 8.0 - 19, 6, 770));
+  const ridge = Math.pow(clamp(peaks, 0, 1), 2.1) * 0.34;
+  const valley = 1 - Math.pow(Math.max(0, 1 - Math.hypot((nx - 0.52) * 1.6, (ny - 0.54) * 1.45)), 2) * 0.22;
+  let h = 0.36 + rolling + meadow + mountainWall * 0.62 + ridge * mountainWall;
+  h *= valley;
+
+  const riverDist = riverDistance(nx, ny);
+  const riverWidth = 0.013 + valueNoise01(nx * 9.0, ny * 9.0, 1, 404) * 0.006;
+  const river = riverDist < riverWidth;
+  const bank = riverDist < riverWidth * 2.3;
+  if(river) h = Math.min(h, 0.10 + riverDist * 2.0);
+  else if(bank) h = Math.min(h, 0.27 + riverDist * 2.6);
+
+  const moisture = valueNoise01(nx * 5 + 100, ny * 5 + 100, 1, 214) * 0.7 + (bank ? 0.35 : 0);
+  let b;
+  if(river) b = 1;
+  else if(bank) b = riverDist < riverWidth * 1.55 ? 2 : 3;
+  else if(edge < 0.055 || h > 0.92) b = 8;
+  else if(edge < 0.12 || h > 0.82) b = 9;
+  else if(edge < 0.18 || h > 0.73) b = 7;
+  else if(moisture > 0.78 && h < 0.43) b = 10;
+  else if(h > 0.58) b = 6;
+  else if(h > 0.45) b = 5;
+  else b = 4;
+  return { h: clamp(h, 0, 1), b, riverDist, riverWidth };
+}
+
+function isWalkableBiome(b){ return !BLOCKED_BIOMES.has(b); }
 
 // ─── GENERATE WORLD ─────────────────────────────────────────────────
 function generateWorld(progress){
-  const S1=42, S2=137, S3=999;
   for(let iy=0; iy<ROWS; iy++){
     let ny = iy/ROWS;
     for(let ix=0; ix<COLS; ix++){
       let nx = ix/COLS;
-      // distance from center falloff for ocean border
-      let dx = (nx-0.5)*2, dy = (ny-0.5)*2;
-      let dist = Math.sqrt(dx*dx+dy*dy);
-      let border = Math.max(0, 1 - Math.pow(Math.max(0,dist-0.62)/0.38, 2));
-      
-      let h = fbm(nx*3,ny*3,7,S1)*0.6 + fbm(nx*6,ny*6,4,S2)*0.3 + fbm(nx*1.5,ny*1.5,3,S3)*0.1;
-      h = h * border;
-      heightMap[iy*COLS+ix] = h;
-      
-      // assign biome
-      let b;
-      if(h < 0.05) b=0;        // deep water
-      else if(h < 0.12) b=1;   // water
-      else if(h < 0.16) b=2;   // shore/coast
-      else if(h < 0.20) b=3;   // sand/beach
-      else if(h < 0.42) b=4;   // grass
-      else if(h < 0.55) b=5;   // dark grass
-      else if(h < 0.65) b=6;   // forest
-      else if(h < 0.72) b=9;   // mountain rock
-      else if(h < 0.80) b=7;   // rock
-      else b=8;                 // snow peak
-      
-      // swamp in low wet areas near water
-      let moisture = fbm(nx*5+100, ny*5+100, 4, S2+77);
-      if(b==4 && moisture > 0.7 && h < 0.30) b=10;
-      
-      biomeMap[iy*COLS+ix] = b;
+      const t = terrainAt(nx, ny);
+      heightMap[iy*COLS+ix] = t.h;
+      biomeMap[iy*COLS+ix] = t.b;
     }
     if(iy % 50 === 0) progress(iy/ROWS);
   }
@@ -173,24 +213,43 @@ function renderWorldToImage(progress){
   const offCtx = offCanvas.getContext('2d');
   const img = offCtx.createImageData(COLS, ROWS);
   const d = img.data;
-  
+
   for(let i=0; i<COLS*ROWS; i++){
     let b = biomeMap[i];
     let h = heightMap[i];
-    let col = hexToRgb(BIOME_COLORS[b]);
-    // shading by height for terrain feel
-    let shade = 0.8 + h * 0.4;
-    // noise detail
     let iy = Math.floor(i/COLS), ix = i%COLS;
-    let det = smoothNoise(ix/COLS*20, iy/ROWS*20, 1, 555)*0.1;
-    shade += det;
+    let col = hexToRgb(BIOME_COLORS[b]);
+    let left = heightMap[iy*COLS+Math.max(0,ix-1)];
+    let right = heightMap[iy*COLS+Math.min(COLS-1,ix+1)];
+    let up = heightMap[Math.max(0,iy-1)*COLS+ix];
+    let down = heightMap[Math.min(ROWS-1,iy+1)*COLS+ix];
+    let macro = valueNoise01(ix/COLS*18, iy/ROWS*18, 1, 1200);
+    let micro = valueNoise01(ix/COLS*110, iy/ROWS*110, 1, 1201);
+    let streak = Math.sin((ix + iy*0.35) * 0.12) * 0.5 + 0.5;
+    if(b===4 || b===5) col = mixRgb(col, hexToRgb(macro > 0.58 ? '#b6c96b' : '#466f2d'), 0.18 + micro*0.10);
+    if(b===6) col = mixRgb(col, hexToRgb(macro > 0.52 ? '#1f4e28' : '#4f8738'), 0.20);
+    if(b===3) col = mixRgb(col, hexToRgb('#c9ad79'), 0.35 + streak*0.12);
+    if(b===7 || b===9) col = mixRgb(col, hexToRgb(macro > 0.55 ? '#b1a38e' : '#4c4944'), 0.28);
+    if(b===10) col = mixRgb(col, hexToRgb('#223f32'), 0.30);
+    // faux 3D hill-shading: light from north-west, darker south-east slopes.
+    let slopeX = left - right;
+    let slopeY = up - down;
+    let hillShade = 0.86 + slopeX * 5.8 + slopeY * 4.8 + h * 0.34;
+    let grain = smoothNoise(ix/COLS*70, iy/ROWS*70, 1, 555)*0.075 + smoothNoise(ix/COLS*190, iy/ROWS*190, 1, 556)*0.04;
+    let shade = clamp(hillShade + grain, 0.38, 1.52);
+    if(b===1){
+      let sparkle = Math.sin(ix*0.19 + iy*0.11) * 0.06 + Math.cos(ix*0.04 - iy*0.13) * 0.05;
+      col = mixRgb(col, hexToRgb('#6fbde3'), 0.18);
+      shade = clamp(0.88 + sparkle, 0.68, 1.20);
+    }
+    if(b===7 || b===9) shade *= 0.78 + Math.abs(smoothNoise(ix/COLS*120, iy/ROWS*120, 1, 901))*0.36;
     d[i*4]   = Math.min(255, col.r * shade);
     d[i*4+1] = Math.min(255, col.g * shade);
     d[i*4+2] = Math.min(255, col.b * shade);
     d[i*4+3] = 255;
   }
   offCtx.putImageData(img, 0, 0);
-  
+
   // scale to full world
   const finalCanvas = document.createElement('canvas');
   finalCanvas.width = WORLD_W; finalCanvas.height = WORLD_H;
@@ -198,7 +257,8 @@ function renderWorldToImage(progress){
   fCtx.imageSmoothingEnabled = true;
   fCtx.imageSmoothingQuality = 'high';
   fCtx.drawImage(offCanvas, 0, 0, WORLD_W, WORLD_H);
-  
+  paintWorldDetails(fCtx);
+
   worldImg = finalCanvas;
   progress(1);
 }
@@ -210,62 +270,139 @@ function hexToRgb(hex){
   return {r,g,b};
 }
 
+function mixRgb(a, b, t){
+  return {
+    r: a.r + (b.r - a.r) * t,
+    g: a.g + (b.g - a.g) * t,
+    b: a.b + (b.b - a.b) * t
+  };
+}
+
+function paintWorldDetails(fCtx){
+  fCtx.save();
+  fCtx.lineCap = 'round';
+  fCtx.lineJoin = 'round';
+  const roads = [
+    [[520, 3920], [1600, 3120], [2900, 3340], [4550, 2580], [5650, 3040]],
+    [[1250, 1200], [2150, 2100], [3000, 3050], [3660, 4620], [5020, 5350]],
+    [[940, 5060], [2050, 4300], [3150, 3800], [4680, 4380], [5520, 3820]]
+  ];
+  for(const road of roads){
+    fCtx.strokeStyle = 'rgba(63, 43, 25, 0.30)';
+    fCtx.lineWidth = 34;
+    drawRoadPath(fCtx, road);
+    fCtx.strokeStyle = 'rgba(177, 139, 89, 0.78)';
+    fCtx.lineWidth = 22;
+    drawRoadPath(fCtx, road);
+    fCtx.strokeStyle = 'rgba(224, 194, 139, 0.20)';
+    fCtx.lineWidth = 5;
+    fCtx.setLineDash([30, 28]);
+    drawRoadPath(fCtx, road);
+    fCtx.setLineDash([]);
+  }
+  // Irregular meadow/soil patches keep the terrain from looking like flat color.
+  for(let i=0;i<260;i++){
+    const rng = mulberry32(7000 + i * 37);
+    const x = rng() * WORLD_W, y = rng() * WORLD_H;
+    const bx = Math.floor(x/TILE), by = Math.floor(y/TILE);
+    if(bx<0||by<0||bx>=COLS||by>=ROWS) continue;
+    const b = biomeMap[by*COLS+bx];
+    if(b<4 || b>6) continue;
+    fCtx.globalAlpha = 0.08 + rng()*0.08;
+    fCtx.fillStyle = rng() < 0.45 ? '#d0b37c' : '#254d22';
+    fCtx.beginPath();
+    fCtx.ellipse(x, y, 35+rng()*95, 18+rng()*52, rng()*Math.PI, 0, Math.PI*2);
+    fCtx.fill();
+  }
+  fCtx.restore();
+}
+
+function drawRoadPath(fCtx, points){
+  fCtx.beginPath();
+  fCtx.moveTo(points[0][0], points[0][1]);
+  for(let i=1;i<points.length-1;i++){
+    const midX = (points[i][0] + points[i+1][0]) / 2;
+    const midY = (points[i][1] + points[i+1][1]) / 2;
+    fCtx.quadraticCurveTo(points[i][0], points[i][1], midX, midY);
+  }
+  const last = points[points.length-1];
+  fCtx.lineTo(last[0], last[1]);
+  fCtx.stroke();
+}
+
 // ─── PLACE OBJECTS ──────────────────────────────────────────────────
 function placeObjects(){
   objects = [];
   let rng = mulberry32(9999);
-  
-  for(let i=0; i<6000; i++){
+
+  // Dense natural dressing: trees, grass clumps, flowers, reeds and logs.
+  for(let i=0; i<15000; i++){
     let wx = rng() * WORLD_W;
     let wy = rng() * WORLD_H;
     let bx = Math.floor(wx/TILE), by = Math.floor(wy/TILE);
     if(bx<0||by<0||bx>=COLS||by>=ROWS) continue;
     let b = biomeMap[by*COLS+bx];
-    
-    if(b===4||b===5||b===6){
-      // trees in grass/forest
-      let type = (b===6) ? (rng()<0.6 ? 'pine':'oak') : (rng()<0.4 ? 'oak':'shrub');
-      let scale = 0.7 + rng()*0.8;
-      objects.push({wx,wy,type,scale,z:wy});
+    let type = null;
+    let scale = 0.6 + rng()*0.9;
+
+    if(b===6){
+      type = rng()<0.58 ? 'pine' : (rng()<0.88 ? 'oak' : 'log');
+      scale = 0.85 + rng()*1.15;
+    } else if(b===5){
+      type = rng()<0.28 ? 'oak' : (rng()<0.62 ? 'grassPatch' : (rng()<0.82 ? 'flowerPatch' : 'shrub'));
+      scale = 0.45 + rng()*0.95;
+    } else if(b===4){
+      type = rng()<0.12 ? 'oak' : (rng()<0.52 ? 'grassPatch' : (rng()<0.78 ? 'flowerPatch' : 'shrub'));
+      scale = 0.35 + rng()*0.85;
+    } else if(b===2 || b===10){
+      type = rng()<0.70 ? 'reeds' : 'swamptree';
+      scale = 0.45 + rng()*0.8;
+    } else if(b===3){
+      type = rng()<0.40 ? 'driftwood' : (rng()<0.68 ? 'reeds' : 'boulder');
+      scale = 0.45 + rng()*0.75;
     }
-    if(b===3&&rng()<0.3){
-      objects.push({wx,wy,type:'palmtree',scale:0.6+rng()*0.5,z:wy});
-    }
-    if(b===4&&rng()<0.6){
-      objects.push({wx,wy,type:'shrub',scale:0.4+rng()*0.5,z:wy});
-    }
-    if(b===10){
-      objects.push({wx,wy,type:'swamptree',scale:0.5+rng()*0.6,z:wy});
-    }
+    if(type) objects.push({wx,wy,type,scale,z:wy,rot:rng()*Math.PI*2,tint:rng()});
   }
-  
-  // add rocks near mountains
-  for(let i=0; i<800; i++){
+
+  // Heavy rocky silhouettes make the mountain wall feel tall instead of minimal.
+  for(let i=0; i<2200; i++){
     let wx = rng() * WORLD_W;
     let wy = rng() * WORLD_H;
     let bx = Math.floor(wx/TILE), by = Math.floor(wy/TILE);
     if(bx<0||by<0||bx>=COLS||by>=ROWS) continue;
     let b = biomeMap[by*COLS+bx];
-    if(b===7||b===9){
-      objects.push({wx,wy,type:'rock',scale:0.5+rng()*1,z:wy});
+    if(b===7||b===9||b===8){
+      objects.push({wx,wy,type:rng()<0.18?'cliffFace':'boulder',scale:0.7+rng()*1.8,z:wy,rot:rng()*Math.PI*2,tint:rng()});
     }
   }
-  
+
+  // Hand-placed points of interest like Fortnite-style open world landmarks.
+  const landmarks = [
+    {wx:2860, wy:3180, type:'cabin', scale:1.25},
+    {wx:3270, wy:3260, type:'cabin', scale:1.05},
+    {wx:4380, wy:2520, type:'watchtower', scale:1.15},
+    {wx:1810, wy:4200, type:'barn', scale:1.20},
+    {wx:5100, wy:3840, type:'camp', scale:1.10}
+  ];
+  for(const landmark of landmarks){
+    objects.push({...landmark, z:landmark.wy, rot:0, tint:rng()});
+  }
+
   // sort by depth
   objects.sort((a,b)=>a.z-b.z);
-  
-  // animals (very few)
+
+  // more ambient wildlife so the open world feels alive
   animals = [];
-  for(let i=0; i<30; i++){
+  for(let i=0; i<70; i++){
     let wx = rng() * WORLD_W;
     let wy = rng() * WORLD_H;
     let bx = Math.floor(wx/TILE), by = Math.floor(wy/TILE);
     if(bx<0||by<0||bx>=COLS||by>=ROWS) continue;
     let b = biomeMap[by*COLS+bx];
     let type;
-    if(b===4||b===5) type = rng()<0.5?'deer':'rabbit';
-    else if(b===6) type = rng()<0.4?'bear':'wolf';
-    else if(b===3) type = 'seagull';
+    if(b===4||b===5) type = rng()<0.58?'deer':'rabbit';
+    else if(b===6) type = rng()<0.38?'bear':'wolf';
+    else if(b===3||b===2) type = 'seagull';
     else continue;
     animals.push({
       wx,wy,type,
@@ -288,70 +425,130 @@ function mulberry32(a){
 }
 
 // ─── DRAW OBJECTS ───────────────────────────────────────────────────
-function drawTree(cx, cy, sc, type){
+function drawTree(cx, cy, sc, type, obj={rot:0,tint:0}){
   ctx.save();
   ctx.translate(cx, cy);
+  ctx.rotate((type==='log'||type==='driftwood'||type==='cliffFace') ? obj.rot : 0);
   ctx.scale(sc, sc);
-  
+
   if(type==='pine'){
-    // trunk
-    ctx.fillStyle='#5d3a1a';
-    ctx.fillRect(-3,0,6,18);
-    // layers
-    const layers=[['#1a5c1a',28,-14,0],['#1e7a1e',22,-28,0],['#228b22',16,-40,0]];
-    for(let [c,w,y,x] of layers){
+    ctx.fillStyle='#573516';
+    ctx.fillRect(-4,-2,8,24);
+    const layers=[['#123f1e',34,-8],['#1e6a2b',28,-24],['#2b8a35',21,-39],['#5ca64d',13,-51]];
+    for(let [c,w,y] of layers){
       ctx.fillStyle=c;
-      ctx.beginPath(); ctx.moveTo(x-w/2,y+14); ctx.lineTo(x+w/2,y+14); ctx.lineTo(x,y); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-w/2,y+22); ctx.lineTo(w/2,y+22); ctx.lineTo(0,y); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='rgba(255,255,210,0.10)';
+      ctx.beginPath(); ctx.moveTo(-w/2+5,y+18); ctx.lineTo(0,y+3); ctx.lineTo(0,y+19); ctx.closePath(); ctx.fill();
     }
   } else if(type==='oak'){
-    ctx.fillStyle='#5d3a1a';
-    ctx.fillRect(-3,0,6,20);
-    ctx.fillStyle='#2d7d2d';
-    ctx.beginPath(); ctx.arc(0,-22,18,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#3a9a3a';
-    ctx.beginPath(); ctx.arc(-8,-28,10,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(8,-25,11,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#61401e';
+    ctx.fillRect(-4,-1,8,24);
+    let g=ctx.createRadialGradient(-8,-28,3,0,-24,27);
+    g.addColorStop(0,'#78a847'); g.addColorStop(0.55,'#3f7f35'); g.addColorStop(1,'#1d4d22');
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(0,-25,22,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,230,150,0.16)';
+    ctx.beginPath(); ctx.arc(-8,-34,10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(9,35,12,0.18)';
+    ctx.beginPath(); ctx.arc(9,-17,13,0,Math.PI*2); ctx.fill();
   } else if(type==='palmtree'){
-    // curved trunk
     ctx.strokeStyle='#8B6914'; ctx.lineWidth=5;
     ctx.beginPath(); ctx.moveTo(0,0); ctx.quadraticCurveTo(8,-20,4,-38); ctx.stroke();
-    ctx.fillStyle='#2a8a2a';
     for(let i=0;i<6;i++){
       let a=i*60*Math.PI/180 - Math.PI/2;
       ctx.save(); ctx.translate(4,-40); ctx.rotate(a);
-      ctx.fillStyle='#3cb34a';
-      ctx.beginPath(); ctx.ellipse(12,0,14,4,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle=i%2?'#2f8d39':'#47b652';
+      ctx.beginPath(); ctx.ellipse(12,0,16,4,0,0,Math.PI*2); ctx.fill();
       ctx.restore();
     }
   } else if(type==='swamptree'){
     ctx.fillStyle='#3d2b1a';
-    ctx.fillRect(-3,0,6,22);
-    ctx.fillStyle='#3a5a2a';
-    ctx.beginPath(); ctx.arc(0,-18,14,0,Math.PI*2); ctx.fill();
-    ctx.globalAlpha=0.4;
-    ctx.fillStyle='#1a3a1a';
-    ctx.beginPath(); ctx.arc(-6,-22,8,0,Math.PI*2); ctx.fill();
-    ctx.globalAlpha=1;
+    ctx.fillRect(-3,0,6,24);
+    ctx.fillStyle='#314d28';
+    ctx.beginPath(); ctx.arc(0,-19,16,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(38,55,28,0.55)'; ctx.lineWidth=2;
+    for(let i=-1;i<=1;i++){ ctx.beginPath(); ctx.moveTo(i*6,-10); ctx.quadraticCurveTo(i*10,3,i*4,13); ctx.stroke(); }
   } else if(type==='shrub'){
-    ctx.fillStyle='#2a6a2a';
-    ctx.beginPath(); ctx.arc(0,-6,9,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#3a8a3a';
-    ctx.beginPath(); ctx.arc(-5,-8,6,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(5,-9,5,0,Math.PI*2); ctx.fill();
-  } else if(type==='rock'){
-    ctx.fillStyle='#666';
-    ctx.beginPath(); ctx.ellipse(0,-6,12,8,0,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#888';
-    ctx.beginPath(); ctx.ellipse(-4,-9,5,4,-0.3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#244f22';
+    ctx.beginPath(); ctx.arc(0,-6,10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#4a8f3d';
+    ctx.beginPath(); ctx.arc(-5,-9,6,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(6,-10,6,0,Math.PI*2); ctx.fill();
+  } else if(type==='grassPatch'){
+    ctx.strokeStyle='#2f6f24'; ctx.lineWidth=2;
+    for(let i=0;i<8;i++){
+      const x=-10+i*3, bend=Math.sin(i+obj.tint*6)*5;
+      ctx.beginPath(); ctx.moveTo(x,3); ctx.quadraticCurveTo(x+bend,-7,x+bend*0.4,-16-obj.tint*6); ctx.stroke();
+    }
+    ctx.strokeStyle='rgba(216,227,130,0.45)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(-9,1); ctx.lineTo(-3,-14); ctx.moveTo(5,1); ctx.lineTo(9,-12); ctx.stroke();
+  } else if(type==='flowerPatch'){
+    ctx.strokeStyle='#3d742c'; ctx.lineWidth=1.5;
+    for(let i=0;i<7;i++){
+      const a=i*1.7+obj.tint, x=Math.cos(a)*10, y=Math.sin(a)*5;
+      ctx.beginPath(); ctx.moveTo(x,2); ctx.lineTo(x*0.8,y-8); ctx.stroke();
+      ctx.fillStyle=i%3===0?'#f4d35e':(i%3===1?'#e66b9d':'#fff2b6');
+      ctx.beginPath(); ctx.arc(x*0.8,y-9,2.4,0,Math.PI*2); ctx.fill();
+    }
+  } else if(type==='reeds'){
+    ctx.strokeStyle='#314d21'; ctx.lineWidth=2;
+    for(let i=0;i<9;i++){
+      const x=-9+i*2.3;
+      ctx.beginPath(); ctx.moveTo(x,3); ctx.lineTo(x+Math.sin(i)*3,-18-randomish(i,obj.tint)*8); ctx.stroke();
+      ctx.fillStyle='#7a5a25'; ctx.fillRect(x+Math.sin(i)*3-1,-23-randomish(i,obj.tint)*8,2,6);
+    }
+  } else if(type==='log'||type==='driftwood'){
+    ctx.fillStyle=type==='log'?'#65411f':'#8d7350';
+    ctx.fillRect(-18,-5,36,10);
+    ctx.fillStyle='rgba(255,220,150,0.22)'; ctx.fillRect(-15,-4,28,2);
+    ctx.strokeStyle='#3c2411'; ctx.lineWidth=2; ctx.strokeRect(-18,-5,36,10);
+  } else if(type==='cabin'||type==='barn'){
+    ctx.fillStyle='rgba(0,0,0,0.26)';
+    ctx.beginPath(); ctx.ellipse(0,8,34,12,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=type==='barn'?'#8f3026':'#76512b';
+    ctx.fillRect(-24,-22,48,30);
+    ctx.fillStyle=type==='barn'?'#5b1d17':'#4b2b16';
+    ctx.beginPath(); ctx.moveTo(-30,-22); ctx.lineTo(0,-46); ctx.lineTo(30,-22); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#e6c27a'; ctx.fillRect(-7,-8,14,16);
+    ctx.fillStyle='rgba(120,190,230,0.70)'; ctx.fillRect(-18,-15,8,8); ctx.fillRect(10,-15,8,8);
+  } else if(type==='watchtower'){
+    ctx.strokeStyle='#5a3a1c'; ctx.lineWidth=5;
+    ctx.beginPath(); ctx.moveTo(-16,8); ctx.lineTo(-9,-42); ctx.moveTo(16,8); ctx.lineTo(9,-42); ctx.moveTo(-18,-8); ctx.lineTo(18,-8); ctx.stroke();
+    ctx.fillStyle='#704720'; ctx.fillRect(-18,-52,36,18);
+    ctx.fillStyle='#3a2410'; ctx.beginPath(); ctx.moveTo(-23,-52); ctx.lineTo(0,-67); ctx.lineTo(23,-52); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='rgba(255,225,128,0.8)'; ctx.fillRect(-5,-46,10,8);
+  } else if(type==='camp'){
+    ctx.fillStyle='rgba(0,0,0,0.20)'; ctx.beginPath(); ctx.ellipse(0,3,28,12,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#5c3a1c'; ctx.fillRect(-22,-2,17,7); ctx.fillRect(5,-2,17,7);
+    ctx.fillStyle='#e56a2d'; ctx.beginPath(); ctx.moveTo(-5,-2); ctx.lineTo(0,-22); ctx.lineTo(7,-2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#ffd36a'; ctx.beginPath(); ctx.moveTo(-1,-1); ctx.lineTo(3,-15); ctx.lineTo(8,-1); ctx.closePath(); ctx.fill();
+  } else if(type==='rock'||type==='boulder'||type==='cliffFace'){
+    let g=ctx.createLinearGradient(-15,-20,18,12);
+    g.addColorStop(0,type==='cliffFace'?'#b8ab97':'#9c9388');
+    g.addColorStop(0.55,type==='cliffFace'?'#726a61':'#68635d');
+    g.addColorStop(1,'#383633');
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    if(type==='cliffFace') ctx.moveTo(-24,8), ctx.lineTo(-11,-30), ctx.lineTo(9,-24), ctx.lineTo(25,6), ctx.lineTo(8,18), ctx.closePath();
+    else ctx.ellipse(0,-7,type==='boulder'?17:12,type==='boulder'?12:8,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(-8,-13); ctx.lineTo(2,-18); ctx.lineTo(10,-9); ctx.stroke();
   }
   ctx.restore();
+}
+
+function randomish(i, seed){
+  const v = Math.sin(i*12.9898 + seed*78.233) * 43758.5453;
+  return v - Math.floor(v);
 }
 
 function drawAnimal(a, sx, sy, sc){
   ctx.save();
   ctx.translate(sx, sy);
   let s = a.stepAnim;
-  
+
   if(a.type==='deer'){
     ctx.scale(sc*a.dir, sc);
     ctx.fillStyle='#b5651d';
@@ -413,30 +610,30 @@ function drawPlayer(sx, sy, sc){
   let moving = player.moving;
   let dir = player.angle > Math.PI/2 && player.angle < Math.PI*1.5 ? -1 : 1;
   ctx.scale(dir, 1);
-  
+
   // shadow
   ctx.globalAlpha = 0.3;
   ctx.fillStyle='#000';
   ctx.beginPath(); ctx.ellipse(0,24,12,4,0,0,Math.PI*2); ctx.fill();
   ctx.globalAlpha = 1;
-  
+
   // cloak
   ctx.fillStyle='#5c3f96';
   ctx.beginPath(); ctx.moveTo(-12,6); ctx.lineTo(12,6); ctx.lineTo(14,32); ctx.lineTo(-14,32); ctx.closePath(); ctx.fill();
-  
+
   // body/armor
   ctx.fillStyle='#4a4a6e';
   ctx.fillRect(-9,4,18,20);
   // armor highlights
   ctx.fillStyle='#6a6a9e';
   ctx.fillRect(-8,5,4,18); ctx.fillRect(4,5,4,18);
-  
+
   // belt
   ctx.fillStyle='#8B6914';
   ctx.fillRect(-9,20,18,4);
   ctx.fillStyle='#ffd700';
   ctx.fillRect(-3,20,6,4);
-  
+
   // legs
   let legSwing = moving ? Math.sin(s * 6) * 6 : 0;
   ctx.fillStyle='#2a2a4e';
@@ -444,11 +641,11 @@ function drawPlayer(sx, sy, sc){
   ctx.fillRect(-4,0,8,18); ctx.restore();
   ctx.save(); ctx.translate(4,26); ctx.rotate(-legSwing*Math.PI/180);
   ctx.fillRect(-4,0,8,18); ctx.restore();
-  
+
   // boots
   ctx.fillStyle='#3a2010';
   ctx.fillRect(-9,40,9,6); ctx.fillRect(0,40,9,6);
-  
+
   // arms
   let armSwing = moving ? Math.sin(s * 6) * 10 : 0;
   ctx.fillStyle='#4a4a6e';
@@ -456,27 +653,27 @@ function drawPlayer(sx, sy, sc){
   ctx.fillRect(-4,0,8,18); ctx.restore();
   ctx.save(); ctx.translate(12,8); ctx.rotate(armSwing*Math.PI/180);
   ctx.fillRect(-4,0,8,18); ctx.restore();
-  
+
   // hands
   ctx.fillStyle='#d4a88a';
   ctx.beginPath(); ctx.arc(-14,26,5,0,Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc(14,26,5,0,Math.PI*2); ctx.fill();
-  
+
   // sword (right hand)
   ctx.strokeStyle='#ccc'; ctx.lineWidth=3;
   ctx.beginPath(); ctx.moveTo(16,28); ctx.lineTo(26,6); ctx.stroke();
   ctx.fillStyle='#ffd700'; ctx.fillRect(11,22,10,3);
-  
+
   // head
   ctx.fillStyle='#d4a88a';
   ctx.beginPath(); ctx.arc(0,-8,12,0,Math.PI*2); ctx.fill();
-  
+
   // hair/hood
   ctx.fillStyle='#5c3f96';
   ctx.beginPath(); ctx.arc(0,-10,13,Math.PI,0); ctx.fill();
   ctx.beginPath(); ctx.arc(-6,-5,5,Math.PI,-0.2); ctx.fill();
   ctx.beginPath(); ctx.arc(6,-5,5,Math.PI+0.2,0); ctx.fill();
-  
+
   // eyes
   ctx.fillStyle='#fff';
   ctx.beginPath(); ctx.arc(-4,-8,3,0,Math.PI*2); ctx.fill();
@@ -484,7 +681,7 @@ function drawPlayer(sx, sy, sc){
   ctx.fillStyle='#1a1aff';
   ctx.beginPath(); ctx.arc(-4,-8,2,0,Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc(4,-8,2,0,Math.PI*2); ctx.fill();
-  
+
   ctx.restore();
 }
 
@@ -566,7 +763,7 @@ function updateAnimals(dt){
     let bx=Math.floor(nx/TILE), by=Math.floor(ny/TILE);
     if(bx>0&&by>0&&bx<COLS&&by<ROWS){
       let b = biomeMap[by*COLS+bx];
-      if(b>=2){ a.wx=nx; a.wy=ny; }
+      if(isWalkableBiome(b)){ a.wx=nx; a.wy=ny; }
       else { a.vx=-a.vx; a.vy=-a.vy; }
     }
     if(a.vx!==0||a.vy!==0) a.stepAnim+=dt;
@@ -578,7 +775,7 @@ function gameLoop(timestamp){
   let dt = Math.min((timestamp - lastTime)/1000, 0.05);
   lastTime = timestamp;
   waterTime += dt;
-  
+
   // ── UPDATE PLAYER ─────
   if(player.moving){
     let dx = player.targetX - player.wx;
@@ -595,12 +792,12 @@ function gameLoop(timestamp){
       player.wx += (dx/dist)*spd;
       player.wy += (dy/dist)*spd;
       player.stepAnim += dt;
-      
+
       // check biome under player
       let bx=Math.floor(player.wx/TILE), by=Math.floor(player.wy/TILE);
       if(bx>=0&&by>=0&&bx<COLS&&by<ROWS){
         let b=biomeMap[by*COLS+bx];
-        if(b<=1){ // water: stop and go back
+        if(!isWalkableBiome(b)){ // water, cliffs, mountains: stop and go back
           player.wx -= (dx/dist)*spd*2;
           player.wy -= (dy/dist)*spd*2;
           player.moving = false;
@@ -608,19 +805,19 @@ function gameLoop(timestamp){
       }
     }
   }
-  
+
   updateAnimals(dt);
-  
+
   // ── CAMERA FOLLOW ─────
   let targetCamX = player.wx - canvas.width/(2*cam.zoom);
   let targetCamY = player.wy - canvas.height/(2*cam.zoom);
   cam.x += (targetCamX - cam.x) * 5 * dt;
   cam.y += (targetCamY - cam.y) * 5 * dt;
-  
+
   // clamp camera
   cam.x = Math.max(0, Math.min(WORLD_W - canvas.width/cam.zoom, cam.x));
   cam.y = Math.max(0, Math.min(WORLD_H - canvas.height/cam.zoom, cam.y));
-  
+
   // ── ZONE ─────
   zoneTimer -= dt;
   let z = getZone(player.wx, player.wy);
@@ -631,26 +828,26 @@ function gameLoop(timestamp){
     zoneTimer = 3;
   }
   if(zoneTimer<=0) document.getElementById('zoneDisplay').style.opacity=0.4;
-  
-  document.getElementById('coordDisplay').textContent = 
+
+  document.getElementById('coordDisplay').textContent =
     `X: ${Math.floor(player.wx)} | Y: ${Math.floor(player.wy)} | ${currentZone}`;
-  
+
   // ── DRAW ─────
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.save();
   ctx.scale(cam.zoom, cam.zoom);
   ctx.translate(-cam.x, -cam.y);
-  
+
   // draw world
   if(worldImg){
     ctx.drawImage(worldImg, 0, 0, WORLD_W, WORLD_H);
   }
-  
+
   // animated water overlay
   let vx1 = Math.floor(cam.x), vy1 = Math.floor(cam.y);
   let vx2 = Math.ceil(cam.x + canvas.width/cam.zoom);
   let vy2 = Math.ceil(cam.y + canvas.height/cam.zoom);
-  
+
   // water shimmer
   for(let wy2=vy1;wy2<vy2;wy2+=TILE*2){
     for(let wx2=vx1;wx2<vx2;wx2+=TILE*2){
@@ -666,30 +863,30 @@ function gameLoop(timestamp){
       }
     }
   }
-  
+
   // ── DRAW OBJECTS IN VIEW ──
   for(let obj of objects){
     if(obj.wx<vx1-60||obj.wx>vx2+60||obj.wy<vy1-100||obj.wy>vy2+60) continue;
-    
+
     // shadow
     ctx.globalAlpha=0.2;
     ctx.fillStyle='#000';
     ctx.beginPath(); ctx.ellipse(obj.wx, obj.wy, 10*obj.scale, 4*obj.scale, 0, 0, Math.PI*2);
     ctx.fill(); ctx.globalAlpha=1;
-    
-    drawTree(obj.wx, obj.wy, obj.scale, obj.type);
+
+    drawTree(obj.wx, obj.wy, obj.scale, obj.type, obj);
   }
-  
+
   // ── DRAW ANIMALS ──
   let pScale = 1/cam.zoom*1.8;
   for(let a of animals){
     if(a.wx<vx1-60||a.wx>vx2+60||a.wy<vy1-60||a.wy>vy2+60) continue;
     drawAnimal(a, a.wx, a.wy, 1);
   }
-  
+
   // ── DRAW PLAYER ──
   drawPlayer(player.wx, player.wy, 1);
-  
+
   // path indicator
   if(player.moving){
     ctx.save();
@@ -707,12 +904,12 @@ function gameLoop(timestamp){
     ctx.beginPath(); ctx.arc(player.targetX, player.targetY, 6, 0, Math.PI*2); ctx.fill();
     ctx.restore();
   }
-  
+
   ctx.restore();
-  
+
   // minimap
   renderMinimap();
-  
+
   requestAnimationFrame(gameLoop);
 }
 
@@ -723,7 +920,7 @@ canvas.addEventListener('click', (e)=>{
   let bx=Math.floor(wx/TILE), by=Math.floor(wy/TILE);
   if(bx<0||by<0||bx>=COLS||by>=ROWS) return;
   let b=biomeMap[by*COLS+bx];
-  if(b<=1){ return; } // can't walk on water
+  if(!isWalkableBiome(b)){ return; } // can't walk on rivers, cliffs or mountains
   setTarget(wx, wy);
 });
 
@@ -743,23 +940,23 @@ window.addEventListener('resize', ()=>{
 // ─── ASYNC INIT ───────────────────────────────────────────────────────
 async function init(){
   let fill = document.getElementById('loadFill');
-  
+
   // Generate height/biome maps
   fill.style.width = '5%';
   await new Promise(r=>setTimeout(r,10));
-  
+
   generateWorld((p)=>{ fill.style.width = (5+p*45)+'%'; });
   fill.style.width = '50%';
   await new Promise(r=>setTimeout(r,10));
-  
+
   renderWorldToImage((p)=>{ fill.style.width = (50+p*30)+'%'; });
   fill.style.width = '80%';
   await new Promise(r=>setTimeout(r,10));
-  
+
   placeObjects();
   fill.style.width = '90%';
   await new Promise(r=>setTimeout(r,10));
-  
+
   // find a good spawn (grass biome)
   let spawnFound = false;
   let rng2 = mulberry32(12345);
@@ -772,11 +969,11 @@ async function init(){
       if(b>=4&&b<=5){ player.wx=sx; player.wy=sy; player.targetX=sx; player.targetY=sy; spawnFound=true; break; }
     }
   }
-  
+
   fill.style.width = '100%';
   await new Promise(r=>setTimeout(r,300));
   document.getElementById('loadingScreen').style.display='none';
-  
+
   gameRunning = true;
   lastTime = performance.now();
   requestAnimationFrame(gameLoop);
@@ -787,53 +984,43 @@ async function chunkedInit(){
   // Step 1: height map
   document.getElementById('loadFill').style.width='5%';
   await new Promise(r=>requestAnimationFrame(r));
-  
-  const S1=42,S2=137,S3=999;
+
   for(let iy=0;iy<ROWS;iy++){
     let ny=iy/ROWS;
     for(let ix=0;ix<COLS;ix++){
       let nx=ix/COLS;
-      let dx=(nx-0.5)*2, dy=(ny-0.5)*2;
-      let dist=Math.sqrt(dx*dx+dy*dy);
-      let border=Math.max(0,1-Math.pow(Math.max(0,dist-0.62)/0.38,2));
-      let h=fbm(nx*3,ny*3,7,S1)*0.6+fbm(nx*6,ny*6,4,S2)*0.3+fbm(nx*1.5,ny*1.5,3,S3)*0.1;
-      h=h*border; heightMap[iy*COLS+ix]=h;
-      let b;
-      if(h<0.05)b=0; else if(h<0.12)b=1; else if(h<0.16)b=2;
-      else if(h<0.20)b=3; else if(h<0.42)b=4; else if(h<0.55)b=5;
-      else if(h<0.65)b=6; else if(h<0.72)b=9; else if(h<0.80)b=7; else b=8;
-      let moisture=fbm(nx*5+100,ny*5+100,4,S2+77);
-      if(b===4&&moisture>0.7&&h<0.30)b=10;
-      biomeMap[iy*COLS+ix]=b;
+      const t = terrainAt(nx, ny);
+      heightMap[iy*COLS+ix] = t.h;
+      biomeMap[iy*COLS+ix] = t.b;
     }
     if(iy%100===0){
       document.getElementById('loadFill').style.width=(5+iy/ROWS*35)+'%';
       await new Promise(r=>requestAnimationFrame(r));
     }
   }
-  
+
   document.getElementById('loadFill').style.width='40%';
   await new Promise(r=>requestAnimationFrame(r));
-  
+
   // Step 2: render image
   renderWorldToImage(p=>{ document.getElementById('loadFill').style.width=(40+p*30)+'%'; });
   await new Promise(r=>requestAnimationFrame(r));
-  
+
   document.getElementById('loadFill').style.width='75%';
   await new Promise(r=>requestAnimationFrame(r));
-  
+
   // Step 3: place objects
   placeObjects();
-  
+
   document.getElementById('loadFill').style.width='88%';
   await new Promise(r=>requestAnimationFrame(r));
-  
+
   // Render minimap
   renderMinimap();
-  
+
   document.getElementById('loadFill').style.width='95%';
   await new Promise(r=>requestAnimationFrame(r));
-  
+
   // Spawn player
   let rng2=mulberry32(12345);
   for(let t=0;t<2000;t++){
@@ -845,11 +1032,11 @@ async function chunkedInit(){
       if(b>=4&&b<=5){ player.wx=sx; player.wy=sy; player.targetX=sx; player.targetY=sy; break; }
     }
   }
-  
+
   document.getElementById('loadFill').style.width='100%';
   await new Promise(r=>setTimeout(r,400));
   document.getElementById('loadingScreen').style.display='none';
-  
+
   gameRunning=true;
   lastTime=performance.now();
   requestAnimationFrame(gameLoop);
