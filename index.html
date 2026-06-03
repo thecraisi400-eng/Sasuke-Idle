@@ -102,6 +102,23 @@
       width: min(300px, calc(100vw - 36px));
     }
 
+    #mode {
+      position: absolute;
+      right: 18px;
+      top: 18px;
+      padding: 10px 14px;
+      border: 1px solid rgba(125, 218, 255, 0.35);
+      border-radius: 999px;
+      background: rgba(8, 17, 36, 0.72);
+      color: #91e7ff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(10px);
+    }
+
     .stat {
       height: 15px;
       overflow: hidden;
@@ -179,11 +196,13 @@
   <div id="hud" aria-hidden="true">
     <div id="panel">
       <h1>Isla 3D</h1>
-      <p><strong>WASD</strong> mover · <strong>Ratón</strong> mirar</p>
-      <p><strong>Shift</strong> correr · <strong>Ctrl/C</strong> agacharse</p>
-      <p><strong>Espacio</strong> saltar · <strong>Esc</strong> liberar el cursor</p>
+      <p><strong>W/S</strong> adelante/atrás · <strong>A/D</strong> derecha/izquierda</p>
+      <p><strong>Ratón</strong> mirar suave · <strong>P</strong> activar/desactivar vuelo</p>
+      <p><strong>Shift</strong> correr · <strong>Ctrl/C</strong> agacharse o bajar volando</p>
+      <p><strong>Espacio</strong> saltar o subir volando · <strong>Esc</strong> liberar el cursor</p>
     </div>
     <div id="crosshair"></div>
+    <div id="mode">Modo: Tierra</div>
     <div id="stats">
       <div class="stat shield"><span></span></div>
       <div class="stat health"><span></span></div>
@@ -202,11 +221,12 @@
     import * as THREE from 'https://unpkg.com/three@0.165.0/build/three.module.js';
 
     const blocker = document.getElementById('blocker');
+    const modeLabel = document.getElementById('mode');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x7fc7ff);
-    scene.fog = new THREE.FogExp2(0x8fd3ff, 0.0055);
+    scene.fog = new THREE.FogExp2(0x8fd3ff, 0.0038);
 
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1400);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1900);
     camera.position.set(0, 2.2, 14);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -220,10 +240,10 @@
     sun.position.set(36, 58, 22);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
-    sun.shadow.camera.left = -270;
-    sun.shadow.camera.right = 270;
-    sun.shadow.camera.top = 270;
-    sun.shadow.camera.bottom = -270;
+    sun.shadow.camera.left = -420;
+    sun.shadow.camera.right = 420;
+    sun.shadow.camera.top = 420;
+    sun.shadow.camera.bottom = -420;
     scene.add(sun);
 
     scene.add(new THREE.HemisphereLight(0xbce9ff, 0x55712e, 1.35));
@@ -231,10 +251,10 @@
     const world = new THREE.Group();
     scene.add(world);
 
-    const ISLAND_RADIUS = 214;
-    const BEACH_START = 176;
-    const COAST_START = 186;
-    const OCEAN_RADIUS = 760;
+    const ISLAND_RADIUS = 321;
+    const BEACH_START = 264;
+    const COAST_START = 279;
+    const OCEAN_RADIUS = 980;
     const WATER_LEVEL = -0.7;
     const HEIGHT_SCALE = 2;
 
@@ -249,20 +269,28 @@
 
     function plainsBlend(x, z) {
       return Math.max(
-        gaussian(x, z, -58, 34, 5200),
-        gaussian(x, z, 78, 70, 6800),
-        gaussian(x, z, 24, -94, 6200)
+        gaussian(x, z, -86, 50, 11600),
+        gaussian(x, z, 118, 104, 15400),
+        gaussian(x, z, 36, -140, 13900)
       );
+    }
+
+    function biomeBlend(x, z, centerX, centerZ, spread) {
+      return gaussian(x, z, centerX, centerZ, spread);
     }
 
     function biomeAt(x, z) {
       const distance = Math.hypot(x, z);
       const height = terrainHeight(x, z);
       if (distance > BEACH_START || height < WATER_LEVEL + 1.25) return 'beach';
-      if (height > WATER_LEVEL + 29) return 'alpine';
-      if (height > WATER_LEVEL + 20) return 'rock';
-      if (x > 42 && z < -28) return 'savanna';
-      if (x < -45 && z > 24) return 'forest';
+      if (height > WATER_LEVEL + 31 || biomeBlend(x, z, -130, 120, 7200) > 0.62) return 'alpine';
+      if (height > WATER_LEVEL + 21) return 'rock';
+      if (biomeBlend(x, z, 162, 116, 9800) > 0.42) return 'desert';
+      if (biomeBlend(x, z, -166, -118, 10500) > 0.42) return 'swamp';
+      if (biomeBlend(x, z, -178, 152, 11200) > 0.38) return 'jungle';
+      if (biomeBlend(x, z, 128, -166, 8800) > 0.43) return 'tundra';
+      if (x > 62 && z < -42) return 'savanna';
+      if (x < -68 && z > 36) return 'forest';
       if (plainsBlend(x, z) > 0.46) return 'plains';
       return 'grassland';
     }
@@ -272,14 +300,17 @@
       const beachBlend = smoothstep(BEACH_START, ISLAND_RADIUS, distance);
       const inland = THREE.MathUtils.clamp((ISLAND_RADIUS - distance) / (ISLAND_RADIUS - COAST_START), 0, 1);
       const shorelineBlend = inland * inland * (3 - 2 * inland);
-      const rollingHills = Math.sin(x * 0.036) * 1.35 + Math.cos(z * 0.041) * 1.2 + Math.sin((x + z) * 0.022) * 1.75;
-      const sharpRidges = Math.abs(Math.sin((x - z) * 0.052)) * 2.2 + Math.max(0, Math.sin((x + z) * 0.044)) * 1.4;
-      const mountainA = gaussian(x, z, -78, 58, 1100) * 15.8;
-      const mountainB = gaussian(x, z, 72, -82, 980) * 14.2;
-      const valleyA = gaussian(x, z, 10, 18, 5200) * 3.9;
-      const canyonA = Math.exp(-((x + z * 0.38 - 20) ** 2) / 70) * Math.exp(-((x * 0.3 - z - 18) ** 2) / 16500) * 7.2;
+      const rollingHills = Math.sin(x * 0.024) * 1.35 + Math.cos(z * 0.027) * 1.2 + Math.sin((x + z) * 0.015) * 1.75;
+      const sharpRidges = Math.abs(Math.sin((x - z) * 0.035)) * 2.2 + Math.max(0, Math.sin((x + z) * 0.03)) * 1.4;
+      const mountainA = gaussian(x, z, -118, 88, 2475) * 15.8;
+      const mountainB = gaussian(x, z, 108, -123, 2205) * 14.2;
+      const mountainC = gaussian(x, z, -196, 142, 3600) * 10.6;
+      const valleyA = gaussian(x, z, 15, 27, 11700) * 3.9;
+      const canyonA = Math.exp(-((x + z * 0.38 - 30) ** 2) / 105) * Math.exp(-((x * 0.3 - z - 27) ** 2) / 37125) * 7.2;
+      const wetlands = biomeBlend(x, z, -166, -118, 10500) * 2.8;
+      const dunes = biomeBlend(x, z, 162, 116, 9800) * (Math.sin(x * 0.052) + Math.cos(z * 0.047)) * 0.9;
       const plains = plainsBlend(x, z);
-      const roughTerrain = 2.5 + rollingHills + sharpRidges + mountainA + mountainB - valleyA - canyonA;
+      const roughTerrain = 2.5 + rollingHills + sharpRidges + mountainA + mountainB + mountainC - valleyA - canyonA - wetlands + dunes;
       const flatTerrain = 2.1 + Math.sin(x * 0.018) * 0.35 + Math.cos(z * 0.016) * 0.28;
       const blendedTerrain = THREE.MathUtils.lerp(roughTerrain, flatTerrain, THREE.MathUtils.clamp(plains * 0.82, 0, 0.82));
       const beachShelf = 0.42 + Math.sin(x * 0.018) * 0.12 + Math.cos(z * 0.017) * 0.1;
@@ -306,6 +337,10 @@
       if (biome === 'alpine') return new THREE.Color(0xdce8ee);
       if (biome === 'rock' || slope > 1.55) return new THREE.Color(0x80877d);
       if (biome === 'forest') return new THREE.Color(0x245f33);
+      if (biome === 'jungle') return new THREE.Color(0x166b3d);
+      if (biome === 'swamp') return new THREE.Color(0x456b3d);
+      if (biome === 'desert') return new THREE.Color(0xd7ad59);
+      if (biome === 'tundra') return new THREE.Color(0xb8c7bd);
       if (biome === 'savanna') return new THREE.Color(0xb6a34b);
       if (biome === 'plains') return new THREE.Color(0x72b957);
       return new THREE.Color(0x4ba048);
@@ -404,14 +439,14 @@
     }
 
     const groundMaterial = new THREE.MeshStandardMaterial({ roughness: 0.94, side: THREE.DoubleSide, vertexColors: true });
-    const ground = new THREE.Mesh(createIslandGeometry(ISLAND_RADIUS), groundMaterial);
+    const ground = new THREE.Mesh(createIslandGeometry(ISLAND_RADIUS, 164, 336), groundMaterial);
     ground.receiveShadow = true;
     world.add(ground);
 
     const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x5c6171, roughness: 0.86 });
     const roadGroup = new THREE.Group();
     const roadAngle = -0.26;
-    const roadLength = 300;
+    const roadLength = 450;
     const roadSegments = 60;
     for (let i = 0; i < roadSegments; i++) {
       const localZ = -roadLength / 2 + (i + 0.5) * (roadLength / roadSegments);
@@ -432,11 +467,27 @@
     const pineMaterial = new THREE.MeshStandardMaterial({ color: 0x174f38, roughness: 0.82 });
     const dryLeafMaterial = new THREE.MeshStandardMaterial({ color: 0x9f9a3a, roughness: 0.86 });
     const palmLeafMaterial = new THREE.MeshStandardMaterial({ color: 0x2f9b55, roughness: 0.78 });
+    const jungleLeafMaterial = new THREE.MeshStandardMaterial({ color: 0x0f8a4d, roughness: 0.8 });
+    const swampLeafMaterial = new THREE.MeshStandardMaterial({ color: 0x315b35, roughness: 0.88 });
+    const cactusMaterial = new THREE.MeshStandardMaterial({ color: 0x2f8f4e, roughness: 0.86 });
 
     function createTree(x, z, scale = 1, biome = biomeAt(x, z)) {
       const tree = new THREE.Group();
 
-      if (biome === 'beach') {
+      if (biome === 'desert') {
+        const cactus = new THREE.Mesh(new THREE.CylinderGeometry(0.28 * scale, 0.34 * scale, 3.2 * scale, 9), cactusMaterial);
+        cactus.position.y = 1.6 * scale;
+        cactus.castShadow = true;
+        tree.add(cactus);
+
+        [-1, 1].forEach(side => {
+          const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.16 * scale, 0.18 * scale, 1.25 * scale, 8), cactusMaterial);
+          arm.position.set(side * 0.48 * scale, 2.15 * scale, 0);
+          arm.rotation.z = Math.PI / 2;
+          arm.castShadow = true;
+          tree.add(arm);
+        });
+      } else if (biome === 'beach') {
         const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.14 * scale, 0.24 * scale, 3.3 * scale, 8), palmTrunkMaterial);
         trunk.position.y = 1.65 * scale;
         trunk.rotation.z = (Math.random() - 0.5) * 0.22;
@@ -457,10 +508,10 @@
         trunk.castShadow = true;
         tree.add(trunk);
 
-        const isPine = biome === 'forest' || biome === 'alpine' || biome === 'rock';
+        const isPine = biome === 'forest' || biome === 'alpine' || biome === 'rock' || biome === 'tundra';
         const leaves = new THREE.Mesh(
           new THREE.ConeGeometry((isPine ? 1.2 : 1.35) * scale, (isPine ? 4.2 : 3.6) * scale, 10),
-          isPine ? pineMaterial : (biome === 'savanna' ? dryLeafMaterial : leafMaterials[Math.floor(Math.random() * leafMaterials.length)])
+          isPine ? pineMaterial : (biome === 'savanna' ? dryLeafMaterial : (biome === 'jungle' ? jungleLeafMaterial : (biome === 'swamp' ? swampLeafMaterial : leafMaterials[Math.floor(Math.random() * leafMaterials.length)])))
         );
         leaves.position.y = (isPine ? 3.55 : 3.35) * scale;
         leaves.castShadow = true;
@@ -473,16 +524,16 @@
 
     let plantedTrees = 0;
     let treeAttempts = 0;
-    while (plantedTrees < 420 && treeAttempts < 1800) {
+    while (plantedTrees < 680 && treeAttempts < 2800) {
       treeAttempts++;
       const angle = Math.random() * Math.PI * 2;
       const radius = 18 + Math.random() * (ISLAND_RADIUS - 28);
       const x = Math.cos(angle) * radius;
       const z = Math.sin(angle) * radius;
       const biome = biomeAt(x, z);
-      const maxSlope = biome === 'beach' || biome === 'plains' ? 0.7 : 1.2;
-      if (Math.abs(x - 9) > 10 && Math.hypot(x + 38, z + 26) > 31 && terrainSlope(x, z) < maxSlope && biome !== 'rock') {
-        const biomeScale = biome === 'beach' ? 0.9 : (biome === 'forest' ? 1.08 : 1);
+      const maxSlope = biome === 'beach' || biome === 'plains' || biome === 'swamp' || biome === 'desert' ? 0.7 : 1.2;
+      if (Math.abs(x - 9) > 10 && Math.hypot(x + 38, z + 26) > 31 && terrainSlope(x, z) < maxSlope && biome !== 'rock' && biome !== 'alpine') {
+        const biomeScale = biome === 'beach' ? 0.9 : (biome === 'forest' || biome === 'jungle' ? 1.08 : (biome === 'desert' ? 0.78 : 1));
         createTree(x, z, (0.65 + Math.random() * 1.05) * biomeScale, biome);
         plantedTrees++;
       }
@@ -519,7 +570,7 @@
       world.add(reliefCluster);
     }
 
-    [[-112, 70, 1.7], [104, -68, 1.45], [8, -124, 1.15], [136, 36, 1.05]].forEach(([x, z, scale]) => createReliefCluster(x, z, scale));
+    [[-168, 105, 1.7], [156, -102, 1.45], [12, -186, 1.15], [204, 54, 1.05], [-238, -96, 1.25], [232, 136, 1.1]].forEach(([x, z, scale]) => createReliefCluster(x, z, scale));
 
     const wallMaterials = [0xffd166, 0xef476f, 0x54c6eb, 0x9b5de5].map(color => new THREE.MeshStandardMaterial({ color, roughness: 0.65 }));
     const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x26324d, roughness: 0.72 });
@@ -554,12 +605,12 @@
       world.add(house);
     }
 
-    [[-52, 32], [-20, 48], [60, -44], [88, 24], [-76, -20], [124, -76], [-124, 84], [144, 60], [26, 118], [-152, -58]].forEach(([x, z], index) => createHouse(x, z, index));
+    [[-52, 32], [-20, 48], [60, -44], [88, 24], [-76, -20], [124, -76], [-124, 84], [144, 60], [26, 118], [-152, -58], [206, 118], [-224, -122], [188, -168], [-196, 156], [42, 214]].forEach(([x, z], index) => createHouse(x, z, index));
 
     const platformMaterial = new THREE.MeshStandardMaterial({ color: 0xd89a4b, roughness: 0.72 });
-    for (let i = 0; i < 16; i++) {
-      const x = -82 + i * 11;
-      const z = 104 + Math.sin(i) * 16;
+    for (let i = 0; i < 24; i++) {
+      const x = -123 + i * 12;
+      const z = 156 + Math.sin(i) * 22;
       if (Math.hypot(x, z) > ISLAND_RADIUS - 18 || terrainSlope(x, z) > 0.9) continue;
       const platform = new THREE.Mesh(new THREE.BoxGeometry(5, 0.6, 5), platformMaterial);
       platform.position.set(x, groundY(x, z, 0.3), z);
@@ -579,16 +630,24 @@
     const keys = new Set();
     const velocity = new THREE.Vector3();
     const direction = new THREE.Vector3();
+    const playerPosition = camera.position.clone();
     let yaw = 0;
     let pitch = 0;
+    let smoothYaw = 0;
+    let smoothPitch = 0;
     let isLocked = false;
     let canJump = false;
+    let isFlying = false;
     let currentEyeHeight = 2.15;
     const STAND_EYE_HEIGHT = 2.15;
     const CROUCH_EYE_HEIGHT = 1.18;
     const WALK_SPEED = 9.8;
     const SPRINT_SPEED = 16.5;
     const CROUCH_SPEED = 4.8;
+    const FLY_SPEED = 14.5;
+    const FLY_SPRINT_SPEED = 24;
+    const CAMERA_POSITION_SMOOTHING = 16;
+    const CAMERA_ROTATION_SMOOTHING = 24;
 
     blocker.addEventListener('click', () => document.body.requestPointerLock());
 
@@ -602,16 +661,21 @@
       yaw -= event.movementX * 0.0022;
       pitch -= event.movementY * 0.0022;
       pitch = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, pitch));
-      camera.rotation.set(pitch, yaw, 0, 'YXZ');
     });
 
     document.addEventListener('keydown', event => {
-      if (['Space', 'ControlLeft', 'ControlRight'].includes(event.code)) {
+      if (['Space', 'ControlLeft', 'ControlRight', 'KeyP'].includes(event.code)) {
         event.preventDefault();
+      }
+      if (event.code === 'KeyP' && !event.repeat) {
+        isFlying = !isFlying;
+        velocity.y = 0;
+        canJump = !isFlying;
+        modeLabel.textContent = isFlying ? 'Modo: Vuelo' : 'Modo: Tierra';
       }
       keys.add(event.code);
       const isCrouching = keys.has('ControlLeft') || keys.has('ControlRight') || keys.has('KeyC');
-      if (event.code === 'Space' && canJump && !isCrouching) {
+      if (event.code === 'Space' && canJump && !isCrouching && !isFlying) {
         velocity.y = 8.2;
         canJump = false;
       }
@@ -622,43 +686,58 @@
     const clock = new THREE.Clock();
 
     function updatePlayer(delta) {
-      const isCrouching = keys.has('ControlLeft') || keys.has('ControlRight') || keys.has('KeyC');
+      const wantsCrouchOrDescend = keys.has('ControlLeft') || keys.has('ControlRight') || keys.has('KeyC');
+      const isCrouching = !isFlying && wantsCrouchOrDescend;
       const isSprinting = !isCrouching && (keys.has('ShiftLeft') || keys.has('ShiftRight'));
-      const speed = isCrouching ? CROUCH_SPEED : (isSprinting ? SPRINT_SPEED : WALK_SPEED);
+      const speed = isFlying ? (isSprinting ? FLY_SPRINT_SPEED : FLY_SPEED) : (isCrouching ? CROUCH_SPEED : (isSprinting ? SPRINT_SPEED : WALK_SPEED));
       currentEyeHeight = THREE.MathUtils.lerp(currentEyeHeight, isCrouching ? CROUCH_EYE_HEIGHT : STAND_EYE_HEIGHT, 1 - Math.exp(-12 * delta));
 
       direction.set(0, 0, 0);
       if (keys.has('KeyW')) direction.z -= 1;
       if (keys.has('KeyS')) direction.z += 1;
-      if (keys.has('KeyA')) direction.x -= 1;
-      if (keys.has('KeyD')) direction.x += 1;
+      if (keys.has('KeyA')) direction.x += 1;
+      if (keys.has('KeyD')) direction.x -= 1;
       direction.normalize();
 
       const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
       const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-      camera.position.addScaledVector(forward, -direction.z * speed * delta);
-      camera.position.addScaledVector(right, direction.x * speed * delta);
+      playerPosition.addScaledVector(forward, -direction.z * speed * delta);
+      playerPosition.addScaledVector(right, direction.x * speed * delta);
 
-      const playerRadius = Math.hypot(camera.position.x, camera.position.z);
+      const playerRadius = Math.hypot(playerPosition.x, playerPosition.z);
       const maxRadius = ISLAND_RADIUS - 4;
       if (playerRadius > maxRadius) {
         const correction = maxRadius / playerRadius;
-        camera.position.x *= correction;
-        camera.position.z *= correction;
+        playerPosition.x *= correction;
+        playerPosition.z *= correction;
       }
 
-      velocity.y -= 22 * delta;
-      camera.position.y += velocity.y * delta;
-
-      const playerGroundY = groundY(camera.position.x, camera.position.z, currentEyeHeight);
-      if (camera.position.y < playerGroundY) {
-        camera.position.y = playerGroundY;
+      if (isFlying) {
+        const verticalDirection = (keys.has('Space') ? 1 : 0) - (wantsCrouchOrDescend ? 1 : 0);
+        playerPosition.y += verticalDirection * speed * delta;
+        playerPosition.y = THREE.MathUtils.clamp(playerPosition.y, groundY(playerPosition.x, playerPosition.z, STAND_EYE_HEIGHT + 0.35), WATER_LEVEL + 150);
         velocity.y = 0;
-        canJump = true;
+        canJump = false;
+      } else {
+        velocity.y -= 22 * delta;
+        playerPosition.y += velocity.y * delta;
+
+        const playerGroundY = groundY(playerPosition.x, playerPosition.z, currentEyeHeight);
+        if (playerPosition.y < playerGroundY) {
+          playerPosition.y = playerGroundY;
+          velocity.y = 0;
+          canJump = true;
+        }
       }
+
+      const positionBlend = 1 - Math.exp(-CAMERA_POSITION_SMOOTHING * delta);
+      camera.position.lerp(playerPosition, positionBlend);
+      smoothYaw = THREE.MathUtils.lerp(smoothYaw, yaw, 1 - Math.exp(-CAMERA_ROTATION_SMOOTHING * delta));
+      smoothPitch = THREE.MathUtils.lerp(smoothPitch, pitch, 1 - Math.exp(-CAMERA_ROTATION_SMOOTHING * delta));
+      camera.rotation.set(smoothPitch, smoothYaw, 0, 'YXZ');
 
       playerBody.scale.y = isCrouching ? 0.58 : 1;
-      playerBody.position.copy(camera.position).add(new THREE.Vector3(0, -currentEyeHeight + 0.55, 0));
+      playerBody.position.copy(playerPosition).add(new THREE.Vector3(0, -currentEyeHeight + 0.55, 0));
     }
 
     function animate() {
