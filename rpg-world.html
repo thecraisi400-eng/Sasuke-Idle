@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RPG Open World</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;overflow:hidden;font-family:'Segoe UI',sans-serif;width:100vw;height:100vh;}
+#gameContainer{position:relative;width:100vw;height:100vh;overflow:hidden;}
+#worldCanvas{display:block;}
+#ui{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;}
+#minimap{position:fixed;bottom:20px;right:20px;width:160px;height:160px;border:2px solid rgba(255,220,100,0.8);border-radius:4px;background:rgba(0,0,0,0.7);pointer-events:none;}
+#minimapCanvas{width:160px;height:160px;}
+#stats{position:fixed;top:20px;left:20px;background:rgba(0,0,0,0.75);border:1px solid rgba(255,220,100,0.5);border-radius:8px;padding:12px 16px;color:#fff;min-width:180px;}
+#stats h3{color:#ffd96a;font-size:13px;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
+.bar-label{font-size:11px;color:#aaa;margin-bottom:3px;}
+.bar-bg{background:rgba(255,255,255,0.1);border-radius:3px;height:8px;margin-bottom:8px;}
+.bar-fill{height:100%;border-radius:3px;transition:width 0.3s;}
+#hpBar{background:linear-gradient(90deg,#e74c3c,#c0392b);}
+#mpBar{background:linear-gradient(90deg,#2980b9,#1a6b9a);}
+#expBar{background:linear-gradient(90deg,#f39c12,#d68910);}
+#coordDisplay{position:fixed;bottom:20px;left:20px;background:rgba(0,0,0,0.75);border:1px solid rgba(255,220,100,0.5);border-radius:6px;padding:8px 12px;color:#aaa;font-size:12px;}
+#zoneDisplay{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);border:1px solid rgba(255,220,100,0.6);border-radius:6px;padding:8px 20px;color:#ffd96a;font-size:14px;font-weight:bold;letter-spacing:1px;transition:opacity 0.5s;}
+#controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px 16px;color:#888;font-size:11px;text-align:center;}
+#loadingScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0a0a;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;}
+#loadingScreen h1{font-size:48px;color:#ffd96a;text-shadow:0 0 30px rgba(255,220,100,0.5);margin-bottom:10px;letter-spacing:4px;}
+#loadingScreen p{color:#888;font-size:14px;margin-bottom:30px;}
+#loadBar{width:300px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;}
+#loadFill{height:100%;background:#ffd96a;border-radius:2px;width:0%;transition:width 0.1s;}
+</style>
+</head>
+<body>
+<div id="loadingScreen">
+  <h1>⚔ OPEN WORLD ⚔</h1>
+  <p>Generando mundo...</p>
+  <div id="loadBar"><div id="loadFill"></div></div>
+</div>
+<div id="gameContainer">
+  <canvas id="worldCanvas"></canvas>
+</div>
+<div id="ui">
+  <div id="stats">
+    <h3>🧙 Aventurero</h3>
+    <div class="bar-label">❤ Vida <span id="hpVal">100/100</span></div>
+    <div class="bar-bg"><div class="bar-fill" id="hpBar" style="width:100%"></div></div>
+    <div class="bar-label">💧 Maná <span id="mpVal">80/80</span></div>
+    <div class="bar-bg"><div class="bar-fill" id="mpBar" style="width:100%"></div></div>
+    <div class="bar-label">⭐ Exp Nivel 1</div>
+    <div class="bar-bg"><div class="bar-fill" id="expBar" style="width:10%"></div></div>
+  </div>
+  <div id="zoneDisplay">Praderas del Sur</div>
+  <canvas id="minimapCanvas" width="160" height="160"></canvas>
+  <div id="minimap" style="pointer-events:none;position:fixed;bottom:20px;right:20px;"></div>
+  <div id="coordDisplay">X: 0 | Y: 0 | Zona: Praderas</div>
+  <div id="controls">🖱 Click en el mapa para moverse automáticamente | Scroll: Zoom</div>
+</div>
+
+<script>
+const canvas = document.getElementById('worldCanvas');
+const ctx = canvas.getContext('2d');
+const mmCanvas = document.getElementById('minimapCanvas');
+const mmCtx = mmCanvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// ─── WORLD CONSTANTS ───────────────────────────────────────────────
+const WORLD_W = 4096;
+const WORLD_H = 4096;
+const TILE = 4;
+const COLS = WORLD_W / TILE;
+const ROWS = WORLD_H / TILE;
+
+// ─── WORLD DATA ─────────────────────────────────────────────────────
+let heightMap = new Float32Array(COLS * ROWS);
+let biomeMap  = new Uint8Array(COLS * ROWS);
+let worldImg  = null;
+
+// ─── CAMERA ─────────────────────────────────────────────────────────
+let cam = { x: WORLD_W/2 - canvas.width/2, y: WORLD_H/2 - canvas.height/2, zoom: 1 };
+const MIN_ZOOM = 0.4, MAX_ZOOM = 2.5;
+
+// ─── PLAYER ─────────────────────────────────────────────────────────
+let player = {
+  wx: WORLD_W/2, wy: WORLD_H/2,
+  speed: 180, // pixels/sec
+  targetX: WORLD_W/2, targetY: WORLD_H/2,
+  moving: false,
+  angle: 0,
+  stepAnim: 0,
+  path: [],
+  hp: 100, maxHp: 100,
+  mp: 80, maxMp: 80,
+  exp: 10, expNext: 100,
+  level: 1
+};
+
+// ─── OBJECTS (trees, shrubs, animals) ───────────────────────────────
+let objects = [];
+let animals = [];
+
+// ─── NOISE ──────────────────────────────────────────────────────────
+function smoothNoise(x, y, freq, seed){
+  let xi = Math.floor(x * freq) ^ seed;
+  let yi = Math.floor(y * freq) ^ (seed * 31);
+  function h(n){ n=(n<<13)^n; return 1-(((n*(n*n*15731+789221)+1376312589)&0x7fffffff)/1073741824); }
+  let fx = x * freq - Math.floor(x * freq);
+  let fy = y * freq - Math.floor(y * freq);
+  fx = fx*fx*(3-2*fx);
+  fy = fy*fy*(3-2*fy);
+  let v00=h(xi+yi*57), v10=h(xi+1+yi*57), v01=h(xi+(yi+1)*57), v11=h(xi+1+(yi+1)*57);
+  return v00+(v10-v00)*fx + (v01-v00+( v10-v00-(v11-v00) )*fx)*fy;
+}
+
+function fbm(x, y, octaves, seed){
+  let v=0, amp=0.5, freq=1, max=0;
+  for(let i=0;i<octaves;i++){ v+=smoothNoise(x,y,freq,seed)*amp; max+=amp; amp*=0.5; freq*=2.1; }
+  return v/max;
+}
+
+// ─── BIOME COLORS ───────────────────────────────────────────────────
+// 0=deep water,1=water,2=shore,3=sand,4=grass,5=dark grass,6=forest,7=rock,8=snow,9=mountain,10=swamp
+const BIOME_COLORS = [
+  '#0a2a5e','#1a4a8a','#2a6ab5','#e8d5a3','#6ab04c','#4a9040','#2d6e2d',
+  '#7a7a7a','#e8e8e8','#9a9a9a','#4a6b4a'
+];
+const BIOME_NAMES = ['Océano','Mar','Costa','Playa','Praderas','Llanura','Bosque','Roca','Nieve','Montaña','Pantano'];
+
+// ─── GENERATE WORLD ─────────────────────────────────────────────────
+function generateWorld(progress){
+  const S1=42, S2=137, S3=999;
+  for(let iy=0; iy<ROWS; iy++){
+    let ny = iy/ROWS;
+    for(let ix=0; ix<COLS; ix++){
+      let nx = ix/COLS;
+      // distance from center falloff for ocean border
+      let dx = (nx-0.5)*2, dy = (ny-0.5)*2;
+      let dist = Math.sqrt(dx*dx+dy*dy);
+      let border = Math.max(0, 1 - Math.pow(Math.max(0,dist-0.62)/0.38, 2));
+      
+      let h = fbm(nx*3,ny*3,7,S1)*0.6 + fbm(nx*6,ny*6,4,S2)*0.3 + fbm(nx*1.5,ny*1.5,3,S3)*0.1;
+      h = h * border;
+      heightMap[iy*COLS+ix] = h;
+      
+      // assign biome
+      let b;
+      if(h < 0.05) b=0;        // deep water
+      else if(h < 0.12) b=1;   // water
+      else if(h < 0.16) b=2;   // shore/coast
+      else if(h < 0.20) b=3;   // sand/beach
+      else if(h < 0.42) b=4;   // grass
+      else if(h < 0.55) b=5;   // dark grass
+      else if(h < 0.65) b=6;   // forest
+      else if(h < 0.72) b=9;   // mountain rock
+      else if(h < 0.80) b=7;   // rock
+      else b=8;                 // snow peak
+      
+      // swamp in low wet areas near water
+      let moisture = fbm(nx*5+100, ny*5+100, 4, S2+77);
+      if(b==4 && moisture > 0.7 && h < 0.30) b=10;
+      
+      biomeMap[iy*COLS+ix] = b;
+    }
+    if(iy % 50 === 0) progress(iy/ROWS);
+  }
+}
+
+// ─── RENDER WORLD TO IMAGE ──────────────────────────────────────────
+function renderWorldToImage(progress){
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = COLS; offCanvas.height = ROWS;
+  const offCtx = offCanvas.getContext('2d');
+  const img = offCtx.createImageData(COLS, ROWS);
+  const d = img.data;
+  
+  for(let i=0; i<COLS*ROWS; i++){
+    let b = biomeMap[i];
+    let h = heightMap[i];
+    let col = hexToRgb(BIOME_COLORS[b]);
+    // shading by height for terrain feel
+    let shade = 0.8 + h * 0.4;
+    // noise detail
+    let iy = Math.floor(i/COLS), ix = i%COLS;
+    let det = smoothNoise(ix/COLS*20, iy/ROWS*20, 1, 555)*0.1;
+    shade += det;
+    d[i*4]   = Math.min(255, col.r * shade);
+    d[i*4+1] = Math.min(255, col.g * shade);
+    d[i*4+2] = Math.min(255, col.b * shade);
+    d[i*4+3] = 255;
+  }
+  offCtx.putImageData(img, 0, 0);
+  
+  // scale to full world
+  const finalCanvas = document.createElement('canvas');
+  finalCanvas.width = WORLD_W; finalCanvas.height = WORLD_H;
+  const fCtx = finalCanvas.getContext('2d');
+  fCtx.imageSmoothingEnabled = true;
+  fCtx.imageSmoothingQuality = 'high';
+  fCtx.drawImage(offCanvas, 0, 0, WORLD_W, WORLD_H);
+  
+  worldImg = finalCanvas;
+  progress(1);
+}
+
+function hexToRgb(hex){
+  let r = parseInt(hex.slice(1,3),16);
+  let g = parseInt(hex.slice(3,5),16);
+  let b = parseInt(hex.slice(5,7),16);
+  return {r,g,b};
+}
+
+// ─── PLACE OBJECTS ──────────────────────────────────────────────────
+function placeObjects(){
+  objects = [];
+  let rng = mulberry32(9999);
+  
+  for(let i=0; i<6000; i++){
+    let wx = rng() * WORLD_W;
+    let wy = rng() * WORLD_H;
+    let bx = Math.floor(wx/TILE), by = Math.floor(wy/TILE);
+    if(bx<0||by<0||bx>=COLS||by>=ROWS) continue;
+    let b = biomeMap[by*COLS+bx];
+    
+    if(b===4||b===5||b===6){
+      // trees in grass/forest
+      let type = (b===6) ? (rng()<0.6 ? 'pine':'oak') : (rng()<0.4 ? 'oak':'shrub');
+      let scale = 0.7 + rng()*0.8;
+      objects.push({wx,wy,type,scale,z:wy});
+    }
+    if(b===3&&rng()<0.3){
+      objects.push({wx,wy,type:'palmtree',scale:0.6+rng()*0.5,z:wy});
+    }
+    if(b===4&&rng()<0.6){
+      objects.push({wx,wy,type:'shrub',scale:0.4+rng()*0.5,z:wy});
+    }
+    if(b===10){
+      objects.push({wx,wy,type:'swamptree',scale:0.5+rng()*0.6,z:wy});
+    }
+  }
+  
+  // add rocks near mountains
+  for(let i=0; i<800; i++){
+    let wx = rng() * WORLD_W;
+    let wy = rng() * WORLD_H;
+    let bx = Math.floor(wx/TILE), by = Math.floor(wy/TILE);
+    if(bx<0||by<0||bx>=COLS||by>=ROWS) continue;
+    let b = biomeMap[by*COLS+bx];
+    if(b===7||b===9){
+      objects.push({wx,wy,type:'rock',scale:0.5+rng()*1,z:wy});
+    }
+  }
+  
+  // sort by depth
+  objects.sort((a,b)=>a.z-b.z);
+  
+  // animals (very few)
+  animals = [];
+  for(let i=0; i<30; i++){
+    let wx = rng() * WORLD_W;
+    let wy = rng() * WORLD_H;
+    let bx = Math.floor(wx/TILE), by = Math.floor(wy/TILE);
+    if(bx<0||by<0||bx>=COLS||by>=ROWS) continue;
+    let b = biomeMap[by*COLS+bx];
+    let type;
+    if(b===4||b===5) type = rng()<0.5?'deer':'rabbit';
+    else if(b===6) type = rng()<0.4?'bear':'wolf';
+    else if(b===3) type = 'seagull';
+    else continue;
+    animals.push({
+      wx,wy,type,
+      vx: (rng()-0.5)*30,
+      vy: (rng()-0.5)*30,
+      idle: rng()*5,
+      idleMax: 3+rng()*6,
+      dir: 1, stepAnim:0, hp:100
+    });
+  }
+}
+
+function mulberry32(a){
+  return function(){
+    a|=0; a=a+0x6D2B79F5|0;
+    let t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  }
+}
+
+// ─── DRAW OBJECTS ───────────────────────────────────────────────────
+function drawTree(cx, cy, sc, type){
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(sc, sc);
+  
+  if(type==='pine'){
+    // trunk
+    ctx.fillStyle='#5d3a1a';
+    ctx.fillRect(-3,0,6,18);
+    // layers
+    const layers=[['#1a5c1a',28,-14,0],['#1e7a1e',22,-28,0],['#228b22',16,-40,0]];
+    for(let [c,w,y,x] of layers){
+      ctx.fillStyle=c;
+      ctx.beginPath(); ctx.moveTo(x-w/2,y+14); ctx.lineTo(x+w/2,y+14); ctx.lineTo(x,y); ctx.closePath(); ctx.fill();
+    }
+  } else if(type==='oak'){
+    ctx.fillStyle='#5d3a1a';
+    ctx.fillRect(-3,0,6,20);
+    ctx.fillStyle='#2d7d2d';
+    ctx.beginPath(); ctx.arc(0,-22,18,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#3a9a3a';
+    ctx.beginPath(); ctx.arc(-8,-28,10,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(8,-25,11,0,Math.PI*2); ctx.fill();
+  } else if(type==='palmtree'){
+    // curved trunk
+    ctx.strokeStyle='#8B6914'; ctx.lineWidth=5;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.quadraticCurveTo(8,-20,4,-38); ctx.stroke();
+    ctx.fillStyle='#2a8a2a';
+    for(let i=0;i<6;i++){
+      let a=i*60*Math.PI/180 - Math.PI/2;
+      ctx.save(); ctx.translate(4,-40); ctx.rotate(a);
+      ctx.fillStyle='#3cb34a';
+      ctx.beginPath(); ctx.ellipse(12,0,14,4,0,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  } else if(type==='swamptree'){
+    ctx.fillStyle='#3d2b1a';
+    ctx.fillRect(-3,0,6,22);
+    ctx.fillStyle='#3a5a2a';
+    ctx.beginPath(); ctx.arc(0,-18,14,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=0.4;
+    ctx.fillStyle='#1a3a1a';
+    ctx.beginPath(); ctx.arc(-6,-22,8,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=1;
+  } else if(type==='shrub'){
+    ctx.fillStyle='#2a6a2a';
+    ctx.beginPath(); ctx.arc(0,-6,9,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#3a8a3a';
+    ctx.beginPath(); ctx.arc(-5,-8,6,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(5,-9,5,0,Math.PI*2); ctx.fill();
+  } else if(type==='rock'){
+    ctx.fillStyle='#666';
+    ctx.beginPath(); ctx.ellipse(0,-6,12,8,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#888';
+    ctx.beginPath(); ctx.ellipse(-4,-9,5,4,-0.3,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawAnimal(a, sx, sy, sc){
+  ctx.save();
+  ctx.translate(sx, sy);
+  let s = a.stepAnim;
+  
+  if(a.type==='deer'){
+    ctx.scale(sc*a.dir, sc);
+    ctx.fillStyle='#b5651d';
+    ctx.fillRect(-8,-2,16,10);
+    ctx.fillRect(-3,-12,6,12);
+    // legs
+    let leg=Math.sin(s*5)*3;
+    ctx.fillRect(-7,8,3,10+leg);
+    ctx.fillRect(-2,8,3,8-leg);
+    ctx.fillRect(3,8,3,10+leg);
+    ctx.fillRect(7,8,3,8-leg);
+    // head+antlers
+    ctx.beginPath(); ctx.arc(10,-14,5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#8B4513'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(13,-18); ctx.lineTo(16,-25); ctx.moveTo(16,-25); ctx.lineTo(14,-22); ctx.moveTo(16,-25); ctx.lineTo(19,-23); ctx.stroke();
+  } else if(a.type==='rabbit'){
+    ctx.scale(sc*a.dir, sc);
+    ctx.fillStyle='#d4c8b0';
+    ctx.beginPath(); ctx.ellipse(0,2,6,8,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(5,-5,5,5,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#b8a898';
+    ctx.fillRect(3,-14,2,10); ctx.fillRect(6,-14,2,9);
+    let bleg=Math.abs(Math.sin(s*6))*3;
+    ctx.fillRect(-5,8,4,6+bleg); ctx.fillRect(2,8,4,6+bleg);
+  } else if(a.type==='bear'){
+    ctx.scale(sc*a.dir, sc);
+    ctx.fillStyle='#6b4226';
+    ctx.beginPath(); ctx.ellipse(0,0,14,10,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(14,-8,8,0,Math.PI*2); ctx.fill();
+    let bleg=Math.sin(s*4)*4;
+    ctx.fillRect(-12,8,6,12+bleg); ctx.fillRect(-4,8,6,10-bleg); ctx.fillRect(4,8,6,12+bleg);
+    ctx.fillStyle='#3a2010'; ctx.beginPath(); ctx.arc(14,-8,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#6b4226'; ctx.beginPath(); ctx.arc(10,-14,4,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(18,-14,4,0,Math.PI*2); ctx.fill();
+  } else if(a.type==='wolf'){
+    ctx.scale(sc*a.dir, sc);
+    ctx.fillStyle='#7a7a8a';
+    ctx.beginPath(); ctx.ellipse(0,0,12,7,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(11,-6,7,6,-0.2,0,Math.PI*2); ctx.fill();
+    let wleg=Math.sin(s*5)*4;
+    ctx.fillRect(-10,6,4,10+wleg); ctx.fillRect(-4,6,4,8-wleg); ctx.fillRect(3,6,4,10+wleg); ctx.fillRect(8,6,4,8-wleg);
+    ctx.fillStyle='#555'; ctx.beginPath(); ctx.arc(10,-10,3,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(14,-10,3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-10,0); ctx.quadraticCurveTo(-18,-5,-14,-10); ctx.strokeStyle='#7a7a8a'; ctx.lineWidth=4; ctx.stroke();
+  } else if(a.type==='seagull'){
+    ctx.scale(sc, sc);
+    ctx.fillStyle='#ddd';
+    let fly=Math.sin(s*3)*5;
+    ctx.beginPath(); ctx.moveTo(-12,fly); ctx.quadraticCurveTo(-6,fly-8,0,fly); ctx.quadraticCurveTo(6,fly-8,12,fly); ctx.lineWidth=3; ctx.strokeStyle='#ccc'; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0,fly+2,4,3,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#f90'; ctx.fillRect(3,fly+2,5,2);
+  }
+  ctx.restore();
+}
+
+function drawPlayer(sx, sy, sc){
+  ctx.save();
+  ctx.translate(sx, sy);
+  ctx.scale(sc, sc);
+  let s = player.stepAnim;
+  let moving = player.moving;
+  let dir = player.angle > Math.PI/2 && player.angle < Math.PI*1.5 ? -1 : 1;
+  ctx.scale(dir, 1);
+  
+  // shadow
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle='#000';
+  ctx.beginPath(); ctx.ellipse(0,24,12,4,0,0,Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1;
+  
+  // cloak
+  ctx.fillStyle='#5c3f96';
+  ctx.beginPath(); ctx.moveTo(-12,6); ctx.lineTo(12,6); ctx.lineTo(14,32); ctx.lineTo(-14,32); ctx.closePath(); ctx.fill();
+  
+  // body/armor
+  ctx.fillStyle='#4a4a6e';
+  ctx.fillRect(-9,4,18,20);
+  // armor highlights
+  ctx.fillStyle='#6a6a9e';
+  ctx.fillRect(-8,5,4,18); ctx.fillRect(4,5,4,18);
+  
+  // belt
+  ctx.fillStyle='#8B6914';
+  ctx.fillRect(-9,20,18,4);
+  ctx.fillStyle='#ffd700';
+  ctx.fillRect(-3,20,6,4);
+  
+  // legs
+  let legSwing = moving ? Math.sin(s * 6) * 6 : 0;
+  ctx.fillStyle='#2a2a4e';
+  ctx.save(); ctx.translate(-4,26); ctx.rotate(legSwing*Math.PI/180);
+  ctx.fillRect(-4,0,8,18); ctx.restore();
+  ctx.save(); ctx.translate(4,26); ctx.rotate(-legSwing*Math.PI/180);
+  ctx.fillRect(-4,0,8,18); ctx.restore();
+  
+  // boots
+  ctx.fillStyle='#3a2010';
+  ctx.fillRect(-9,40,9,6); ctx.fillRect(0,40,9,6);
+  
+  // arms
+  let armSwing = moving ? Math.sin(s * 6) * 10 : 0;
+  ctx.fillStyle='#4a4a6e';
+  ctx.save(); ctx.translate(-12,8); ctx.rotate(-armSwing*Math.PI/180);
+  ctx.fillRect(-4,0,8,18); ctx.restore();
+  ctx.save(); ctx.translate(12,8); ctx.rotate(armSwing*Math.PI/180);
+  ctx.fillRect(-4,0,8,18); ctx.restore();
+  
+  // hands
+  ctx.fillStyle='#d4a88a';
+  ctx.beginPath(); ctx.arc(-14,26,5,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(14,26,5,0,Math.PI*2); ctx.fill();
+  
+  // sword (right hand)
+  ctx.strokeStyle='#ccc'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(16,28); ctx.lineTo(26,6); ctx.stroke();
+  ctx.fillStyle='#ffd700'; ctx.fillRect(11,22,10,3);
+  
+  // head
+  ctx.fillStyle='#d4a88a';
+  ctx.beginPath(); ctx.arc(0,-8,12,0,Math.PI*2); ctx.fill();
+  
+  // hair/hood
+  ctx.fillStyle='#5c3f96';
+  ctx.beginPath(); ctx.arc(0,-10,13,Math.PI,0); ctx.fill();
+  ctx.beginPath(); ctx.arc(-6,-5,5,Math.PI,-0.2); ctx.fill();
+  ctx.beginPath(); ctx.arc(6,-5,5,Math.PI+0.2,0); ctx.fill();
+  
+  // eyes
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(-4,-8,3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4,-8,3,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#1a1aff';
+  ctx.beginPath(); ctx.arc(-4,-8,2,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4,-8,2,0,Math.PI*2); ctx.fill();
+  
+  ctx.restore();
+}
+
+// ─── PATHFINDING (simple direct path with obstacle avoidance)────────
+function setTarget(wx, wy){
+  player.targetX = wx;
+  player.targetY = wy;
+  player.moving = true;
+}
+
+// ─── ZONE DETECTION ─────────────────────────────────────────────────
+const ZONES = [
+  {name:'Praderas del Sur',check:(x,y)=>y>WORLD_H*0.6&&x>WORLD_W*0.2&&x<WORLD_W*0.8},
+  {name:'Bosque del Norte',check:(x,y)=>y<WORLD_H*0.35&&x>WORLD_W*0.25&&x<WORLD_W*0.75},
+  {name:'Costa del Este',check:(x,y)=>x>WORLD_W*0.72&&y>WORLD_H*0.2&&y<WORLD_H*0.8},
+  {name:'Costa del Oeste',check:(x,y)=>x<WORLD_W*0.28&&y>WORLD_H*0.2&&y<WORLD_H*0.8},
+  {name:'Montañas Centrales',check:(x,y)=>{let bx=Math.floor(x/TILE),by=Math.floor(y/TILE);let b=biomeMap[Math.min(ROWS-1,by)*COLS+Math.min(COLS-1,bx)];return b===7||b===9;}},
+  {name:'Playa',check:(x,y)=>{let bx=Math.floor(x/TILE),by=Math.floor(y/TILE);let b=biomeMap[Math.min(ROWS-1,by)*COLS+Math.min(COLS-1,bx)];return b===3||b===2;}},
+  {name:'Pantano Oscuro',check:(x,y)=>{let bx=Math.floor(x/TILE),by=Math.floor(y/TILE);return biomeMap[Math.min(ROWS-1,by)*COLS+Math.min(COLS-1,bx)]===10;}},
+  {name:'Tierras Medias',check:()=>true},
+];
+let currentZone = 'Praderas del Sur';
+let zoneTimer = 0;
+
+function getZone(x, y){
+  for(let z of ZONES){ if(z.check(x,y)) return z.name; }
+  return 'Tierras Medias';
+}
+
+// ─── MINIMAP ────────────────────────────────────────────────────────
+let mmImageData = null;
+function renderMinimap(){
+  if(!mmImageData){
+    const mmW=160,mmH=160;
+    mmImageData = mmCtx.createImageData(mmW,mmH);
+    const d = mmImageData.data;
+    for(let my=0;my<mmH;my++){
+      for(let mx=0;mx<mmW;mx++){
+        let wx=Math.floor(mx/mmW*COLS), wy=Math.floor(my/mmH*ROWS);
+        let b = biomeMap[Math.min(ROWS-1,wy)*COLS+Math.min(COLS-1,wx)];
+        let c = hexToRgb(BIOME_COLORS[b]);
+        let i=(my*mmW+mx)*4;
+        d[i]=c.r; d[i+1]=c.g; d[i+2]=c.b; d[i+3]=255;
+      }
+    }
+  }
+  mmCtx.putImageData(mmImageData,0,0);
+  // player dot
+  let px=player.wx/WORLD_W*160, py=player.wy/WORLD_H*160;
+  mmCtx.fillStyle='#fff';
+  mmCtx.beginPath(); mmCtx.arc(px,py,3,0,Math.PI*2); mmCtx.fill();
+  mmCtx.strokeStyle='#ffd700'; mmCtx.lineWidth=1;
+  mmCtx.beginPath(); mmCtx.arc(px,py,3,0,Math.PI*2); mmCtx.stroke();
+  // camera rect
+  mmCtx.strokeStyle='rgba(255,255,100,0.5)'; mmCtx.lineWidth=1;
+  let cx=cam.x/WORLD_W*160, cy=cam.y/WORLD_H*160;
+  let cw=canvas.width/(WORLD_W*cam.zoom)*160, ch=canvas.height/(WORLD_H*cam.zoom)*160;
+  mmCtx.strokeRect(cx,cy,cw,ch);
+}
+
+// ─── WATER ANIMATION ────────────────────────────────────────────────
+let waterTime = 0;
+
+// ─── MAIN GAME LOOP ─────────────────────────────────────────────────
+let lastTime = 0;
+let gameRunning = false;
+
+function updateAnimals(dt){
+  for(let a of animals){
+    a.idle -= dt;
+    if(a.idle <= 0){
+      a.vx = (Math.random()-0.5)*60;
+      a.vy = (Math.random()-0.5)*60;
+      a.dir = a.vx >= 0 ? 1 : -1;
+      a.idle = a.idleMax;
+    }
+    let nx = a.wx + a.vx*dt;
+    let ny = a.wy + a.vy*dt;
+    let bx=Math.floor(nx/TILE), by=Math.floor(ny/TILE);
+    if(bx>0&&by>0&&bx<COLS&&by<ROWS){
+      let b = biomeMap[by*COLS+bx];
+      if(b>=2){ a.wx=nx; a.wy=ny; }
+      else { a.vx=-a.vx; a.vy=-a.vy; }
+    }
+    if(a.vx!==0||a.vy!==0) a.stepAnim+=dt;
+  }
+}
+
+function gameLoop(timestamp){
+  if(!gameRunning){ requestAnimationFrame(gameLoop); return; }
+  let dt = Math.min((timestamp - lastTime)/1000, 0.05);
+  lastTime = timestamp;
+  waterTime += dt;
+  
+  // ── UPDATE PLAYER ─────
+  if(player.moving){
+    let dx = player.targetX - player.wx;
+    let dy = player.targetY - player.wy;
+    let dist = Math.sqrt(dx*dx+dy*dy);
+    player.angle = Math.atan2(dy, dx);
+    if(dist < 5){
+      player.moving = false;
+      player.wx = player.targetX;
+      player.wy = player.targetY;
+    } else {
+      let spd = player.speed * dt;
+      if(spd > dist) spd = dist;
+      player.wx += (dx/dist)*spd;
+      player.wy += (dy/dist)*spd;
+      player.stepAnim += dt;
+      
+      // check biome under player
+      let bx=Math.floor(player.wx/TILE), by=Math.floor(player.wy/TILE);
+      if(bx>=0&&by>=0&&bx<COLS&&by<ROWS){
+        let b=biomeMap[by*COLS+bx];
+        if(b<=1){ // water: stop and go back
+          player.wx -= (dx/dist)*spd*2;
+          player.wy -= (dy/dist)*spd*2;
+          player.moving = false;
+        }
+      }
+    }
+  }
+  
+  updateAnimals(dt);
+  
+  // ── CAMERA FOLLOW ─────
+  let targetCamX = player.wx - canvas.width/(2*cam.zoom);
+  let targetCamY = player.wy - canvas.height/(2*cam.zoom);
+  cam.x += (targetCamX - cam.x) * 5 * dt;
+  cam.y += (targetCamY - cam.y) * 5 * dt;
+  
+  // clamp camera
+  cam.x = Math.max(0, Math.min(WORLD_W - canvas.width/cam.zoom, cam.x));
+  cam.y = Math.max(0, Math.min(WORLD_H - canvas.height/cam.zoom, cam.y));
+  
+  // ── ZONE ─────
+  zoneTimer -= dt;
+  let z = getZone(player.wx, player.wy);
+  if(z !== currentZone){
+    currentZone = z;
+    document.getElementById('zoneDisplay').textContent = z;
+    document.getElementById('zoneDisplay').style.opacity=1;
+    zoneTimer = 3;
+  }
+  if(zoneTimer<=0) document.getElementById('zoneDisplay').style.opacity=0.4;
+  
+  document.getElementById('coordDisplay').textContent = 
+    `X: ${Math.floor(player.wx)} | Y: ${Math.floor(player.wy)} | ${currentZone}`;
+  
+  // ── DRAW ─────
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.scale(cam.zoom, cam.zoom);
+  ctx.translate(-cam.x, -cam.y);
+  
+  // draw world
+  if(worldImg){
+    ctx.drawImage(worldImg, 0, 0, WORLD_W, WORLD_H);
+  }
+  
+  // animated water overlay
+  let vx1 = Math.floor(cam.x), vy1 = Math.floor(cam.y);
+  let vx2 = Math.ceil(cam.x + canvas.width/cam.zoom);
+  let vy2 = Math.ceil(cam.y + canvas.height/cam.zoom);
+  
+  // water shimmer
+  for(let wy2=vy1;wy2<vy2;wy2+=TILE*2){
+    for(let wx2=vx1;wx2<vx2;wx2+=TILE*2){
+      let bx=Math.floor(wx2/TILE), by=Math.floor(wy2/TILE);
+      if(bx<0||by<0||bx>=COLS||by>=ROWS) continue;
+      let b=biomeMap[by*COLS+bx];
+      if(b<=1){
+        let wave=Math.sin(wx2*0.02+waterTime*2)*0.15+Math.cos(wy2*0.015+waterTime*1.5)*0.1;
+        ctx.globalAlpha=0.1+wave*0.1;
+        ctx.fillStyle= b===0 ? '#1a4a8a' : '#2a6ab5';
+        ctx.fillRect(wx2,wy2,TILE*2,TILE*2);
+        ctx.globalAlpha=1;
+      }
+    }
+  }
+  
+  // ── DRAW OBJECTS IN VIEW ──
+  for(let obj of objects){
+    if(obj.wx<vx1-60||obj.wx>vx2+60||obj.wy<vy1-100||obj.wy>vy2+60) continue;
+    
+    // shadow
+    ctx.globalAlpha=0.2;
+    ctx.fillStyle='#000';
+    ctx.beginPath(); ctx.ellipse(obj.wx, obj.wy, 10*obj.scale, 4*obj.scale, 0, 0, Math.PI*2);
+    ctx.fill(); ctx.globalAlpha=1;
+    
+    drawTree(obj.wx, obj.wy, obj.scale, obj.type);
+  }
+  
+  // ── DRAW ANIMALS ──
+  let pScale = 1/cam.zoom*1.8;
+  for(let a of animals){
+    if(a.wx<vx1-60||a.wx>vx2+60||a.wy<vy1-60||a.wy>vy2+60) continue;
+    drawAnimal(a, a.wx, a.wy, 1);
+  }
+  
+  // ── DRAW PLAYER ──
+  drawPlayer(player.wx, player.wy, 1);
+  
+  // path indicator
+  if(player.moving){
+    ctx.save();
+    ctx.globalAlpha=0.5;
+    ctx.strokeStyle='#ffd700';
+    ctx.lineWidth=2;
+    ctx.setLineDash([6,4]);
+    ctx.beginPath();
+    ctx.moveTo(player.wx, player.wy);
+    ctx.lineTo(player.targetX, player.targetY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha=0.8;
+    ctx.fillStyle='#ffd700';
+    ctx.beginPath(); ctx.arc(player.targetX, player.targetY, 6, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  
+  ctx.restore();
+  
+  // minimap
+  renderMinimap();
+  
+  requestAnimationFrame(gameLoop);
+}
+
+// ─── CLICK TO MOVE ───────────────────────────────────────────────────
+canvas.addEventListener('click', (e)=>{
+  let wx = cam.x + e.clientX/cam.zoom;
+  let wy = cam.y + e.clientY/cam.zoom;
+  let bx=Math.floor(wx/TILE), by=Math.floor(wy/TILE);
+  if(bx<0||by<0||bx>=COLS||by>=ROWS) return;
+  let b=biomeMap[by*COLS+bx];
+  if(b<=1){ return; } // can't walk on water
+  setTarget(wx, wy);
+});
+
+// ─── ZOOM ─────────────────────────────────────────────────────────────
+canvas.addEventListener('wheel', (e)=>{
+  e.preventDefault();
+  let delta = e.deltaY > 0 ? 0.9 : 1.1;
+  cam.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, cam.zoom * delta));
+},{passive:false});
+
+// ─── RESIZE ───────────────────────────────────────────────────────────
+window.addEventListener('resize', ()=>{
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+// ─── ASYNC INIT ───────────────────────────────────────────────────────
+async function init(){
+  let fill = document.getElementById('loadFill');
+  
+  // Generate height/biome maps
+  fill.style.width = '5%';
+  await new Promise(r=>setTimeout(r,10));
+  
+  generateWorld((p)=>{ fill.style.width = (5+p*45)+'%'; });
+  fill.style.width = '50%';
+  await new Promise(r=>setTimeout(r,10));
+  
+  renderWorldToImage((p)=>{ fill.style.width = (50+p*30)+'%'; });
+  fill.style.width = '80%';
+  await new Promise(r=>setTimeout(r,10));
+  
+  placeObjects();
+  fill.style.width = '90%';
+  await new Promise(r=>setTimeout(r,10));
+  
+  // find a good spawn (grass biome)
+  let spawnFound = false;
+  let rng2 = mulberry32(12345);
+  for(let t=0;t<1000;t++){
+    let sx = rng2()*WORLD_W*0.6 + WORLD_W*0.2;
+    let sy = rng2()*WORLD_H*0.6 + WORLD_H*0.2;
+    let bx=Math.floor(sx/TILE), by=Math.floor(sy/TILE);
+    if(bx>=0&&by>=0&&bx<COLS&&by<ROWS){
+      let b=biomeMap[by*COLS+bx];
+      if(b>=4&&b<=5){ player.wx=sx; player.wy=sy; player.targetX=sx; player.targetY=sy; spawnFound=true; break; }
+    }
+  }
+  
+  fill.style.width = '100%';
+  await new Promise(r=>setTimeout(r,300));
+  document.getElementById('loadingScreen').style.display='none';
+  
+  gameRunning = true;
+  lastTime = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+// ─── FIX: run init in chunks so browser doesn't freeze ───────────────
+async function chunkedInit(){
+  // Step 1: height map
+  document.getElementById('loadFill').style.width='5%';
+  await new Promise(r=>requestAnimationFrame(r));
+  
+  const S1=42,S2=137,S3=999;
+  for(let iy=0;iy<ROWS;iy++){
+    let ny=iy/ROWS;
+    for(let ix=0;ix<COLS;ix++){
+      let nx=ix/COLS;
+      let dx=(nx-0.5)*2, dy=(ny-0.5)*2;
+      let dist=Math.sqrt(dx*dx+dy*dy);
+      let border=Math.max(0,1-Math.pow(Math.max(0,dist-0.62)/0.38,2));
+      let h=fbm(nx*3,ny*3,7,S1)*0.6+fbm(nx*6,ny*6,4,S2)*0.3+fbm(nx*1.5,ny*1.5,3,S3)*0.1;
+      h=h*border; heightMap[iy*COLS+ix]=h;
+      let b;
+      if(h<0.05)b=0; else if(h<0.12)b=1; else if(h<0.16)b=2;
+      else if(h<0.20)b=3; else if(h<0.42)b=4; else if(h<0.55)b=5;
+      else if(h<0.65)b=6; else if(h<0.72)b=9; else if(h<0.80)b=7; else b=8;
+      let moisture=fbm(nx*5+100,ny*5+100,4,S2+77);
+      if(b===4&&moisture>0.7&&h<0.30)b=10;
+      biomeMap[iy*COLS+ix]=b;
+    }
+    if(iy%100===0){
+      document.getElementById('loadFill').style.width=(5+iy/ROWS*35)+'%';
+      await new Promise(r=>requestAnimationFrame(r));
+    }
+  }
+  
+  document.getElementById('loadFill').style.width='40%';
+  await new Promise(r=>requestAnimationFrame(r));
+  
+  // Step 2: render image
+  renderWorldToImage(p=>{ document.getElementById('loadFill').style.width=(40+p*30)+'%'; });
+  await new Promise(r=>requestAnimationFrame(r));
+  
+  document.getElementById('loadFill').style.width='75%';
+  await new Promise(r=>requestAnimationFrame(r));
+  
+  // Step 3: place objects
+  placeObjects();
+  
+  document.getElementById('loadFill').style.width='88%';
+  await new Promise(r=>requestAnimationFrame(r));
+  
+  // Render minimap
+  renderMinimap();
+  
+  document.getElementById('loadFill').style.width='95%';
+  await new Promise(r=>requestAnimationFrame(r));
+  
+  // Spawn player
+  let rng2=mulberry32(12345);
+  for(let t=0;t<2000;t++){
+    let sx=rng2()*WORLD_W*0.6+WORLD_W*0.2;
+    let sy=rng2()*WORLD_H*0.6+WORLD_H*0.2;
+    let bx=Math.floor(sx/TILE),by=Math.floor(sy/TILE);
+    if(bx>=0&&by>=0&&bx<COLS&&by<ROWS){
+      let b=biomeMap[by*COLS+bx];
+      if(b>=4&&b<=5){ player.wx=sx; player.wy=sy; player.targetX=sx; player.targetY=sy; break; }
+    }
+  }
+  
+  document.getElementById('loadFill').style.width='100%';
+  await new Promise(r=>setTimeout(r,400));
+  document.getElementById('loadingScreen').style.display='none';
+  
+  gameRunning=true;
+  lastTime=performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+chunkedInit();
+</script>
+</body>
+</html>
