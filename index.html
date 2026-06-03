@@ -26,216 +26,13 @@
       display: block;
     }
 
-    #hud {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    #crosshair {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 18px;
-      height: 18px;
-      transform: translate(-50%, -50%);
-    }
-
-    #crosshair::before,
-    #crosshair::after {
-      content: "";
-      position: absolute;
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 2px;
-      box-shadow: 0 0 8px rgba(66, 209, 255, 0.8);
-    }
-
-    #crosshair::before {
-      top: 8px;
-      left: 0;
-      width: 18px;
-      height: 2px;
-    }
-
-    #crosshair::after {
-      top: 0;
-      left: 8px;
-      width: 2px;
-      height: 18px;
-    }
-
-    #panel {
-      position: absolute;
-      top: 18px;
-      left: 18px;
-      min-width: 260px;
-      padding: 16px 18px;
-      background: linear-gradient(135deg, rgba(10, 19, 42, 0.86), rgba(19, 44, 82, 0.72));
-      border: 1px solid rgba(125, 218, 255, 0.35);
-      border-radius: 18px;
-      box-shadow: 0 16px 60px rgba(0, 0, 0, 0.28);
-      backdrop-filter: blur(12px);
-    }
-
-    #panel h1 {
-      margin: 0 0 8px;
-      font-size: 1rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #91e7ff;
-    }
-
-    #panel p {
-      margin: 4px 0;
-      color: rgba(247, 251, 255, 0.82);
-      font-size: 0.88rem;
-      line-height: 1.35;
-    }
-
-    #stats {
-      position: absolute;
-      right: 18px;
-      bottom: 18px;
-      display: grid;
-      gap: 8px;
-      width: min(300px, calc(100vw - 36px));
-    }
-
-    #mode,
-    #fps-counter {
-      position: absolute;
-      right: 18px;
-      padding: 10px 14px;
-      border: 1px solid rgba(125, 218, 255, 0.35);
-      border-radius: 999px;
-      background: rgba(8, 17, 36, 0.72);
-      color: #91e7ff;
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
-      backdrop-filter: blur(10px);
-    }
-
-    #mode {
-      top: 18px;
-    }
-
-    #fps-counter {
-      top: 64px;
-      min-width: 86px;
-      text-align: center;
-      color: #b8ff91;
-    }
-
-    .stat {
-      height: 15px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      border-radius: 999px;
-      background: rgba(5, 10, 24, 0.6);
-      box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.38);
-    }
-
-    .stat span {
-      display: block;
-      height: 100%;
-      border-radius: inherit;
-    }
-
-    .shield span {
-      width: 78%;
-      background: linear-gradient(90deg, #2897ff, #67e1ff);
-    }
-
-    .health span {
-      width: 100%;
-      background: linear-gradient(90deg, #28c76f, #a7ff83);
-    }
-
-    #blocker {
-      position: fixed;
-      inset: 0;
-      z-index: 3;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      background: radial-gradient(circle at 50% 35%, rgba(45, 143, 255, 0.24), rgba(3, 7, 16, 0.92) 62%);
-      cursor: pointer;
-    }
-
-    #start-card {
-      max-width: 620px;
-      padding: 34px;
-      text-align: center;
-      border: 1px solid rgba(145, 231, 255, 0.38);
-      border-radius: 28px;
-      background: rgba(8, 17, 36, 0.78);
-      box-shadow: 0 24px 90px rgba(0, 0, 0, 0.48);
-      backdrop-filter: blur(16px);
-    }
-
-    #start-card h2 {
-      margin: 0 0 12px;
-      font-size: clamp(2rem, 5vw, 4rem);
-      line-height: 0.95;
-      text-transform: uppercase;
-      color: #ffffff;
-      text-shadow: 0 0 22px rgba(68, 195, 255, 0.65);
-    }
-
-    #start-card p {
-      margin: 0 auto 20px;
-      max-width: 480px;
-      color: rgba(255, 255, 255, 0.78);
-      line-height: 1.55;
-    }
-
-    #start-card strong {
-      display: inline-block;
-      padding: 12px 22px;
-      border-radius: 999px;
-      background: linear-gradient(135deg, #ffd447, #ff8c2a);
-      color: #1b1630;
-      box-shadow: 0 12px 30px rgba(255, 166, 35, 0.25);
-    }
+    /* El juego inicia sin elementos de interfaz ni cuadros de texto superpuestos. */
   </style>
 </head>
 <body>
-  <div id="hud" aria-hidden="true">
-    <div id="panel">
-      <h1>Isla 3D</h1>
-      <p><strong>W/S</strong> adelante/atrás · <strong>A/D</strong> izquierda/derecha</p>
-      <p><strong>Autoexploración</strong> activa: el personaje recorre toda la isla solo</p>
-      <p><strong>O</strong> activar/desactivar exploración · <strong>Ratón</strong> mirar suave</p>
-      <p><strong>WASD</strong> movimiento manual · <strong>P</strong> vuelo · <strong>Shift</strong> correr</p>
-      <p><strong>Espacio</strong> saltar/subir · <strong>Ctrl/C</strong> agacharse/bajar · <strong>Esc</strong> liberar</p>
-    </div>
-    <div id="crosshair"></div>
-    <div id="mode">Modo: Tierra</div>
-    <div id="fps-counter">FPS: --</div>
-    <div id="stats">
-      <div class="stat shield"><span></span></div>
-      <div class="stat health"><span></span></div>
-    </div>
-  </div>
-
-  <div id="blocker">
-    <div id="start-card">
-      <h2>Battle Island</h2>
-      <p>Observa cómo el personaje explora automáticamente una gran isla delimitada por océano, playas, llanuras, biomas, relieves, bosques, casas y plataformas. También puedes tomar el control manual cuando quieras.</p>
-      <strong>Haz clic para entrar</strong>
-    </div>
-  </div>
-
   <script type="module">
     import * as THREE from 'https://unpkg.com/three@0.165.0/build/three.module.js';
 
-    const blocker = document.getElementById('blocker');
-    const modeLabel = document.getElementById('mode');
-    const fpsCounter = document.getElementById('fps-counter');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x7fc7ff);
     scene.fog = new THREE.FogExp2(0x8fd3ff, 0.0038);
@@ -739,16 +536,14 @@
       return keys.has('KeyW') || keys.has('KeyA') || keys.has('KeyS') || keys.has('KeyD');
     }
 
-    function updateModeLabel() {
-      const movementMode = autoExploreEnabled ? 'Autoexploración' : (isFlying ? 'Vuelo' : 'Tierra');
-      modeLabel.textContent = `Modo: ${movementMode}`;
-    }
-
-    blocker.addEventListener('click', () => document.body.requestPointerLock());
+    document.addEventListener('click', () => {
+      if (document.pointerLockElement !== document.body) {
+        document.body.requestPointerLock();
+      }
+    });
 
     document.addEventListener('pointerlockchange', () => {
       isLocked = document.pointerLockElement === document.body;
-      blocker.style.display = isLocked ? 'none' : 'grid';
     });
 
     document.addEventListener('mousemove', event => {
@@ -766,13 +561,11 @@
         isFlying = !isFlying;
         velocity.y = 0;
         canJump = !isFlying;
-        updateModeLabel();
       }
       if (event.code === 'KeyO' && !event.repeat) {
         autoExploreEnabled = !autoExploreEnabled;
         velocity.x = 0;
         velocity.z = 0;
-        updateModeLabel();
       }
       keys.add(event.code);
       const isCrouching = keys.has('ControlLeft') || keys.has('ControlRight') || keys.has('KeyC');
@@ -783,8 +576,6 @@
     });
 
     document.addEventListener('keyup', event => keys.delete(event.code));
-
-    updateModeLabel();
 
     const clock = new THREE.Clock();
 
@@ -871,24 +662,9 @@
       playerBody.position.copy(playerPosition).add(playerBodyOffset);
     }
 
-    let fpsFrames = 0;
-    let fpsElapsed = 0;
-
-    function updateFpsCounter(delta) {
-      fpsFrames++;
-      fpsElapsed += delta;
-      if (fpsElapsed < 0.25) return;
-
-      const fps = Math.round(fpsFrames / fpsElapsed);
-      fpsCounter.textContent = `FPS: ${fps}`;
-      fpsFrames = 0;
-      fpsElapsed = 0;
-    }
-
     function animate() {
       const delta = Math.min(clock.getDelta(), 0.05);
       updatePlayer(delta);
-      updateFpsCounter(delta);
       water.material.opacity = 0.62 + Math.sin(clock.elapsedTime * 1.8) * 0.06;
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
