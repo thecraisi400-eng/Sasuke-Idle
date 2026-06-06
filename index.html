@@ -109,9 +109,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:
 .scroll .sv{font-size:14px;font-weight:900;color:#4a1f00;line-height:1.2;display:block;font-family:'Georgia',serif}
 .vs-mid{font-size:30px;font-weight:900;color:#ff6d00;text-shadow:0 0 18px rgba(230,81,0,.7),2px 2px 0 #b71c1c;font-style:italic;letter-spacing:1px;flex-shrink:0;animation:vsPulse .6s ease-out infinite alternate}
 @keyframes vsPulse{from{transform:scale(1)}to{transform:scale(1.12)}}
-.vs-chance{margin-top:4px;padding:6px 14px;background:linear-gradient(180deg,#1a1040,#0c0820);border:2px solid #7c4dff;border-radius:8px;text-align:center;box-shadow:0 0 14px rgba(124,77,255,.45)}
-.vs-chance .cl{font-size:8px;color:#bbb;letter-spacing:.7px;text-transform:uppercase;display:block;margin-bottom:2px}
-.vs-chance .cv{font-size:22px;font-weight:900;display:block;line-height:1}
+.enemy-stat-grid{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:2px}
+.enemy-stat{background:linear-gradient(180deg,#300909,#160404);border:1px solid rgba(239,83,80,.75);border-radius:6px;padding:4px 3px;text-align:center;box-shadow:inset 0 0 8px rgba(239,83,80,.12)}
+.enemy-stat .ei{font-size:14px;line-height:1;display:block;margin-bottom:1px}
+.enemy-stat .en{font-size:6.5px;color:#ffcdd2;text-transform:uppercase;letter-spacing:.35px;display:block;line-height:1.1}
+.enemy-stat .ev{font-size:10px;color:#fff;font-weight:900;display:block;line-height:1.2}
 .vs-go{margin-top:10px;padding:8px 26px;background:linear-gradient(180deg,#e65100,#bf360c);border:2px solid #ff6d00;border-radius:8px;color:#fff;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.6px;box-shadow:0 0 14px rgba(230,81,0,.5)}
 .vs-go:active{transform:scale(.95)}
 
@@ -130,7 +132,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:
     <div class="money-box">💰<span id="xGold">0</span></div>
     <button class="top-nav-btn prev" id="arenaPrev" type="button" aria-label="Anterior" disabled>ANTERIOR</button>
     <div class="top-stats">
-      <div class="top-stat"><span class="lbl">Poder Actual</span><span class="val g" id="xWin">10</span></div>
+      <div class="top-stat"><span class="lbl">Poder Actual</span><span class="val g" id="xWin">6</span></div>
       <div class="top-stat"><span class="lbl">Round</span><span class="val o" id="xRound">0/0</span></div>
       <div class="top-stat"><span class="lbl">Poder Enemigo</span><span class="val c" id="xPow">--</span></div>
     </div>
@@ -172,10 +174,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:
               <div class="scroll"><span class="sl">⚔️ Poder</span><span class="sv" id="vsPowE">0</span></div>
             </div>
           </div>
-          <div class="vs-chance">
-            <span class="cl">Probabilidad de Ganar</span>
-            <span class="cv" id="vsChance">0%</span>
-          </div>
+          <div class="enemy-stat-grid" id="enemyStats" aria-label="Estadísticas del rival"></div>
           <button class="vs-go" id="vsGo">⚔️ ¡PELEAR!</button>
           <div class="cdbar" id="vsCd"><div class="fill"></div></div>
         </div>
@@ -215,9 +214,9 @@ const ST={
   wins:0,fights:0,streak:0,
   arena:0,arenaStreaks:[0],arenaUnlocked:[false],arenaPowerMults:[1]
 };
-const BASE_POWER=10;
-const ENEMY_POWER_MIN=7;
-const ENEMY_POWER_MAX=14;
+const BASE_POWER=6;
+const ENEMY_POWER_MIN=4;
+const ENEMY_POWER_MAX=15;
 const MAX_ROUNDS=3;
 const VS_AUTO_START_MS=4000;
 const RESULT_AUTO_NEXT_MS=7000;
@@ -260,9 +259,7 @@ function fmtN(n){
   return fmtDecimal(n,Number.isInteger(n)?0:2);
 }
 function playerPowerFromStats(){
-  const atk=upgValue('atk',ST.s.atk),def=upgValue('def',ST.s.def),hp=upgValue('hp',ST.s.hp);
-  const spd=upgValue('spd',ST.s.spd),eva=upgValue('eva',ST.s.eva),crit=upgValue('crit',ST.s.crit);
-  return Math.max(1,Math.round((atk*1.6)+(def*1.2)+(hp*0.08)+(spd*4)+(eva*0.6)+(crit*0.6)));
+  return Object.values(ST.s).reduce((total,lvl)=>total+(Number(lvl)||0),0);
 }
 function randomInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
 function randomFloat(min,max){return min+Math.random()*(max-min)}
@@ -287,26 +284,24 @@ function ensureArena(i){
     ST.arenaPowerMults.push(prev*randomFloat(1.70,3.50));
   }
 }
-function arenaEnemyPower(){return Math.max(1,Math.round(randomInt(ENEMY_POWER_MIN,ENEMY_POWER_MAX)*(ST.arenaPowerMults[ST.arena]||1)))}
-function roundPct(n){return Math.round(n*100)/100}
-// Calcula las probabilidades proporcionales y tira el "dado" oculto del resultado.
-// El dado nunca se pinta en pantalla: solo se usa internamente tras ver los 3 rounds.
-function calcularResultadoCombate(poderJugador,poderEnemigo){
-  poderJugador=Math.max(0,Number(poderJugador)||0);
-  poderEnemigo=Math.max(0,Number(poderEnemigo)||0);
-  const poderTotal=poderJugador+poderEnemigo;
-  const porcentajeJugador=poderTotal>0?roundPct((poderJugador/poderTotal)*100):50;
-  const porcentajeEnemigo=roundPct(100-porcentajeJugador);
-  const dado=randomInt(1,100);
-  return{
-    poderTotal,
-    porcentajeJugador,
-    porcentajeEnemigo,
-    dado,
-    ganaJugador:dado<=porcentajeJugador
-  };
+function arenaEnemyPower(){return randomInt(ENEMY_POWER_MIN,ENEMY_POWER_MAX)}
+function distributeEnemyStats(power){
+  const keys=['atk','def','hp','spd','eva','crit'];
+  const stats={atk:0,def:0,hp:0,spd:0,eva:0,crit:0};
+  for(let i=0;i<power;i++)stats[keys[randomInt(0,keys.length-1)]]++;
+  return stats;
 }
-function fmtPct(n){return Number(n).toLocaleString('es-ES',{maximumFractionDigits:2})}
+function enemyStatLevel(points){return Math.max(1,Number(points)||0)}
+function enemyStatValue(k,stats){return upgValue(k,enemyStatLevel(stats[k]))}
+function renderEnemyStats(stats){
+  const el=$('enemyStats');
+  if(!el)return;
+  const items=[
+    ['atk','⚔️','Ataque'],['def','🛡️','Defensa'],['hp','❤️','HP'],
+    ['spd','💨','Velocidad'],['eva','🌀','Evasión'],['crit','💥','Crítico']
+  ];
+  el.innerHTML=items.map(([k,ico,name])=>`<div class="enemy-stat"><span class="ei">${ico}</span><span class="en">${name}</span><span class="ev">+${stats[k]}</span></div>`).join('');
+}
 function syncFighterStats(f){
   f.mhp=Math.max(1,Math.round(f.mhp));
   f.hp=Math.min(f.mhp,Math.max(1,Math.round(f.hp)));
@@ -378,9 +373,6 @@ const F={
   roundWins:[0,0], // p1wins, p2wins
   paused:false,pauseT:0,
   countdown:0,
-  winChance:100,
-  predeterminedWin:false,
-  fightOdds:null,
   // Matchmaking
   searching:false,
   vsReady:false,
@@ -398,16 +390,6 @@ const F={
 // Nombres aleatorios para rivales
 const ENEMY_NAMES=['EL TORO','MÁSCARA NEGRA','REY HALCÓN','TIBURÓN','GIGANTE','VIPERA','TROPA SALVAJE','HURACÁN','BESTIA','RELÁMPAGO','SOMBRA','CICLÓN','LOBO','PUMA','ESCORPIÓN','TITÁN'];
 
-// Poder de un fighter (mismo cálculo conceptual que totPow pero sobre stats reales del rival)
-function fighterPower(f){
-  // Ponderaciones similares a totPow para mantener escala comparable
-  // Nota: el HP fue triplicado para alargar los combates; usamos un peso reducido (0.08/3)
-  // para que el "Poder" y la probabilidad mostrada se mantengan en la misma escala que antes.
-  return Math.max(1,Math.round(
-    (f.atk*1.6)+(f.def*1.2)+(f.mhp*(0.08/3))+(f.spd*4)+(f.eva*0.6)+(f.crit*0.6)
-  ));
-}
-
 const MOVES=[
   {name:'Golpe',dmgMul:1,kb:120,stun:.12,icon:'👊'},
   {name:'Patada',dmgMul:1.1,kb:150,stun:.15,icon:'🦵'},
@@ -421,21 +403,16 @@ const MOVES=[
   {name:'Uppercut',dmgMul:1.35,kb:200,stun:.22,icon:'✊'}
 ];
 
-function mkFighter(isP,x,y){
+function mkFighter(isP,x,y,enemyStats=null){
   const s=ST.s;
-  const lvl=totPow();
   let hp,atk,def,spd,eva,crit;
   if(isP){
     hp=upgValue('hp',s.hp);atk=upgValue('atk',s.atk);def=upgValue('def',s.def);
     spd=upgValue('spd',s.spd);eva=upgValue('eva',s.eva);crit=upgValue('crit',s.crit);
   }else{
-    const diff=0.7+Math.random()*0.6;
-    hp=Math.floor((100+lvl*2)*diff*3);
-    atk=Math.floor((10+lvl*0.5)*diff+Math.random()*8);
-    def=Math.floor((3+lvl*0.3)*diff+Math.random()*4);
-    spd=1.5+Math.random()*2.5;
-    eva=3+Math.floor(Math.random()*12);
-    crit=4+Math.floor(Math.random()*10);
+    const stats=enemyStats||distributeEnemyStats(arenaEnemyPower());
+    hp=enemyStatValue('hp',stats);atk=enemyStatValue('atk',stats);def=enemyStatValue('def',stats);
+    spd=enemyStatValue('spd',stats);eva=enemyStatValue('eva',stats);crit=enemyStatValue('crit',stats);
   }
   return{
     x,y,vx:0,vy:0,
@@ -526,7 +503,6 @@ function startResultCountdown(){
       $('resOv').classList.remove('show');
       F.currentEnemyPow=null;
       F.currentPlayerPow=null;
-      F.fightOdds=null;
       updUI();
       startMatchmaking();
     }
@@ -542,7 +518,6 @@ function startMatchmaking(){
   F.roundWins=[0,0];
   F.currentPlayerPow=playerPowerFromStats();
   F.currentEnemyPow=null;
-  F.fightOdds=null;
   updUI();
   $('mmOv').classList.add('show');
   $('mmStatus').textContent='Conectando con la red de luchadores...';
@@ -580,30 +555,25 @@ function startMatchmaking(){
 function showVS(){
   const W=cv.width,H=cv.height;
   const cX=W/2,cY=H/2;
-  // Construimos rivales (se reutilizarán en la pelea)
-  const p1=mkFighter(true,cX-55,cY);
-  const p2=mkFighter(false,cX+55,cY);
-  syncFighterStats(p1);syncFighterStats(p2);
-  F.pendingEnemy={p1,p2};
-  F.enemyName=ENEMY_NAMES[Math.floor(Math.random()*ENEMY_NAMES.length)];
   const myPow=playerPowerFromStats();
   const enPow=arenaEnemyPower();
+  const enemyStats=distributeEnemyStats(enPow);
+  // Construimos rivales (se reutilizarán en la pelea)
+  const p1=mkFighter(true,cX-55,cY);
+  const p2=mkFighter(false,cX+55,cY,enemyStats);
+  syncFighterStats(p1);syncFighterStats(p2);
   p1.power=myPow;
   p2.power=enPow;
+  p2.statPoints=enemyStats;
+  F.pendingEnemy={p1,p2};
+  F.enemyName=ENEMY_NAMES[Math.floor(Math.random()*ENEMY_NAMES.length)];
   F.currentPlayerPow=myPow;
   F.currentEnemyPow=enPow;
-  const odds=calcularResultadoCombate(myPow,enPow);
-  const chance=odds.porcentajeJugador;
-  // Guardamos la probabilidad mostrada y el dado oculto para mantener todo sincronizado sin revelar el resultado.
-  F.fightOdds=odds;
-  F.winChance=chance;
   // Pintar UI VS
   $('vsEName').textContent=F.enemyName;
   $('vsPowP').textContent=fmtN(myPow);
   $('vsPowE').textContent=fmtN(enPow);
-  const cvEl=$('vsChance');
-  cvEl.textContent=fmtPct(chance)+'%';
-  cvEl.style.color=chance>=66?'#69f0ae':chance>=40?'#ffd740':chance>=20?'#ff9100':'#ef5350';
+  renderEnemyStats(enemyStats);
   // Dibujar sprites estáticos en los canvas pequeños
   drawSpriteSnapshot($('spP').getContext('2d'),p1);
   drawSpriteSnapshot($('spE').getContext('2d'),p2);
@@ -621,7 +591,6 @@ function cancelVS(){
   F.pendingEnemy=null;
   F.currentEnemyPow=null;
   F.currentPlayerPow=null;
-  F.fightOdds=null;
   updUI();
 }
 
@@ -674,16 +643,15 @@ function startFight(){
   }
   F.on=true;F.round=1;F.timer=30;F.fx=[];F.shake=0;F.resultSettled=false;
   F.roundWins=[0,0];F.roundIntroT=0;F.roundIntroText='';
-  // Mantenemos la MISMA probabilidad mostrada en la pantalla VS (sincronizada con la barra superior).
-  // Si por algún motivo no existiera, la recalculamos como respaldo.
   if(F.currentPlayerPow==null)F.currentPlayerPow=playerPowerFromStats();
   if(F.currentEnemyPow==null){
     F.currentEnemyPow=arenaEnemyPower();
+    const enemyStats=distributeEnemyStats(F.currentEnemyPow);
+    p2=mkFighter(false,cX+55,cY,enemyStats);
+    syncFighterStats(p2);
     p2.power=F.currentEnemyPow;
+    p2.statPoints=enemyStats;
   }
-  if(!F.fightOdds)F.fightOdds=calcularResultadoCombate(F.currentPlayerPow,F.currentEnemyPow);
-  F.winChance=F.fightOdds.porcentajeJugador;
-  F.predeterminedWin=F.fightOdds.ganaJugador;
   F.p1=p1;F.p2=p2;
   F.audience=genAudience();
   F.paused=false;
@@ -1313,14 +1281,14 @@ function endFight(won){
     ST.wins++;ST.streak++;
     rt.textContent='🏆 ¡VICTORIA!';rt.style.color='#69f0ae';
     rr.textContent='💰 +'+fmtN(reward);
-    rs.textContent='Rachas: '+arenaStreak()+'/'+ARENA_STREAK_TARGET+' | Prob.: '+fmtPct(F.winChance)+'%';
+    rs.textContent='Rachas: '+arenaStreak()+'/'+ARENA_STREAK_TARGET;
     addLog('🏆 VICTORIA +'+fmtN(reward)+' oro','w');
     F.audience.forEach(a=>a.ch=2);
   }else{
     ST.streak=0;
     rt.textContent='💀 DERROTA';rt.style.color='#ef5350';
     rr.textContent='💰 +'+fmtN(reward);
-    rs.textContent='Rachas: '+arenaStreak()+'/'+ARENA_STREAK_TARGET+' | Prob.: '+fmtPct(F.winChance)+'%';
+    rs.textContent='Rachas: '+arenaStreak()+'/'+ARENA_STREAK_TARGET;
     addLog('💀 Derrota +'+fmtN(reward)+' oro','l');
   }
   // Reseteamos el rival actual para que Poder Enemigo vuelva a "--" hasta el próximo matchmaking
@@ -1346,7 +1314,6 @@ $('resB').addEventListener('click',()=>{
   $('resOv').classList.remove('show');
   F.currentEnemyPow=null;
   F.currentPlayerPow=null;
-  F.fightOdds=null;
   updUI();
   setTimeout(startMatchmaking,200);
 });
@@ -1355,7 +1322,6 @@ $('arenaPrev').addEventListener('click',()=>{
   if(ST.arena<=0)return;
   ST.arena--;
   F.currentEnemyPow=null;F.currentPlayerPow=null;
-  F.fightOdds=null;
   updUI();
 });
 $('arenaNext').addEventListener('click',()=>{
@@ -1364,7 +1330,6 @@ $('arenaNext').addEventListener('click',()=>{
   ST.arena++;
   ensureArena(ST.arena);
   F.currentEnemyPow=null;F.currentPlayerPow=null;
-  F.fightOdds=null;
   updUI();
 });
 $('vsGo').addEventListener('click',()=>{
