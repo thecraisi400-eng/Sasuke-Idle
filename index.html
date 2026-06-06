@@ -130,9 +130,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:
     <div class="money-box">💰<span id="xGold">0</span></div>
     <button class="top-nav-btn prev" id="arenaPrev" type="button" aria-label="Anterior" disabled>ANTERIOR</button>
     <div class="top-stats">
-      <div class="top-stat"><span class="lbl">Prob. Ganar</span><span class="val g" id="xWin">10%</span></div>
-      <div class="top-stat"><span class="lbl">Round</span><span class="val o" id="xRound">1/3</span></div>
-      <div class="top-stat"><span class="lbl">Poder Actual</span><span class="val c" id="xPow">14</span></div>
+      <div class="top-stat"><span class="lbl">Poder Actual</span><span class="val g" id="xWin">10</span></div>
+      <div class="top-stat"><span class="lbl">Round</span><span class="val o" id="xRound">0/0</span></div>
+      <div class="top-stat"><span class="lbl">Poder Enemigo</span><span class="val c" id="xPow">--</span></div>
     </div>
     <button class="top-nav-btn next" id="arenaNext" type="button" aria-label="Siguiente" disabled>SIGUIENTE</button>
     <div class="gems-box">💎<span id="xDiam">0</span></div>
@@ -219,7 +219,7 @@ const BASE_POWER=10;
 const ENEMY_POWER_MIN=7;
 const ENEMY_POWER_MAX=14;
 const MAX_ROUNDS=3;
-const VS_AUTO_START_MS=6000;
+const VS_AUTO_START_MS=4000;
 const RESULT_AUTO_NEXT_MS=7000;
 const ARENA_STREAK_TARGET=10;
 function upgCost(k){return Math.floor(10*Math.pow(1.4,ST.s[k]-1))}
@@ -318,14 +318,9 @@ function updUI(){
   ensureArena(ST.arena);
   $('xGold').textContent=fmtN(ST.gold);
   $('xDiam').textContent=ST.diamonds;
-  $('xPow').textContent=F.currentPlayerPow!=null?F.currentPlayerPow:playerPowerFromStats();
-  // Prob. ganar SIEMPRE sincronizada con la mostrada en la pantalla VS del combate actual.
-  if(F.currentEnemyPow!=null){
-    $('xWin').textContent=fmtPct(F.winChance)+'%';
-  }else{
-    $('xWin').textContent='--%';
-  }
-  $('xRound').textContent=F.on?F.round+'/'+MAX_ROUNDS:($('resOv')&&$('resOv').classList.contains('show')?MAX_ROUNDS+'/'+MAX_ROUNDS:'1/'+MAX_ROUNDS);
+  $('xWin').textContent=F.currentPlayerPow!=null?F.currentPlayerPow:playerPowerFromStats();
+  $('xPow').textContent=F.currentEnemyPow!=null?F.currentEnemyPow:'--';
+  $('xRound').textContent=F.roundWins[0]+'/'+F.roundWins[1];
   const prevBtn=$('arenaPrev'),nextBtn=$('arenaNext');
   if(prevBtn)prevBtn.disabled=ST.arena<=0;
   if(nextBtn)nextBtn.disabled=!ST.arenaUnlocked[ST.arena];
@@ -369,10 +364,10 @@ const F={
   searching:false,
   vsReady:false,
   pendingEnemy:null,     // ficha del enemigo encontrado, pendiente de pelear
-  currentEnemyPow:null,  // poder visible del rival (para Prob. Ganar)
+  currentEnemyPow:null,  // poder visible del rival para la barra superior y la pantalla VS
   currentPlayerPow:null, // poder propio visible en VS y barra superior
   enemyName:'RIVAL',
-  vsTimer:null,          // temporizador de auto-inicio de pelea (6s)
+  vsTimer:null,          // temporizador de auto-inicio de pelea (4s)
   resTimer:null,         // temporizador de auto-búsqueda tras resultado (7s)
   resultSettled:false,   // evita pagar la misma pelea más de una vez
   roundIntroT:0,
@@ -490,7 +485,7 @@ function stopCdBar(id){
   if(bar)bar.classList.remove('run');
 }
 
-// Tras encontrar al rival: barra de 6s bajo "PELEAR" -> inicia la pelea automáticamente.
+// Tras encontrar al rival: barra de 4s bajo "PELEAR" -> inicia la pelea automáticamente.
 function startVsCountdown(){
   if(F.vsTimer)clearTimeout(F.vsTimer);
   runCdBar('vsCd',VS_AUTO_START_MS);
@@ -523,6 +518,11 @@ function startMatchmaking(){
   if($('resOv').classList.contains('show'))return;
   F.searching=true;
   F.pendingEnemy=null;
+  F.roundWins=[0,0];
+  F.currentPlayerPow=playerPowerFromStats();
+  F.currentEnemyPow=null;
+  F.fightOdds=null;
+  updUI();
   $('mmOv').classList.add('show');
   $('mmStatus').textContent='Conectando con la red de luchadores...';
   // Animación de puntos
@@ -589,7 +589,7 @@ function showVS(){
   $('vsOv').classList.add('show');
   F.vsReady=true;
   updUI();
-  // Inicia automáticamente la pelea tras 6s, mostrando la barra que se consume bajo "PELEAR".
+  // Inicia automáticamente la pelea tras 4s, mostrando la barra que se consume bajo "PELEAR".
   startVsCountdown();
 }
 
@@ -1236,7 +1236,8 @@ function endRound(p1Won){
     spawnFx(cv.width/2,cv.height*.4,'ROUND PERDIDO','#ef5350',20);
   }
   if(F.round>=MAX_ROUNDS){
-    setTimeout(()=>endFight(F.predeterminedWin),900);
+    const playerWonFight=F.roundWins[0]>F.roundWins[1];
+    setTimeout(()=>endFight(playerWonFight),900);
   }else{
     setTimeout(startNextRound,900);
   }
@@ -1302,7 +1303,7 @@ function endFight(won){
     rs.textContent='Rachas: '+arenaStreak()+'/'+ARENA_STREAK_TARGET+' | Prob.: '+fmtPct(F.winChance)+'%';
     addLog('💀 Derrota +'+reward+' oro','l');
   }
-  // Reseteamos el rival actual para que Prob. Ganar vuelva a "--%" hasta el próximo matchmaking
+  // Reseteamos el rival actual para que Poder Enemigo vuelva a "--" hasta el próximo matchmaking
   F.currentEnemyPow=null;
   F.currentPlayerPow=null;
   ov.classList.add('show');
