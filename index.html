@@ -299,7 +299,14 @@ function ensureArena(i){
     ST.arenaPowerMults.push(prev*randomFloat(1.70,3.50));
   }
 }
-function arenaEnemyPower(){return randomInt(Math.max(BASE_POWER,ENEMY_POWER_MIN),ENEMY_POWER_MAX)}
+function arenaEnemyPower(){
+  ensureArena(ST.arena);
+  const arenaMult=Number(ST.arenaPowerMults[ST.arena])||1;
+  const playerPow=Math.max(1,playerPowerFromStats());
+  const minPow=Math.max(ENEMY_POWER_MIN,Math.floor(playerPow*.75),Math.floor(ENEMY_POWER_MIN*arenaMult));
+  const maxPow=Math.max(minPow,Math.ceil(playerPow*1.35),Math.ceil(ENEMY_POWER_MAX*arenaMult));
+  return randomInt(minPow,maxPow);
+}
 function distributeEnemyStats(power){
   const keys=['atk','def','hp','spd','eva','crit'];
   const totalPoints=Math.max(0,Math.round(Number(power)||0));
