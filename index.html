@@ -222,29 +222,62 @@ const MAX_ROUNDS=3;
 const VS_AUTO_START_MS=4000;
 const RESULT_AUTO_NEXT_MS=7000;
 const ARENA_STREAK_TARGET=10;
-function upgCost(k){return Math.floor(10*Math.pow(1.4,ST.s[k]-1))}
+const STAT_CFG={
+  atk:{base:7,growth:1.13},
+  def:{base:3,growth:1.07},
+  hp:{base:100,growth:1.18},
+  spd:{base:2,growth:1.05},
+  eva:{base:1,add:.30,max:35},
+  crit:{base:1,add:.21,max:23}
+};
+function upgCost(k){return isStatMaxed(k)?Infinity:Math.floor(10*Math.pow(1.4,ST.s[k]-1))}
 function upgValue(k,lvl){
-  if(k==='atk')return 10+lvl*5;
-  if(k==='def')return 3+lvl*3;
-  if(k==='hp')return (100+lvl*30)*3;
-  if(k==='spd')return 1.8+lvl*0.25;
-  if(k==='eva')return 4+lvl*2.5;
-  if(k==='crit')return 5+lvl*3;
-  return lvl;
+  const c=STAT_CFG[k];
+  if(!c)return lvl;
+  if(k==='eva'||k==='crit')return Math.min(c.max,c.base+(lvl-1)*c.add);
+  return c.base*Math.pow(c.growth,lvl-1);
+}
+function isStatMaxed(k,lvl=ST.s[k]){
+  const c=STAT_CFG[k];
+  return !!(c&&c.max!=null&&upgValue(k,lvl)>=c.max);
 }
 function fmtStat(k,v){
-  if(k==='spd')return v.toFixed(2);
-  if(k==='crit')return fmtN(v)+'%';
-  return Number.isInteger(v)?fmtN(v):Number(v.toFixed(1));
+  if(k==='eva'||k==='crit')return fmtDecimal(v,2)+'%';
+  if(k==='spd')return fmtDecimal(v,2);
+  return fmtN(v);
 }
-function totPow(){const s=ST.s;return s.atk*3+s.def*2+s.hp*2+s.spd*2+s.eva*2+s.crit*3}
-function fmtN(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return''+Math.floor(n)}
+function fmtDecimal(n,maxDigits=2){
+  const fixed=Number(n).toFixed(maxDigits);
+  return fixed.replace(/(\.\d*?[1-9])0+$/,'$1').replace(/\.0+$/,'');
+}
+function totPow(){return playerPowerFromStats()}
+function fmtN(n){
+  n=Math.max(0,Number(n)||0);
+  const units=[{v:1e9,s:'B'},{v:1e6,s:'M'},{v:1e3,s:'K'}];
+  for(const u of units){
+    if(n>=u.v)return fmtDecimal(n/u.v,2)+u.s;
+  }
+  return fmtDecimal(n,Number.isInteger(n)?0:2);
+}
 function playerPowerFromStats(){
-  const s=ST.s;
-  return BASE_POWER+(s.atk-1)*3+(s.def-1)*2+(s.hp-1)*2+(s.spd-1)*2+(s.eva-1)*2+(s.crit-1)*3;
+  const atk=upgValue('atk',ST.s.atk),def=upgValue('def',ST.s.def),hp=upgValue('hp',ST.s.hp);
+  const spd=upgValue('spd',ST.s.spd),eva=upgValue('eva',ST.s.eva),crit=upgValue('crit',ST.s.crit);
+  return Math.max(1,Math.round((atk*1.6)+(def*1.2)+(hp*0.08)+(spd*4)+(eva*0.6)+(crit*0.6)));
 }
 function randomInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
 function randomFloat(min,max){return min+Math.random()*(max-min)}
+
+function rollPercent(chance){
+  chance=Math.max(0,Math.min(100,Number(chance)||0));
+  const invisibleRoll=randomFloat(0,100);
+  return invisibleRoll<chance;
+}
+function reduceDamageByDefense(damage,defense){
+  damage=Math.max(0,Number(damage)||0);
+  defense=Math.max(0,Number(defense)||0);
+  const reduction=Math.min(.20,defense*.004);
+  return damage*(1-reduction);
+}
 function arenaStreak(){return ST.arenaUnlocked[ST.arena]?ARENA_STREAK_TARGET:(ST.arenaStreaks[ST.arena]||0)}
 function ensureArena(i){
   while(ST.arenaStreaks.length<=i)ST.arenaStreaks.push(0);
@@ -277,24 +310,12 @@ function fmtPct(n){return Number(n).toLocaleString('es-ES',{maximumFractionDigit
 function syncFighterStats(f){
   f.mhp=Math.max(1,Math.round(f.mhp));
   f.hp=Math.min(f.mhp,Math.max(1,Math.round(f.hp)));
-  f.atk=Math.max(1,Math.round(f.atk));
-  f.def=Math.max(0,Math.round(f.def));
+  f.atk=Math.max(1,Number(f.atk.toFixed(2)));
+  f.def=Math.max(0,Number(f.def.toFixed(2)));
   f.spd=Math.max(.8,Number(f.spd.toFixed(2)));
-  f.eva=Math.max(0,Math.round(f.eva));
-  f.crit=Math.max(0,Math.round(f.crit));
+  f.eva=Math.min(STAT_CFG.eva.max,Math.max(0,Number(f.eva.toFixed(2))));
+  f.crit=Math.min(STAT_CFG.crit.max,Math.max(0,Number(f.crit.toFixed(2))));
 }
-function applyFightBias(player,cpu,playerWins){
-  if(playerWins){
-    player.mhp*=1.45;player.hp=player.mhp;player.atk*=1.9;player.def*=1.55;player.spd*=1.15;player.eva+=10;player.crit+=18;
-    cpu.mhp*=0.82;cpu.hp=cpu.mhp;cpu.atk*=0.72;cpu.def*=0.75;cpu.spd*=0.92;cpu.eva=Math.max(0,cpu.eva-6);cpu.crit=Math.max(0,cpu.crit-4);
-  }else{
-    cpu.mhp*=1.45;cpu.hp=cpu.mhp;cpu.atk*=1.9;cpu.def*=1.55;cpu.spd*=1.15;cpu.eva+=10;cpu.crit+=18;
-    player.mhp*=0.82;player.hp=player.mhp;player.atk*=0.72;player.def*=0.75;player.spd*=0.92;player.eva=Math.max(0,player.eva-6);player.crit=Math.max(0,player.crit-4);
-  }
-  syncFighterStats(player);
-  syncFighterStats(cpu);
-}
-
 // ================ DOM ================
 const $=id=>document.getElementById(id);
 const cv=$('cv'),cx=cv.getContext('2d');
@@ -311,15 +332,15 @@ document.querySelectorAll('.menu-btn').forEach(b=>b.addEventListener('click',()=
 // Upgrades
 document.querySelectorAll('.upg-card').forEach(b=>b.addEventListener('click',()=>{
   const k=b.dataset.u,c=upgCost(k);
-  if(ST.gold>=c){ST.gold-=c;ST.s[k]++;updUI();}
+  if(!isStatMaxed(k)&&ST.gold>=c){ST.gold-=c;ST.s[k]++;updUI();}
 }));
 
 function updUI(){
   ensureArena(ST.arena);
   $('xGold').textContent=fmtN(ST.gold);
-  $('xDiam').textContent=ST.diamonds;
-  $('xWin').textContent=F.currentPlayerPow!=null?F.currentPlayerPow:playerPowerFromStats();
-  $('xPow').textContent=F.currentEnemyPow!=null?F.currentEnemyPow:'--';
+  $('xDiam').textContent=fmtN(ST.diamonds);
+  $('xWin').textContent=fmtN(F.currentPlayerPow!=null?F.currentPlayerPow:playerPowerFromStats());
+  $('xPow').textContent=F.currentEnemyPow!=null?fmtN(F.currentEnemyPow):'--';
   $('xRound').textContent=F.roundWins[0]+'/'+F.roundWins[1];
   const prevBtn=$('arenaPrev'),nextBtn=$('arenaNext');
   if(prevBtn)prevBtn.disabled=ST.arena<=0;
@@ -327,8 +348,8 @@ function updUI(){
   ['atk','def','hp','spd','eva','crit'].forEach(k=>{
     const cap=k.charAt(0).toUpperCase()+k.slice(1);
     $('u'+cap).textContent='Actual '+fmtStat(k,upgValue(k,ST.s[k]));
-    $('n'+cap).textContent='Mejora '+fmtStat(k,upgValue(k,ST.s[k]+1));
-    $('c'+cap).textContent='💰'+fmtN(upgCost(k));
+    $('n'+cap).textContent=isStatMaxed(k)?'MAX':('Mejora '+fmtStat(k,upgValue(k,ST.s[k]+1)));
+    $('c'+cap).textContent=isStatMaxed(k)?'MAX':('💰'+fmtN(upgCost(k)));
   });
 }
 
@@ -405,8 +426,8 @@ function mkFighter(isP,x,y){
   const lvl=totPow();
   let hp,atk,def,spd,eva,crit;
   if(isP){
-    hp=(100+s.hp*30)*3;atk=10+s.atk*5;def=3+s.def*3;
-    spd=1.8+s.spd*0.25;eva=4+s.eva*2.5;crit=5+s.crit*3;
+    hp=upgValue('hp',s.hp);atk=upgValue('atk',s.atk);def=upgValue('def',s.def);
+    spd=upgValue('spd',s.spd);eva=upgValue('eva',s.eva);crit=upgValue('crit',s.crit);
   }else{
     const diff=0.7+Math.random()*0.6;
     hp=Math.floor((100+lvl*2)*diff*3);
@@ -578,8 +599,8 @@ function showVS(){
   F.winChance=chance;
   // Pintar UI VS
   $('vsEName').textContent=F.enemyName;
-  $('vsPowP').textContent=myPow;
-  $('vsPowE').textContent=enPow;
+  $('vsPowP').textContent=fmtN(myPow);
+  $('vsPowE').textContent=fmtN(enPow);
   const cvEl=$('vsChance');
   cvEl.textContent=fmtPct(chance)+'%';
   cvEl.style.color=chance>=66?'#69f0ae':chance>=40?'#ffd740':chance>=20?'#ff9100':'#ef5350';
@@ -664,7 +685,6 @@ function startFight(){
   F.winChance=F.fightOdds.porcentajeJugador;
   F.predeterminedWin=F.fightOdds.ganaJugador;
   F.p1=p1;F.p2=p2;
-  applyFightBias(F.p1,F.p2,F.predeterminedWin);
   F.audience=genAudience();
   F.paused=false;
   F.countdown=3;
@@ -780,14 +800,14 @@ function clamp(f,l,r,t,b){
 function doAttack(atk,def){
   const mv=MOVES[Math.floor(Math.random()*MOVES.length)];
   atk.lastMv=mv;
-  atk.atkCD=.5+Math.random()*.4;
+  atk.atkCD=(.5+Math.random()*.4)/Math.max(.2,atk.spd/2);
 
   // Dash lunge
   const dx=def.x-atk.x,dy=def.y-atk.y,d=Math.sqrt(dx*dx+dy*dy)||1;
   atk.dashT=.08;atk.dashDx=dx/d*200;atk.dashDy=dy/d*200;
 
-  // Evasion
-  if(Math.random()*100<def.eva){
+  // Evasión: el porcentaje actual del defensor es su probabilidad real de esquivar.
+  if(rollPercent(def.eva)){
     addLog(`${def.name} esquiva ${mv.name} ${mv.icon}`,'m');
     spawnFx(def.x,def.y-22,'ESQUIVA!','#aaa',14);
     // Defender dodges sideways
@@ -799,20 +819,20 @@ function doAttack(atk,def){
 
   // Block check
   if(def.blocking){
-    const blocked=Math.floor(atk.atk*mv.dmgMul*.3);
+    const blocked=Math.max(1,Math.floor(reduceDamageByDefense(atk.atk*.3,def.def)));
     def.hp=Math.max(0,def.hp-blocked);
     def.hurt=.1;
     addLog(`${def.name} bloquea ${mv.name}! -${blocked} (reducido)`,'m');
-    spawnFx(def.x,def.y-22,'🛡️ BLOCK -'+blocked,'#40c4ff',14);
+    spawnFx(def.x,def.y-22,'🛡️ BLOCK -'+fmtN(blocked),'#40c4ff',14);
     F.shake=.06;
     spawnSparks((atk.x+def.x)/2,(atk.y+def.y)/2,3,'#40c4ff');
     return;
   }
 
-  // Damage
-  let dmg=Math.max(1,Math.floor(atk.atk*mv.dmgMul-def.def*.35+Math.random()*6-2));
-  const isCrit=Math.random()*100<atk.crit;
-  if(isCrit)dmg=Math.floor(dmg*2.2);
+  // Damage: el ataque sincronizado del personaje es la base que se resta al HP rival.
+  let dmg=Math.max(1,Math.floor(reduceDamageByDefense(atk.atk,def.def)));
+  const isCrit=rollPercent(atk.crit);
+  if(isCrit)dmg=Math.floor(dmg*2);
 
   def.hp=Math.max(0,def.hp-dmg);
   def.hurt=.18;
@@ -842,7 +862,7 @@ function doAttack(atk,def){
   }
 
   const lt=isCrit?'cr':'h';
-  addLog(`${atk.name} ${mv.icon}${mv.name}${isCrit?' ¡CRIT!':''} → -${dmg} ${def.name} [${Math.ceil(def.hp)}/${def.mhp}]`,lt);
+  addLog(`${atk.name} ${mv.icon}${mv.name}${isCrit?' ¡CRIT!':''} → -${fmtN(dmg)} ${def.name} [${fmtN(Math.ceil(def.hp))}/${fmtN(def.mhp)}]`,lt);
 }
 
 // ================ EFFECTS ================
@@ -1092,7 +1112,7 @@ function drawFighter(f,t){
 
   // HP text
   cx.fillStyle='#ccc';cx.font='bold 6px Arial';
-  cx.fillText(Math.ceil(f.hp)+'/'+f.mhp,x,by+bh+8);
+  cx.fillText(fmtN(Math.ceil(f.hp))+'/'+fmtN(f.mhp),x,by+bh+8);
 }
 
 function drawFx(){
@@ -1292,16 +1312,16 @@ function endFight(won){
   if(won){
     ST.wins++;ST.streak++;
     rt.textContent='🏆 ¡VICTORIA!';rt.style.color='#69f0ae';
-    rr.textContent='💰 +'+reward;
+    rr.textContent='💰 +'+fmtN(reward);
     rs.textContent='Rachas: '+arenaStreak()+'/'+ARENA_STREAK_TARGET+' | Prob.: '+fmtPct(F.winChance)+'%';
-    addLog('🏆 VICTORIA +'+reward+' oro','w');
+    addLog('🏆 VICTORIA +'+fmtN(reward)+' oro','w');
     F.audience.forEach(a=>a.ch=2);
   }else{
     ST.streak=0;
     rt.textContent='💀 DERROTA';rt.style.color='#ef5350';
-    rr.textContent='💰 +'+reward;
+    rr.textContent='💰 +'+fmtN(reward);
     rs.textContent='Rachas: '+arenaStreak()+'/'+ARENA_STREAK_TARGET+' | Prob.: '+fmtPct(F.winChance)+'%';
-    addLog('💀 Derrota +'+reward+' oro','l');
+    addLog('💀 Derrota +'+fmtN(reward)+' oro','l');
   }
   // Reseteamos el rival actual para que Poder Enemigo vuelva a "--" hasta el próximo matchmaking
   F.currentEnemyPow=null;
