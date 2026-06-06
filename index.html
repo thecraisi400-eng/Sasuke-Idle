@@ -15,7 +15,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:
 .top-nav-btn{min-width:62px;min-height:28px;padding:3px 5px;border-radius:5px;font-size:8.5px;font-weight:900;letter-spacing:.35px;line-height:1;text-align:center;cursor:pointer;white-space:nowrap;text-transform:uppercase;box-shadow:inset 0 0 10px rgba(255,255,255,.08),0 0 8px rgba(0,0,0,.2)}
 .top-nav-btn.prev{margin-right:6px;background:linear-gradient(135deg,#d9b069,#8a5a24);border:1px solid rgba(255,224,178,.85);color:#3a2410;text-shadow:0 1px 0 rgba(255,240,200,.35)}
 .top-nav-btn.next{margin-left:6px;background:linear-gradient(135deg,#b9f6ca,#43a047);border:1px solid rgba(185,246,202,.9);color:#053b16;text-shadow:0 1px 0 rgba(235,255,235,.45)}
-.top-nav-btn:active{transform:none}
+.top-nav-btn:disabled{background:linear-gradient(135deg,#555,#2b2b2b);border-color:#777;color:#bdbdbd;text-shadow:none;cursor:not-allowed;box-shadow:inset 0 0 8px rgba(0,0,0,.35);opacity:.78}
+.top-nav-btn:not(:disabled):active{transform:scale(.96)}
 .top-stats{display:flex;gap:3px;flex:0 1 auto;min-width:0;justify-content:center}
 .top-stat{background:linear-gradient(135deg,#1a1040,#120e30);border:1px solid rgba(120,80,200,.4);border-radius:5px;padding:2px 5px;text-align:center;line-height:1.2}
 .top-stat .lbl{font-size:6.5px;color:#8888aa;text-transform:uppercase;letter-spacing:.4px;display:block}
@@ -117,7 +118,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:
 /* ===== AUTO COUNTDOWN BAR (debajo de botones) ===== */
 .cdbar{margin-top:6px;width:140px;max-width:80%;height:5px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden;position:relative}
 .cdbar .fill{position:absolute;left:0;top:0;bottom:0;width:100%;background:linear-gradient(90deg,#ffd740,#ff6d00);border-radius:3px;transform-origin:left center}
-.cdbar.run .fill{animation:cdShrink 2s linear forwards}
+.cdbar.run .fill{animation:cdShrink var(--cd-duration,2s) linear forwards}
 @keyframes cdShrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 
 ::-webkit-scrollbar{width:2px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
@@ -127,13 +128,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:
 <div id="app">
   <div class="top-bar">
     <div class="money-box">💰<span id="xGold">0</span></div>
-    <button class="top-nav-btn prev" type="button" aria-label="Anterior">ANTERIOR</button>
+    <button class="top-nav-btn prev" id="arenaPrev" type="button" aria-label="Anterior" disabled>ANTERIOR</button>
     <div class="top-stats">
       <div class="top-stat"><span class="lbl">Prob. Ganar</span><span class="val g" id="xWin">10%</span></div>
-      <div class="top-stat"><span class="lbl">Round</span><span class="val o" id="xRound">1 / 1</span></div>
+      <div class="top-stat"><span class="lbl">Round</span><span class="val o" id="xRound">1/3</span></div>
       <div class="top-stat"><span class="lbl">Poder Actual</span><span class="val c" id="xPow">14</span></div>
     </div>
-    <button class="top-nav-btn next" type="button" aria-label="Siguiente">SIGUIENTE</button>
+    <button class="top-nav-btn next" id="arenaNext" type="button" aria-label="Siguiente" disabled>SIGUIENTE</button>
     <div class="gems-box">💎<span id="xDiam">0</span></div>
   </div>
   <div class="content">
@@ -211,11 +212,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:
 const ST={
   gold:0,diamonds:0,
   s:{atk:1,def:1,hp:1,spd:1,eva:1,crit:1},
-  wins:0,fights:0,streak:0
+  wins:0,fights:0,streak:0,
+  arena:0,arenaStreaks:[0],arenaUnlocked:[false],arenaPowerMults:[1]
 };
 const BASE_POWER=10;
 const ENEMY_POWER_MIN=7;
 const ENEMY_POWER_MAX=14;
+const MAX_ROUNDS=3;
+const VS_AUTO_START_MS=6000;
+const RESULT_AUTO_NEXT_MS=7000;
+const ARENA_STREAK_TARGET=10;
 function upgCost(k){return Math.floor(10*Math.pow(1.4,ST.s[k]-1))}
 function upgValue(k,lvl){
   if(k==='atk')return 10+lvl*5;
@@ -238,6 +244,17 @@ function playerPowerFromStats(){
   return BASE_POWER+(s.atk-1)*3+(s.def-1)*2+(s.hp-1)*2+(s.spd-1)*2+(s.eva-1)*2+(s.crit-1)*3;
 }
 function randomInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+function randomFloat(min,max){return min+Math.random()*(max-min)}
+function arenaStreak(){return ST.arenaUnlocked[ST.arena]?ARENA_STREAK_TARGET:(ST.arenaStreaks[ST.arena]||0)}
+function ensureArena(i){
+  while(ST.arenaStreaks.length<=i)ST.arenaStreaks.push(0);
+  while(ST.arenaUnlocked.length<=i)ST.arenaUnlocked.push(false);
+  while(ST.arenaPowerMults.length<=i){
+    const prev=ST.arenaPowerMults[ST.arenaPowerMults.length-1]||1;
+    ST.arenaPowerMults.push(prev*randomFloat(1.70,3.50));
+  }
+}
+function arenaEnemyPower(){return Math.max(1,Math.round(randomInt(ENEMY_POWER_MIN,ENEMY_POWER_MAX)*(ST.arenaPowerMults[ST.arena]||1)))}
 // Calcula el % de victoria comparando el poder actual propio contra el del rival.
 // Si el rival tiene 50% más poder (10 vs 15), el % queda en 50.
 function winChanceVs(myPow,enPow){
@@ -291,6 +308,7 @@ document.querySelectorAll('.upg-card').forEach(b=>b.addEventListener('click',()=
 }));
 
 function updUI(){
+  ensureArena(ST.arena);
   $('xGold').textContent=fmtN(ST.gold);
   $('xDiam').textContent=ST.diamonds;
   $('xPow').textContent=F.currentPlayerPow!=null?F.currentPlayerPow:playerPowerFromStats();
@@ -300,6 +318,10 @@ function updUI(){
   }else{
     $('xWin').textContent='--%';
   }
+  $('xRound').textContent=F.on?F.round+'/'+MAX_ROUNDS:($('resOv')&&$('resOv').classList.contains('show')?MAX_ROUNDS+'/'+MAX_ROUNDS:'1/'+MAX_ROUNDS);
+  const prevBtn=$('arenaPrev'),nextBtn=$('arenaNext');
+  if(prevBtn)prevBtn.disabled=ST.arena<=0;
+  if(nextBtn)nextBtn.disabled=!ST.arenaUnlocked[ST.arena];
   ['atk','def','hp','spd','eva','crit'].forEach(k=>{
     const cap=k.charAt(0).toUpperCase()+k.slice(1);
     $('u'+cap).textContent='Actual '+fmtStat(k,upgValue(k,ST.s[k]));
@@ -342,9 +364,11 @@ const F={
   currentEnemyPow:null,  // poder visible del rival (para Prob. Ganar)
   currentPlayerPow:null, // poder propio visible en VS y barra superior
   enemyName:'RIVAL',
-  vsTimer:null,          // temporizador de auto-inicio de pelea (2s)
-  resTimer:null,         // temporizador de auto-búsqueda tras resultado (2s)
-  resultSettled:false    // evita pagar la misma pelea más de una vez
+  vsTimer:null,          // temporizador de auto-inicio de pelea (6s)
+  resTimer:null,         // temporizador de auto-búsqueda tras resultado (7s)
+  resultSettled:false,   // evita pagar la misma pelea más de una vez
+  roundIntroT:0,
+  roundIntroText:''
 };
 
 // Nombres aleatorios para rivales
@@ -443,13 +467,14 @@ function genAudience(){
 }
 
 // ====== BARRAS DE CUENTA ATRÁS (auto-avance) ======
-// Reinicia y lanza la animación CSS de la barra de 2s.
-function runCdBar(id){
+// Reinicia y lanza la animación CSS de la barra según la duración indicada.
+function runCdBar(id,durationMs){
   const bar=$(id);
   if(!bar)return;
   bar.classList.remove('run');
   // forzar reflow para reiniciar la animación
   void bar.offsetWidth;
+  if(durationMs)bar.style.setProperty('--cd-duration',durationMs+'ms');
   bar.classList.add('run');
 }
 function stopCdBar(id){
@@ -457,20 +482,20 @@ function stopCdBar(id){
   if(bar)bar.classList.remove('run');
 }
 
-// Tras encontrar al rival: barra de 2s bajo "PELEAR" -> inicia la pelea automáticamente.
+// Tras encontrar al rival: barra de 6s bajo "PELEAR" -> inicia la pelea automáticamente.
 function startVsCountdown(){
   if(F.vsTimer)clearTimeout(F.vsTimer);
-  runCdBar('vsCd');
+  runCdBar('vsCd',VS_AUTO_START_MS);
   F.vsTimer=setTimeout(()=>{
     F.vsTimer=null;
     if(F.vsReady)startFight();
-  },2000);
+  },VS_AUTO_START_MS);
 }
 
-// Tras el resultado (VICTORIA/DERROTA): barra de 2s bajo "SIGUIENTE PELEA" -> busca nuevo rival.
+// Tras el resultado (VICTORIA/DERROTA): barra de 7s bajo "SIGUIENTE PELEA" -> busca nuevo rival.
 function startResultCountdown(){
   if(F.resTimer)clearTimeout(F.resTimer);
-  runCdBar('resCd');
+  runCdBar('resCd',RESULT_AUTO_NEXT_MS);
   F.resTimer=setTimeout(()=>{
     F.resTimer=null;
     if($('resOv').classList.contains('show')){
@@ -480,7 +505,7 @@ function startResultCountdown(){
       updUI();
       startMatchmaking();
     }
-  },2000);
+  },RESULT_AUTO_NEXT_MS);
 }
 
 // ====== MATCHMAKING ======
@@ -532,7 +557,7 @@ function showVS(){
   F.pendingEnemy={p1,p2};
   F.enemyName=ENEMY_NAMES[Math.floor(Math.random()*ENEMY_NAMES.length)];
   const myPow=playerPowerFromStats();
-  const enPow=randomInt(ENEMY_POWER_MIN,ENEMY_POWER_MAX);
+  const enPow=arenaEnemyPower();
   p1.power=myPow;
   p2.power=enPow;
   F.currentPlayerPow=myPow;
@@ -553,7 +578,7 @@ function showVS(){
   $('vsOv').classList.add('show');
   F.vsReady=true;
   updUI();
-  // Inicia automáticamente la pelea tras 2s, mostrando la barra que se consume bajo "PELEAR".
+  // Inicia automáticamente la pelea tras 6s, mostrando la barra que se consume bajo "PELEAR".
   startVsCountdown();
 }
 
@@ -615,12 +640,12 @@ function startFight(){
     p2=mkFighter(false,cX+55,cY);
   }
   F.on=true;F.round=1;F.timer=30;F.fx=[];F.shake=0;F.resultSettled=false;
-  F.roundWins=[0,0];
+  F.roundWins=[0,0];F.roundIntroT=0;F.roundIntroText='';
   // Mantenemos la MISMA probabilidad mostrada en la pantalla VS (sincronizada con la barra superior).
   // Si por algún motivo no existiera, la recalculamos como respaldo.
   if(F.currentPlayerPow==null)F.currentPlayerPow=playerPowerFromStats();
   if(F.currentEnemyPow==null){
-    F.currentEnemyPow=randomInt(ENEMY_POWER_MIN,ENEMY_POWER_MAX);
+    F.currentEnemyPow=arenaEnemyPower();
     p2.power=F.currentEnemyPow;
   }
   if(F.winChance==null)F.winChance=winChanceVs(F.currentPlayerPow,F.currentEnemyPow);
@@ -638,9 +663,9 @@ function startFight(){
   stopCdBar('vsCd');stopCdBar('resCd');
   $('vsOv').classList.remove('show');
   $('resOv').classList.remove('show');
-  $('xRound').textContent='1 / 1';
+  updUI();
   addLog('━━━━ NUEVA PELEA ━━━━','w');
-  addLog('🔔 Round único — ¡FIGHT!','h');
+  addLog('🔔 Round 1 de '+MAX_ROUNDS+' — ¡FIGHT!','h');
 }
 
 // ================ AI / PHYSICS ================
@@ -1085,6 +1110,23 @@ function drawTimer(W,H){
   cx.fillText('ROUND '+F.round,W/2,H*.07);
 }
 
+function drawRoundIntro(W,H){
+  if(F.roundIntroT<=0)return;
+  cx.save();
+  cx.translate(W/2,H/2);
+  cx.fillStyle='rgba(3,3,10,.86)';
+  cx.strokeStyle='#ffd740';cx.lineWidth=3;
+  roundRect(cx,-110,-42,220,84,12);cx.fill();cx.stroke();
+  cx.fillStyle='#ffd740';cx.font='900 30px Arial';cx.textAlign='center';cx.textBaseline='middle';
+  cx.fillText(F.roundIntroText,0,-4);
+  cx.fillStyle='rgba(255,255,255,.78)';cx.font='bold 11px Arial';
+  cx.fillText('Prepárate para luchar',0,24);
+  cx.restore();
+}
+function roundRect(g,x,y,w,h,r){
+  g.beginPath();g.moveTo(x+r,y);g.lineTo(x+w-r,y);g.quadraticCurveTo(x+w,y,x+w,y+r);g.lineTo(x+w,y+h-r);g.quadraticCurveTo(x+w,y+h,x+w-r,y+h);g.lineTo(x+r,y+h);g.quadraticCurveTo(x,y+h,x,y+h-r);g.lineTo(x,y+r);g.quadraticCurveTo(x,y,x+r,y);g.closePath();
+}
+
 function drawCountdown(W,H){
   if(F.countdown<=0)return;
   const n=Math.ceil(F.countdown);
@@ -1118,8 +1160,12 @@ function loop(now){
   drawAud(gt);
 
   if(F.on&&F.p1&&F.p2){
-    // Countdown
-    if(F.countdown>0){
+    // Presentación entre rounds
+    if(F.roundIntroT>0){
+      F.roundIntroT-=dt;
+      drawFighter(F.p1,gt);drawFighter(F.p2,gt);
+      drawRoundIntro(W,H);
+    }else if(F.countdown>0){
       F.countdown-=dt;
       drawFighter(F.p1,gt);drawFighter(F.p2,gt);
       drawCountdown(W,H);
@@ -1149,7 +1195,7 @@ function loop(now){
         endRound(F.p1.hp>=F.p2.hp);
       }
     }
-    $('xRound').textContent='1 / 1';
+    updUI();
   }else if(!F.on&&!$('resOv').classList.contains('show')){
     cx.fillStyle='rgba(255,255,255,.12)';
     cx.font='bold '+Math.floor(W*.04)+'px Arial';cx.textAlign='center';
@@ -1168,15 +1214,53 @@ function endRound(p1Won){
   F.paused=true;
   if(p1Won){
     F.roundWins[0]++;
-    addLog('✅ ¡Ganaste la pelea!','w');
-    spawnFx(cv.width/2,cv.height*.4,'¡PELEA GANADA!','#69f0ae',20);
+    addLog('✅ ¡Ganaste el round '+F.round+'!','w');
+    spawnFx(cv.width/2,cv.height*.4,'¡ROUND GANADO!','#69f0ae',20);
     F.audience.forEach(a=>a.ch=1);
   }else{
     F.roundWins[1]++;
-    addLog('❌ Perdiste la pelea','l');
-    spawnFx(cv.width/2,cv.height*.4,'PELEA PERDIDA','#ef5350',20);
+    addLog('❌ Perdiste el round '+F.round,'l');
+    spawnFx(cv.width/2,cv.height*.4,'ROUND PERDIDO','#ef5350',20);
   }
-  setTimeout(()=>endFight(p1Won),900);
+  if(F.round>=MAX_ROUNDS){
+    setTimeout(()=>endFight(F.roundWins[0]>F.roundWins[1]),900);
+  }else{
+    setTimeout(startNextRound,900);
+  }
+}
+
+function startNextRound(){
+  if(!F.on)return;
+  F.round++;
+  F.timer=30;
+  F.paused=false;
+  F.countdown=3;
+  F.roundIntroT=1.6;
+  F.roundIntroText=F.round===2?'2do Round':'3er Round';
+  resetRoundFighters();
+  updUI();
+  addLog('🔔 '+F.roundIntroText+' — cuenta atrás','h');
+}
+
+function resetRoundFighters(){
+  const W=cv.width,H=cv.height,cX=W/2,cY=H/2;
+  [F.p1,F.p2].forEach((f,i)=>{
+    if(!f)return;
+    f.x=cX+(i===0?-55:55);f.y=cY;f.vx=0;f.vy=0;f.hp=f.mhp;
+    f.st='idle';f.stT=0;f.atkCD=0;f.face=i===0?1:-1;f.stunT=0;f.kbx=0;f.kby=0;
+    f.combo=0;f.hurt=0;f.dashT=0;f.blocking=false;f.blockT=0;
+  });
+}
+
+function updateArenaStreak(won){
+  ensureArena(ST.arena);
+  if(ST.arenaUnlocked[ST.arena])return;
+  const cur=ST.arenaStreaks[ST.arena]||0;
+  ST.arenaStreaks[ST.arena]=won?Math.min(ARENA_STREAK_TARGET,cur+1):Math.max(0,cur-1);
+  if(ST.arenaStreaks[ST.arena]>=ARENA_STREAK_TARGET){
+    ST.arenaStreaks[ST.arena]=ARENA_STREAK_TARGET;
+    ST.arenaUnlocked[ST.arena]=true;
+  }
 }
 
 function endFight(won){
@@ -1190,25 +1274,26 @@ function endFight(won){
   const enPow=F.currentEnemyPow!=null?F.currentEnemyPow:1;
   const reward=won?Math.round(4+enPow*0.6):Math.round(1+enPow*0.15);
   ST.gold+=reward;
+  updateArenaStreak(won);
   if(won){
     ST.wins++;ST.streak++;
     rt.textContent='🏆 ¡VICTORIA!';rt.style.color='#69f0ae';
     rr.textContent='💰 +'+reward;
-    rs.textContent='Racha: '+ST.streak+' | Prob.: '+F.winChance+'%';
+    rs.textContent='Rachas: '+arenaStreak()+'/'+ARENA_STREAK_TARGET+' | Prob.: '+F.winChance+'%';
     addLog('🏆 VICTORIA +'+reward+' oro','w');
     F.audience.forEach(a=>a.ch=2);
   }else{
     ST.streak=0;
     rt.textContent='💀 DERROTA';rt.style.color='#ef5350';
     rr.textContent='💰 +'+reward;
-    rs.textContent='Ronda única | Prob.: '+F.winChance+'%';
+    rs.textContent='Rachas: '+arenaStreak()+'/'+ARENA_STREAK_TARGET+' | Prob.: '+F.winChance+'%';
     addLog('💀 Derrota +'+reward+' oro','l');
   }
   // Reseteamos el rival actual para que Prob. Ganar vuelva a "--%" hasta el próximo matchmaking
   F.currentEnemyPow=null;
   F.currentPlayerPow=null;
   ov.classList.add('show');
-  // Inicia la barra de 2s bajo "SIGUIENTE PELEA" y busca al nuevo rival automáticamente.
+  // Inicia la barra de 7s bajo "SIGUIENTE PELEA" y busca al nuevo rival automáticamente.
   startResultCountdown();
   updUI();
 }
@@ -1231,6 +1316,20 @@ $('resB').addEventListener('click',()=>{
   setTimeout(startMatchmaking,200);
 });
 // Botón "¡PELEAR!" del VS screen
+$('arenaPrev').addEventListener('click',()=>{
+  if(ST.arena<=0)return;
+  ST.arena--;
+  F.currentEnemyPow=null;F.currentPlayerPow=null;
+  updUI();
+});
+$('arenaNext').addEventListener('click',()=>{
+  ensureArena(ST.arena);
+  if(!ST.arenaUnlocked[ST.arena])return;
+  ST.arena++;
+  ensureArena(ST.arena);
+  F.currentEnemyPow=null;F.currentPlayerPow=null;
+  updUI();
+});
 $('vsGo').addEventListener('click',()=>{
   // El usuario adelanta manualmente: cancelar el auto-temporizador y la barra.
   if(F.vsTimer){clearTimeout(F.vsTimer);F.vsTimer=null;}
