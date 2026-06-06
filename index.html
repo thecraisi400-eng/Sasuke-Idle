@@ -201,28 +201,29 @@ const ST={
   s:{atk:1,def:1,hp:1,spd:1,eva:1,crit:1},
   wins:0,fights:0,streak:0
 };
-const BASE_POWER=14;
+const BASE_POWER=10;
+const ENEMY_POWER_MIN=7;
+const ENEMY_POWER_MAX=14;
 function upgCost(k){return Math.floor(10*Math.pow(1.4,ST.s[k]-1))}
 function totPow(){const s=ST.s;return s.atk*3+s.def*2+s.hp*2+s.spd*2+s.eva*2+s.crit*3}
 function fmtN(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return''+Math.floor(n)}
 function playerPowerFromStats(){
   const s=ST.s;
-  return Math.max(1,Math.round(
-    ((10+s.atk*5)*1.6)+((3+s.def*3)*1.2)+(((100+s.hp*30)*3)*(0.08/3))+((1.8+s.spd*0.25)*4)+((4+s.eva*2.5)*0.6)+((5+s.crit*3)*0.6)
-  ));
+  return BASE_POWER+(s.atk-1)*3+(s.def-1)*2+(s.hp-1)*2+(s.spd-1)*2+(s.eva-1)*2+(s.crit-1)*3;
 }
-// Calcula la probabilidad de ganar comparando el poder propio contra el del rival.
-// Si no hay rival, devuelve null (UI mostrará "--%").
+function randomInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+// Calcula el % de victoria comparando el poder actual propio contra el del rival.
+// Si el rival tiene 50% más poder (10 vs 15), el % queda en 50.
 function winChanceVs(myPow,enPow){
-  // Razón de poderes -> mapeo a probabilidad.
-  // Iguales = 50%. Doble que el rival ~ 85%. Mitad del rival ~ 15%.
-  const r=myPow/Math.max(1,enPow);
-  // Curva suave usando logaritmo
-  let p=50+Math.log2(r)*30;
-  p=Math.max(3,Math.min(97,p));
-  return Math.round(p);
+  myPow=Math.max(1,myPow);
+  enPow=Math.max(1,enPow);
+  if(myPow>=enPow)return 100;
+  const enemyAdvantagePct=((enPow-myPow)/myPow)*100;
+  return Math.max(0,Math.min(100,Math.round(100-enemyAdvantagePct)));
 }
-function rollFightWin(chance){return Math.random()*100<chance}
+// Usa el % actual como piso del azar: se tira un número entre chance y 100;
+// si supera 95, el personaje gana el duelo.
+function rollFightWin(chance){return chance>=100||chance+(Math.random()*(100-chance))>95}
 function syncFighterStats(f){
   f.mhp=Math.max(1,Math.round(f.mhp));
   f.hp=Math.min(f.mhp,Math.max(1,Math.round(f.hp)));
@@ -305,7 +306,7 @@ const F={
   roundWins:[0,0], // p1wins, p2wins
   paused:false,pauseT:0,
   countdown:0,
-  winChance:10,
+  winChance:100,
   predeterminedWin:false,
   // Matchmaking
   searching:false,
@@ -503,8 +504,10 @@ function showVS(){
   syncFighterStats(p1);syncFighterStats(p2);
   F.pendingEnemy={p1,p2};
   F.enemyName=ENEMY_NAMES[Math.floor(Math.random()*ENEMY_NAMES.length)];
-  const myPow=fighterPower(p1);
-  const enPow=fighterPower(p2);
+  const myPow=playerPowerFromStats();
+  const enPow=randomInt(ENEMY_POWER_MIN,ENEMY_POWER_MAX);
+  p1.power=myPow;
+  p2.power=enPow;
   F.currentPlayerPow=myPow;
   F.currentEnemyPow=enPow;
   const chance=winChanceVs(myPow,enPow);
@@ -588,8 +591,11 @@ function startFight(){
   F.roundWins=[0,0];
   // Mantenemos la MISMA probabilidad mostrada en la pantalla VS (sincronizada con la barra superior).
   // Si por algún motivo no existiera, la recalculamos como respaldo.
-  if(F.currentPlayerPow==null)F.currentPlayerPow=fighterPower(p1);
-  if(F.currentEnemyPow==null)F.currentEnemyPow=fighterPower(p2);
+  if(F.currentPlayerPow==null)F.currentPlayerPow=playerPowerFromStats();
+  if(F.currentEnemyPow==null){
+    F.currentEnemyPow=randomInt(ENEMY_POWER_MIN,ENEMY_POWER_MAX);
+    p2.power=F.currentEnemyPow;
+  }
   if(F.winChance==null)F.winChance=winChanceVs(F.currentPlayerPow,F.currentEnemyPow);
   F.predeterminedWin=rollFightWin(F.winChance);
   F.p1=p1;F.p2=p2;
