@@ -47,14 +47,18 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:
 
 
 /* ===== UPGRADES ===== */
-.upg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;flex-shrink:0}
-.upg-card{background:linear-gradient(180deg,#331000,#160700);border:1px solid #ff6d00;border-radius:6px;padding:6px 2px 5px;text-align:center;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;box-shadow:inset 0 0 10px rgba(255,109,0,.08)}
+.upg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;flex-shrink:0}
+.upg-card{background:linear-gradient(180deg,#331000,#160700);border:1px solid #ff6d00;border-radius:6px;padding:4px 3px;text-align:left;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;box-shadow:inset 0 0 10px rgba(255,109,0,.08);min-height:68px;display:grid;grid-template-columns:32% 68%;align-items:center}
 .upg-card::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.03),transparent);pointer-events:none}
+.upg-card::after{content:'';position:absolute;left:32%;top:8px;bottom:8px;width:1px;background:linear-gradient(180deg,transparent,rgba(255,224,178,.18),transparent);pointer-events:none}
 .upg-card:active{transform:scale(.94);border-color:#ff6d00;box-shadow:0 0 10px rgba(230,81,0,.3)}
-.upg-card .ui{font-size:18px;display:block;line-height:1.05}
-.upg-card .un{font-size:8.25px;color:#ffe0b2;font-weight:800;display:block;margin:2px 0 1px}
-.upg-card .ul{font-size:7.5px;color:#ffab40;font-weight:800;display:block}
-.upg-card .uc{font-size:7.5px;color:#ffd740;display:block;margin-top:2px}
+.upg-card .ui{font-size:22px;display:flex;align-items:center;justify-content:center;height:100%;line-height:1}
+.upg-info{display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0;padding-left:5px}
+.upg-card .un{font-size:8px;color:#ffe0b2;font-weight:900;display:block;line-height:1;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.upg-card .ul,.upg-card .unx,.upg-card .uc{font-size:8.4px;font-weight:800;display:block;line-height:1.18;white-space:nowrap}
+.upg-card .ul{color:#ffab40}
+.upg-card .unx{color:#69f0ae}
+.upg-card .uc{color:#ffd740}
 
 
 
@@ -169,12 +173,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:
       </div>
 
       <div class="upg-grid">
-        <div class="upg-card" data-u="atk"><span class="ui">⚔️</span><span class="un">Ataque</span><span class="ul" id="uAtk">Nv.1</span><span class="uc" id="cAtk">💰10</span></div>
-        <div class="upg-card" data-u="def"><span class="ui">🛡️</span><span class="un">Defensa</span><span class="ul" id="uDef">Nv.1</span><span class="uc" id="cDef">💰10</span></div>
-        <div class="upg-card" data-u="hp"><span class="ui">❤️</span><span class="un">HP</span><span class="ul" id="uHp">Nv.1</span><span class="uc" id="cHp">💰10</span></div>
-        <div class="upg-card" data-u="spd"><span class="ui">💨</span><span class="un">Velocidad</span><span class="ul" id="uSpd">Nv.1</span><span class="uc" id="cSpd">💰10</span></div>
-        <div class="upg-card" data-u="eva"><span class="ui">🌀</span><span class="un">Evasión</span><span class="ul" id="uEva">Nv.1</span><span class="uc" id="cEva">💰10</span></div>
-        <div class="upg-card" data-u="crit"><span class="ui">💥</span><span class="un">Crítico x2</span><span class="ul" id="uCrit">Nv.1</span><span class="uc" id="cCrit">💰10</span></div>
+        <div class="upg-card" data-u="atk"><span class="ui">⚔️</span><div class="upg-info"><span class="un">Ataque</span><span class="ul" id="uAtk">Actual 15</span><span class="unx" id="nAtk">Mejora 20</span><span class="uc" id="cAtk">💰10</span></div></div>
+        <div class="upg-card" data-u="def"><span class="ui">🛡️</span><div class="upg-info"><span class="un">Defensa</span><span class="ul" id="uDef">Actual 6</span><span class="unx" id="nDef">Mejora 9</span><span class="uc" id="cDef">💰10</span></div></div>
+        <div class="upg-card" data-u="hp"><span class="ui">❤️</span><div class="upg-info"><span class="un">HP</span><span class="ul" id="uHp">Actual 390</span><span class="unx" id="nHp">Mejora 480</span><span class="uc" id="cHp">💰10</span></div></div>
+        <div class="upg-card" data-u="spd"><span class="ui">💨</span><div class="upg-info"><span class="un">Velocidad</span><span class="ul" id="uSpd">Actual 2.05</span><span class="unx" id="nSpd">Mejora 2.30</span><span class="uc" id="cSpd">💰10</span></div></div>
+        <div class="upg-card" data-u="eva"><span class="ui">🌀</span><div class="upg-info"><span class="un">Evasión</span><span class="ul" id="uEva">Actual 6.5</span><span class="unx" id="nEva">Mejora 9</span><span class="uc" id="cEva">💰10</span></div></div>
+        <div class="upg-card" data-u="crit"><span class="ui">💥</span><div class="upg-info"><span class="un">Crítico x2</span><span class="ul" id="uCrit">Actual 8%</span><span class="unx" id="nCrit">Mejora 11%</span><span class="uc" id="cCrit">💰10</span></div></div>
       </div>
 
     </div>
@@ -205,6 +209,20 @@ const BASE_POWER=10;
 const ENEMY_POWER_MIN=7;
 const ENEMY_POWER_MAX=14;
 function upgCost(k){return Math.floor(10*Math.pow(1.4,ST.s[k]-1))}
+function upgValue(k,lvl){
+  if(k==='atk')return 10+lvl*5;
+  if(k==='def')return 3+lvl*3;
+  if(k==='hp')return (100+lvl*30)*3;
+  if(k==='spd')return 1.8+lvl*0.25;
+  if(k==='eva')return 4+lvl*2.5;
+  if(k==='crit')return 5+lvl*3;
+  return lvl;
+}
+function fmtStat(k,v){
+  if(k==='spd')return v.toFixed(2);
+  if(k==='crit')return fmtN(v)+'%';
+  return Number.isInteger(v)?fmtN(v):Number(v.toFixed(1));
+}
 function totPow(){const s=ST.s;return s.atk*3+s.def*2+s.hp*2+s.spd*2+s.eva*2+s.crit*3}
 function fmtN(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return''+Math.floor(n)}
 function playerPowerFromStats(){
@@ -276,7 +294,8 @@ function updUI(){
   }
   ['atk','def','hp','spd','eva','crit'].forEach(k=>{
     const cap=k.charAt(0).toUpperCase()+k.slice(1);
-    $('u'+cap).textContent='Nv.'+ST.s[k];
+    $('u'+cap).textContent='Actual '+fmtStat(k,upgValue(k,ST.s[k]));
+    $('n'+cap).textContent='Mejora '+fmtStat(k,upgValue(k,ST.s[k]+1));
     $('c'+cap).textContent='💰'+fmtN(upgCost(k));
   });
 }
