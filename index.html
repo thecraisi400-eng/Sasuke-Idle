@@ -299,7 +299,7 @@ function ensureArena(i){
     ST.arenaPowerMults.push(prev*randomFloat(1.70,3.50));
   }
 }
-function arenaEnemyPower(){return randomInt(ENEMY_POWER_MIN,ENEMY_POWER_MAX)}
+function arenaEnemyPower(){return randomInt(Math.max(BASE_POWER,ENEMY_POWER_MIN),ENEMY_POWER_MAX)}
 function distributeEnemyStats(power){
   const keys=['atk','def','hp','spd','eva','crit'];
   const totalPoints=Math.max(0,Math.round(Number(power)||0));
