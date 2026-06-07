@@ -269,18 +269,18 @@ function genAudience(){
     seat:cols[(i+row*3+4)%cols.length]
   });
   // Público estático: bloques pixelados baratos de dibujar, sin animaciones ni curvas.
-  for(let i=0;i<18;i++){
-    const row=Math.floor(i/5);
-    addBlock(ringL-14-row*8+(i%2)*2,ringT+9+i*((ringB-ringT-18)/18),i,row);
+  for(let i=0;i<9;i++){
+    const row=Math.floor(i/3);
+    addBlock(ringL-14-row*8+(i%2)*2,ringT+9+i*((ringB-ringT-18)/8),i,row);
   }
-  for(let i=0;i<18;i++){
-    const row=Math.floor(i/5);
-    addBlock(ringR+14+row*8-(i%2)*2,ringT+9+i*((ringB-ringT-18)/18),i+5,row);
+  for(let i=0;i<9;i++){
+    const row=Math.floor(i/3);
+    addBlock(ringR+14+row*8-(i%2)*2,ringT+9+i*((ringB-ringT-18)/8),i+5,row);
   }
   for(let row=0;row<2;row++){
-    for(let i=0;i<22;i++)addBlock(ringL+8+i*((ringR-ringL-16)/21),ringT-15-row*10,i,row);
+    for(let i=0;i<11;i++)addBlock(ringL+8+i*((ringR-ringL-16)/10),ringT-15-row*10,i,row);
   }
-  for(let i=0;i<18;i++)addBlock(ringL+12+i*((ringR-ringL-24)/17),ringB+14,i+2,0);
+  for(let i=0;i<9;i++)addBlock(ringL+12+i*((ringR-ringL-24)/8),ringB+14,i+2,0);
   return a;
 }
 
@@ -997,18 +997,19 @@ function updateFps(now){
 
 function drawFpsCounter(W,H){
   const ring=getRingBounds(W,H);
-  const x=ring.l+8,y=ring.t+9;
   const fps=Math.max(0,FPS.value||0);
   cx.save();
-  cx.font='bold 11px Arial';cx.textAlign='left';cx.textBaseline='top';
-  const label='FPS: '+fps;
-  const w=Math.ceil(cx.measureText(label).width)+12,h=18;
+  cx.font='bold 10px Arial';cx.textAlign='left';cx.textBaseline='top';
+  const label='FPS '+fps;
+  const w=Math.ceil(cx.measureText(label).width)+10,h=16;
+  const x=Math.max(6,Math.min(ring.l-w-8,W-w-6));
+  const y=Math.max(6,ring.t+8);
   cx.fillStyle='rgba(0,0,0,.58)';
   roundRect(cx,x,y,w,h,4);cx.fill();
   cx.strokeStyle=fps>=50?'rgba(105,240,174,.7)':fps>=30?'rgba(255,215,64,.75)':'rgba(239,83,80,.75)';
   cx.lineWidth=1;roundRect(cx,x+.5,y+.5,w-1,h-1,4);cx.stroke();
   cx.fillStyle=fps>=50?'#69f0ae':fps>=30?'#ffd740':'#ef5350';
-  cx.fillText(label,x+6,y+3);
+  cx.fillText(label,x+5,y+3);
   cx.restore();
 }
 
