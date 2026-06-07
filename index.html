@@ -216,8 +216,9 @@ const ST={
   upgCosts:{atk:10,def:10,hp:10,spd:10,eva:10,crit:10},
   goldMult:1
 };
-const ENEMY_POWER_MIN=4;
-const ENEMY_POWER_MAX=15;
+const FIRST_ARENA_POWER_RANGE={min:1,max:5};
+const SECOND_ARENA_POWER_RANGE={min:5,max:10};
+const ARENA_POWER_STEP=10;
 const MAX_ROUNDS=3;
 const VS_AUTO_START_MS=4000;
 const RESULT_AUTO_NEXT_MS=7000;
@@ -299,13 +300,17 @@ function ensureArena(i){
     ST.arenaPowerMults.push(prev*randomFloat(1.70,3.50));
   }
 }
+function arenaEnemyPowerRange(arena=ST.arena){
+  const arenaIndex=Math.max(0,Math.floor(Number(arena)||0));
+  if(arenaIndex===0)return{...FIRST_ARENA_POWER_RANGE};
+  if(arenaIndex===1)return{...SECOND_ARENA_POWER_RANGE};
+  const min=ARENA_POWER_STEP*(arenaIndex-1);
+  return{min,max:min+ARENA_POWER_STEP};
+}
 function arenaEnemyPower(){
   ensureArena(ST.arena);
-  const arenaMult=Number(ST.arenaPowerMults[ST.arena])||1;
-  const playerPow=Math.max(1,playerPowerFromStats());
-  const minPow=Math.max(ENEMY_POWER_MIN,Math.floor(playerPow*.75),Math.floor(ENEMY_POWER_MIN*arenaMult));
-  const maxPow=Math.max(minPow,Math.ceil(playerPow*1.35),Math.ceil(ENEMY_POWER_MAX*arenaMult));
-  return randomInt(minPow,maxPow);
+  const {min,max}=arenaEnemyPowerRange(ST.arena);
+  return randomInt(min,max);
 }
 function distributeEnemyStats(power){
   const keys=['atk','def','hp','spd','eva','crit'];
@@ -615,6 +620,20 @@ function cancelVS(){
   F.currentEnemyPow=null;
   F.currentPlayerPow=null;
   updUI();
+}
+
+function resetEncounterForArenaChange(){
+  if(F.vsTimer){clearTimeout(F.vsTimer);F.vsTimer=null;}
+  if(F.resTimer){clearTimeout(F.resTimer);F.resTimer=null;}
+  stopCdBar('vsCd');stopCdBar('resCd');
+  $('vsOv').classList.remove('show');
+  $('resOv').classList.remove('show');
+  F.vsReady=false;
+  F.pendingEnemy=null;
+  F.currentEnemyPow=null;
+  F.currentPlayerPow=null;
+  F.roundWins=[0,0];
+  F.resultSettled=false;
 }
 
 // Dibuja un sprite estático del fighter en un canvas 64x64
@@ -1343,19 +1362,20 @@ $('resB').addEventListener('click',()=>{
 });
 // Botón "¡PELEAR!" del VS screen
 $('arenaPrev').addEventListener('click',()=>{
-  if(ST.arena<=0)return;
+  if(F.on||F.searching||ST.arena<=0)return;
   ST.arena--;
-  F.currentEnemyPow=null;F.currentPlayerPow=null;
+  resetEncounterForArenaChange();
   updUI();
 });
 $('arenaNext').addEventListener('click',()=>{
   ensureArena(ST.arena);
-  if(!ST.arenaUnlocked[ST.arena])return;
+  if(F.on||F.searching||!ST.arenaUnlocked[ST.arena])return;
   ST.arena++;
   ST.goldMult=(ST.goldMult||1)*randomFloat(1.25,1.50);
   ensureArena(ST.arena);
-  F.currentEnemyPow=null;F.currentPlayerPow=null;
+  resetEncounterForArenaChange();
   updUI();
+  setTimeout(startMatchmaking,200);
 });
 $('vsGo').addEventListener('click',()=>{
   // El usuario adelanta manualmente: cancelar el auto-temporizador y la barra.
