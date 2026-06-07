@@ -1,6 +1,6 @@
 // ================ GAME STATE ================
 const ST={
-  gold:0,diamonds:0,
+  gold:15,diamonds:0,
   s:{atk:1,def:1,hp:1,spd:1,eva:1,crit:1},
   wins:0,fights:0,streak:0,
   arena:0,arenaStreaks:[0],arenaUnlocked:[false],arenaPowerMults:[1],
@@ -146,7 +146,7 @@ document.querySelectorAll('.menu-btn').forEach(b=>b.addEventListener('click',()=
 // Upgrades
 document.querySelectorAll('.upg-card').forEach(b=>b.addEventListener('click',()=>{
   const k=b.dataset.u,c=upgCost(k);
-  if(!isStatMaxed(k)&&ST.gold>=c){ST.gold-=c;ST.s[k]++;advanceUpgradeCost(k,c);updUI();}
+  if(!isStatMaxed(k)&&ST.gold>=c){ST.gold-=c;ST.s[k]++;advanceUpgradeCost(k,c);updUI();saveGameNow();}
 }));
 
 function updUI(){
@@ -203,7 +203,8 @@ const F={
   resTimer:null,         // temporizador de auto-búsqueda tras resultado (7s)
   resultSettled:false,   // evita pagar la misma pelea más de una vez
   roundIntroT:0,
-  roundIntroText:''
+  roundIntroText:'',
+  roundEnding:false
 };
 
 // Nombres aleatorios para rivales
@@ -245,7 +246,6 @@ function mkFighter(isP,x,y,enemyStats=null){
     atkCD:0,
     face:isP?1:-1,
     stunT:0,kbx:0,kby:0,
-    combo:0,
     bob:Math.random()*6.28,
     hurt:0,
     dashT:0,dashDx:0,dashDy:0,
@@ -260,27 +260,27 @@ function genAudience(){
   const a=[],cols=['#e53935','#1e88e5','#43a047','#fdd835','#8e24aa','#fb8c00','#00acc1','#e91e63','#7c4dff','#ff6e40','#26c6da','#d4e157'];
   const ringL=W*.12,ringR=W*.88,ringT=H*.15,ringB=H*.85;
   // Left stands
-  for(let i=0;i<10;i++){
-    const row=Math.floor(i/2);
-    a.push({x:ringL-12-row*9+Math.random()*3,y:ringT+10+i*((ringB-ringT-20)/10)+Math.random()*5,
+  for(let i=0;i<20;i++){
+    const row=Math.floor(i/4);
+    a.push({x:ringL-12-row*9+Math.random()*3,y:ringT+8+i*((ringB-ringT-16)/20)+Math.random()*4,
       c:cols[i%cols.length],b:Math.random()*6.28,ch:0,sz:3+Math.random()});
   }
   // Right stands
-  for(let i=0;i<10;i++){
-    const row=Math.floor(i/2);
-    a.push({x:ringR+12+row*9+Math.random()*3,y:ringT+10+i*((ringB-ringT-20)/10)+Math.random()*5,
+  for(let i=0;i<20;i++){
+    const row=Math.floor(i/4);
+    a.push({x:ringR+12+row*9+Math.random()*3,y:ringT+8+i*((ringB-ringT-16)/20)+Math.random()*4,
       c:cols[(i+5)%cols.length],b:Math.random()*6.28,ch:0,sz:3+Math.random()});
   }
   // Top stands (2 rows)
   for(let r=0;r<2;r++){
-    for(let i=0;i<12;i++){
-      a.push({x:ringL+10+i*((ringR-ringL-20)/12)+Math.random()*4,y:ringT-14-r*11+Math.random()*3,
+    for(let i=0;i<24;i++){
+      a.push({x:ringL+7+i*((ringR-ringL-14)/24)+Math.random()*3,y:ringT-14-r*11+Math.random()*3,
         c:cols[(i+r*3)%cols.length],b:Math.random()*6.28,ch:0,sz:3+Math.random()});
     }
   }
   // Bottom stands
-  for(let i=0;i<10;i++){
-    a.push({x:ringL+15+i*((ringR-ringL-30)/10)+Math.random()*4,y:ringB+14+Math.random()*3,
+  for(let i=0;i<20;i++){
+    a.push({x:ringL+10+i*((ringR-ringL-20)/20)+Math.random()*3,y:ringB+14+Math.random()*3,
       c:cols[(i+2)%cols.length],b:Math.random()*6.28,ch:0,sz:3+Math.random()});
   }
   return a;
@@ -323,6 +323,7 @@ function startResultCountdown(){
       F.currentEnemyPow=null;
       F.currentPlayerPow=null;
       updUI();
+      saveGameNow();
       startMatchmaking();
     }
   },RESULT_AUTO_NEXT_MS);
@@ -338,6 +339,7 @@ function startMatchmaking(){
   F.currentPlayerPow=playerPowerFromStats();
   F.currentEnemyPow=null;
   updUI();
+  saveGameNow();
   $('mmOv').classList.add('show');
   $('mmStatus').textContent='Conectando con la red de luchadores...';
   // Animación de puntos
@@ -401,6 +403,7 @@ function showVS(){
   updUI();
   // Inicia automáticamente la pelea tras 4s, mostrando la barra que se consume bajo "PELEAR".
   startVsCountdown();
+  saveGameNow();
 }
 
 function cancelVS(){
@@ -425,6 +428,7 @@ function resetEncounterForArenaChange(){
   F.currentPlayerPow=null;
   F.roundWins=[0,0];
   F.resultSettled=false;
+  F.roundEnding=false;
 }
 
 // Dibuja un sprite estático del fighter en un canvas 64x64
@@ -474,7 +478,7 @@ function startFight(){
     p1=mkFighter(true,cX-55,cY);
     p2=mkFighter(false,cX+55,cY);
   }
-  F.on=true;F.round=1;F.timer=30;F.fx=[];F.shake=0;F.resultSettled=false;
+  F.on=true;F.round=1;F.timer=30;F.fx=[];F.shake=0;F.resultSettled=false;F.roundEnding=false;
   F.roundWins=[0,0];F.roundIntroT=0;F.roundIntroText='';
   if(F.currentPlayerPow==null)F.currentPlayerPow=playerPowerFromStats();
   if(F.currentEnemyPow==null){
@@ -488,6 +492,7 @@ function startFight(){
   F.p1=p1;F.p2=p2;
   F.audience=genAudience();
   F.paused=false;
+  F.roundEnding=false;
   F.countdown=3;
   F.vsReady=false;
   F.pendingEnemy=null;
@@ -500,6 +505,7 @@ function startFight(){
   updUI();
   addLog('━━━━ NUEVA PELEA ━━━━','w');
   addLog('🔔 Round 1 de '+MAX_ROUNDS+' — ¡FIGHT!','h');
+  saveGameNow();
 }
 
 // ================ AI / PHYSICS ================
@@ -624,9 +630,10 @@ function doAttack(atk,def){
     def.hp=Math.max(0,def.hp-blocked);
     def.hurt=.1;
     addLog(`${def.name} bloquea ${mv.name}! -${blocked} (reducido)`,'m');
-    spawnFx(def.x,def.y-22,'🛡️ BLOCK -'+fmtN(blocked),'#40c4ff',14);
+    spawnFx(def.x,def.y-22,'🛡️ BLOCK -'+fmtN(blocked),atk.isP?'#ffffff':'#ef5350',17);
     F.shake=.06;
     spawnSparks((atk.x+def.x)/2,(atk.y+def.y)/2,3,'#40c4ff');
+    saveGameNow();
     return;
   }
 
@@ -637,8 +644,6 @@ function doAttack(atk,def){
 
   def.hp=Math.max(0,def.hp-dmg);
   def.hurt=.18;
-  atk.combo++;
-
   // Knockback
   const kbF=mv.kb*(isCrit?1.8:1);
   def.stunT=mv.stun*(isCrit?1.5:1);
@@ -648,19 +653,15 @@ function doAttack(atk,def){
 
   // VFX
   const ix=(atk.x+def.x)/2,iy=(atk.y+def.y)/2;
-  const col=isCrit?'#ffd740':'#ef5350';
+  const col=atk.isP?'#ffffff':'#ef5350';
   const txt=isCrit?`💥CRIT! -${dmg}`:`${mv.icon}-${dmg}`;
-  spawnFx(ix,iy-12,txt,col,isCrit?20:15);
+  spawnFx(ix,iy-12,txt,col,isCrit?23:18);
   spawnSparks(ix,iy,isCrit?10:4,isCrit?'#ffd740':'#ff6d00');
   if(isCrit){
-    spawnFx(ix,iy-30,'¡¡'+mv.name.toUpperCase()+'!!','#fff',12);
+    spawnFx(ix,iy-30,'¡¡'+mv.name.toUpperCase()+'!!',col,14);
     F.audience.forEach(a=>a.ch=.6+Math.random()*.3);
   }
-
-  // Combo bonus text
-  if(atk.combo>=3&&atk.combo%2===1){
-    spawnFx(atk.x,atk.y-30,'COMBO x'+atk.combo+'!','#aa00ff',13);
-  }
+  saveGameNow();
 
   const lt=isCrit?'cr':'h';
   addLog(`${atk.name} ${mv.icon}${mv.name}${isCrit?' ¡CRIT!':''} → -${fmtN(dmg)} ${def.name} [${fmtN(Math.ceil(def.hp))}/${fmtN(def.mhp)}]`,lt);
@@ -681,6 +682,19 @@ function spawnRopeHit(x,y){
   spawnSparks(x,y,5,'#ff0000');
   F.shake=Math.max(F.shake,.08);
   F.audience.forEach(a=>{if(Math.random()<.4)a.ch=.3;});
+}
+function spawnKoExplosion(f){
+  if(!f)return;
+  const x=f.x,y=f.y;
+  const mainColor=f.isP?'#90caf9':'#ef5350';
+  spawnFx(x,y-28,'💥 KO 💥',mainColor,28);
+  for(let i=0;i<38;i++){
+    const a=Math.random()*6.28,sp=35+Math.random()*105;
+    F.fx.push({t:'sp',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:.85+Math.random()*.65,ml:1.5,
+      color:i%3===0?'#ffffff':(i%3===1?'#ffd740':mainColor),sz:2.5+Math.random()*4});
+  }
+  F.shake=Math.max(F.shake,.28);
+  F.audience.forEach(a=>a.ch=.9+Math.random()*.7);
 }
 
 function updFx(dt){
@@ -1004,6 +1018,10 @@ function loop(now){
       drawFighter(F.p1,gt);drawFighter(F.p2,gt);
       drawCountdown(W,H);
     }else{
+      if(F.paused){
+        drawFighter(F.p1,gt);drawFighter(F.p2,gt);
+        drawTimer(W,H);
+      }else{
       // Update
       updFighter(F.p1,F.p2,dt);
       updFighter(F.p2,F.p1,dt);
@@ -1028,6 +1046,7 @@ function loop(now){
       }else if(!F.paused&&F.timer<=0){
         endRound(F.p1.hp>=F.p2.hp);
       }
+      }
     }
     updUI();
   }else if(!F.on&&!$('resOv').classList.contains('show')){
@@ -1044,8 +1063,12 @@ function loop(now){
 }
 
 function endRound(p1Won){
-  if(F.paused||!F.on)return;
+  if(F.paused||F.roundEnding||!F.on)return;
   F.paused=true;
+  F.roundEnding=true;
+  const loser=p1Won?F.p2:F.p1;
+  const isKo=F.p1.hp<=0||F.p2.hp<=0;
+  if(isKo&&loser)spawnKoExplosion(loser);
   if(p1Won){
     F.roundWins[0]++;
     addLog('✅ ¡Ganaste el round '+F.round+'!','w');
@@ -1056,11 +1079,12 @@ function endRound(p1Won){
     addLog('❌ Perdiste el round '+F.round,'l');
     spawnFx(cv.width/2,cv.height*.4,'ROUND PERDIDO','#ef5350',20);
   }
+  saveGameNow();
   if(F.round>=MAX_ROUNDS){
     const playerWonFight=F.roundWins[0]>F.roundWins[1];
-    setTimeout(()=>endFight(playerWonFight),900);
+    setTimeout(()=>endFight(playerWonFight),1700);
   }else{
-    setTimeout(startNextRound,900);
+    setTimeout(startNextRound,1700);
   }
 }
 
@@ -1069,12 +1093,14 @@ function startNextRound(){
   F.round++;
   F.timer=30;
   F.paused=false;
+  F.roundEnding=false;
   F.countdown=3;
   F.roundIntroT=1.6;
   F.roundIntroText=F.round===2?'2do Round':'3er Round';
   resetRoundFighters();
   updUI();
   addLog('🔔 '+F.roundIntroText+' — cuenta atrás','h');
+  saveGameNow();
 }
 
 function resetRoundFighters(){
@@ -1083,7 +1109,7 @@ function resetRoundFighters(){
     if(!f)return;
     f.x=cX+(i===0?-55:55);f.y=cY;f.vx=0;f.vy=0;f.hp=f.mhp;
     f.st='idle';f.stT=0;f.atkCD=0;f.face=i===0?1:-1;f.stunT=0;f.kbx=0;f.kby=0;
-    f.combo=0;f.hurt=0;f.dashT=0;f.blocking=false;f.blockT=0;
+    f.hurt=0;f.dashT=0;f.blocking=false;f.blockT=0;
   });
 }
 
@@ -1132,6 +1158,7 @@ function endFight(won){
   // Inicia la barra de 7s bajo "SIGUIENTE PELEA" y busca al nuevo rival automáticamente.
   startResultCountdown();
   updUI();
+  saveGameNow();
 }
 
 // ================ EVENTS ================
@@ -1149,6 +1176,7 @@ $('resB').addEventListener('click',()=>{
   F.currentEnemyPow=null;
   F.currentPlayerPow=null;
   updUI();
+  saveGameNow();
   setTimeout(startMatchmaking,200);
 });
 // Botón "¡PELEAR!" del VS screen
@@ -1157,6 +1185,7 @@ $('arenaPrev').addEventListener('click',()=>{
   ST.arena--;
   resetEncounterForArenaChange();
   updUI();
+  saveGameNow();
 });
 $('arenaNext').addEventListener('click',()=>{
   ensureArena(ST.arena);
@@ -1166,6 +1195,7 @@ $('arenaNext').addEventListener('click',()=>{
   ensureArena(ST.arena);
   resetEncounterForArenaChange();
   updUI();
+  saveGameNow();
   setTimeout(startMatchmaking,200);
 });
 $('vsGo').addEventListener('click',()=>{
@@ -1175,6 +1205,48 @@ $('vsGo').addEventListener('click',()=>{
   if(F.vsReady)startFight();
 });
 
+// ================ SAVE BRIDGE ================
+function saveGameNow(){
+  if(window.GuardarPartida)window.GuardarPartida.save(ST,F);
+}
+function saveGameImmediately(){
+  if(window.GuardarPartida)window.GuardarPartida.saveNow(ST,F);
+}
+function loadSavedGame(){
+  if(window.GuardarPartida)window.GuardarPartida.load(ST,F);
+}
+function restoreSavedVisualState(){
+  if(F.vsReady&&F.pendingEnemy){
+    const p1=F.pendingEnemy.p1,p2=F.pendingEnemy.p2;
+    $('vsEName').textContent=F.enemyName||'RIVAL';
+    $('vsPowP').textContent=fmtN(F.currentPlayerPow!=null?F.currentPlayerPow:playerPowerFromStats());
+    $('vsPowE').textContent=fmtN(F.currentEnemyPow!=null?F.currentEnemyPow:0);
+    renderEnemyStats((p2&&p2.statPoints)||{});
+    if(p1)drawSpriteSnapshot($('spP').getContext('2d'),p1);
+    if(p2)drawSpriteSnapshot($('spE').getContext('2d'),p2);
+    $('vsOv').classList.add('show');
+    startVsCountdown();
+  }
+}
+function resumeSavedTransition(){
+  restoreSavedVisualState();
+  if(!F.on||!F.roundEnding)return;
+  F.paused=true;
+  if(F.round>=MAX_ROUNDS){
+    const playerWonFight=F.roundWins[0]>F.roundWins[1];
+    setTimeout(()=>endFight(playerWonFight),1200);
+  }else{
+    setTimeout(startNextRound,1200);
+  }
+}
+
 // ================ INIT ================
+loadSavedGame();
+window.ST=ST;window.F=F;
+window.addEventListener('pagehide',saveGameImmediately);
+window.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveGameImmediately();});
+setInterval(saveGameNow,5000);
+resumeSavedTransition();
 updUI();
+saveGameNow();
 requestAnimationFrame(loop);
