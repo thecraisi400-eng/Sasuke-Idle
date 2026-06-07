@@ -10,7 +10,7 @@ const ST={
 const FIRST_ARENA_POWER_RANGE={min:1,max:5};
 const SECOND_ARENA_POWER_RANGE={min:5,max:10};
 const ARENA_POWER_STEP=10;
-const MAX_ROUNDS=3;
+const MAX_ROUNDS=1;
 const VS_AUTO_START_MS=4000;
 const RESULT_AUTO_NEXT_MS=7000;
 const ARENA_STREAK_TARGET=10;
@@ -155,7 +155,7 @@ function updUI(){
   $('xDiam').textContent=fmtN(ST.diamonds);
   $('xWin').textContent=fmtN(F.currentPlayerPow!=null?F.currentPlayerPow:playerPowerFromStats());
   $('xPow').textContent=F.currentEnemyPow!=null?fmtN(F.currentEnemyPow):'--';
-  $('xRound').textContent=F.roundWins[0]+'/'+F.roundWins[1];
+  $('xRound').textContent=arenaStreak()+'/'+ARENA_STREAK_TARGET;
   const prevBtn=$('arenaPrev'),nextBtn=$('arenaNext');
   if(prevBtn)prevBtn.disabled=ST.arena<=0;
   if(nextBtn)nextBtn.disabled=!ST.arenaUnlocked[ST.arena];
@@ -502,7 +502,7 @@ function startFight(){
   $('resOv').classList.remove('show');
   updUI();
   addLog('━━━━ NUEVA PELEA ━━━━','w');
-  addLog('🔔 Round 1 de '+MAX_ROUNDS+' — ¡FIGHT!','h');
+  addLog('🔔 Round único — ¡FIGHT!','h');
   saveGameNow();
 }
 
@@ -1119,7 +1119,7 @@ function startNextRound(){
   F.roundEnding=false;
   F.countdown=3;
   F.roundIntroT=1.6;
-  F.roundIntroText=F.round===2?'2do Round':'3er Round';
+  F.roundIntroText=F.round+'º Round';
   resetRoundFighters();
   updUI();
   addLog('🔔 '+F.roundIntroText+' — cuenta atrás','h');
