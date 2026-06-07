@@ -260,29 +260,8 @@ function mkFighter(isP,x,y,enemyStats=null){
 }
 
 function genAudience(){
-  const W=cv.width,H=cv.height;if(!W)return[];
-  const a=[],cols=['#e53935','#1e88e5','#43a047','#fdd835','#8e24aa','#fb8c00','#00acc1','#e91e63','#7c4dff','#ff6e40','#26c6da','#d4e157'];
-  const ringL=W*.12,ringR=W*.88,ringT=H*.15,ringB=H*.85;
-  const addBlock=(x,y,i,row=0)=>a.push({
-    x:Math.round(x),y:Math.round(y),
-    c:cols[(i+row*5)%cols.length],
-    s:Math.max(3,Math.round(Math.min(W,H)*.012)),
-    seat:cols[(i+row*3+4)%cols.length]
-  });
-  // Público estático: bloques pixelados baratos de dibujar, sin animaciones ni curvas.
-  for(let i=0;i<9;i++){
-    const row=Math.floor(i/3);
-    addBlock(ringL-14-row*8+(i%2)*2,ringT+9+i*((ringB-ringT-18)/8),i,row);
-  }
-  for(let i=0;i<9;i++){
-    const row=Math.floor(i/3);
-    addBlock(ringR+14+row*8-(i%2)*2,ringT+9+i*((ringB-ringT-18)/8),i+5,row);
-  }
-  for(let row=0;row<2;row++){
-    for(let i=0;i<11;i++)addBlock(ringL+8+i*((ringR-ringL-16)/10),ringT-15-row*10,i,row);
-  }
-  for(let i=0;i<9;i++)addBlock(ringL+12+i*((ringR-ringL-24)/8),ringB+14,i+2,0);
-  return a;
+  // No se generan personas alrededor del ring para mantener la arena despejada.
+  return [];
 }
 
 // ====== BARRAS DE CUENTA ATRÁS (auto-avance) ======
@@ -512,7 +491,8 @@ function startFight(){
 function updFighter(f,en,dt){
   if(!f||!en||f.visible===false||en.visible===false)return;
   const W=cv.width,H=cv.height;
-  const rL=W*.12+22,rR=W*.88-22,rT=H*.15+22,rB=H*.85-22;
+  const bounds=getFightBounds(W,H,f.r);
+  const rL=bounds.l,rR=bounds.r,rT=bounds.t,rB=bounds.b;
 
   f.bob+=dt*3.5;
   if(f.hurt>0)f.hurt-=dt;
@@ -715,6 +695,24 @@ function getRingBounds(W,H){
   return{l:rL,r:rR,t:rT,b:rB,w:rR-rL,h:rB-rT};
 }
 
+function getRopeInnerInset(W,H){
+  const minD=Math.min(W,H);
+  const ropeOffsets=[.10,.24,.38,.52].map(v=>Math.max(5,minD*.025)+v*Math.max(24,minD*.12));
+  return Math.max(...ropeOffsets);
+}
+
+function getFightBounds(W,H,fighterRadius=0){
+  const ring=getRingBounds(W,H);
+  const minD=Math.min(W,H);
+  const inset=getRopeInnerInset(W,H)+Math.max(3,minD*.01)+fighterRadius*.35;
+  return{
+    l:ring.l+inset,
+    r:ring.r-inset,
+    t:ring.t+inset,
+    b:ring.b-inset
+  };
+}
+
 function drawRingTo(g,W,H){
   const ring=getRingBounds(W,H),rL=ring.l,rR=ring.r,rT=ring.t,rB=ring.b,rW=ring.w,rH=ring.h;
   const cx0=(rL+rR)/2,cy0=(rT+rB)/2,minD=Math.min(W,H);
@@ -733,7 +731,7 @@ function drawRingTo(g,W,H){
   floorGlow.addColorStop(0,'rgba(210,210,210,.13)');floorGlow.addColorStop(1,'transparent');
   g.fillStyle=floorGlow;g.fillRect(0,H*.45,W,H*.55);
 
-  // Público y gradas quedan en penumbra detrás de la iluminación principal.
+  // Gradas vacías en penumbra detrás de la iluminación principal.
   g.fillStyle='rgba(0,0,0,.48)';
   for(let i=0;i<5;i++)g.fillRect(0,H*(.06+i*.075),W,Math.max(3,H*.022));
 
@@ -894,7 +892,7 @@ function drawRing(W,H){
   return getRingBounds(W,H);
 }
 function drawAud(){
-  // El público ahora está prerenderizado dentro de arenaCache para ahorrar FPS.
+  // La arena se mantiene sin público alrededor del ring.
 }
 
 function drawFighter(f,t){
@@ -1092,7 +1090,8 @@ function drawFpsCounter(W,H){
   const label='FPS '+fps;
   const w=Math.ceil(cx.measureText(label).width)+10,h=16;
   const x=Math.max(6,Math.min(ring.l-w-8,W-w-6));
-  const y=Math.max(6,ring.t*.6+8);
+  const baseY=ring.t*.6+8;
+  const y=Math.max(6,baseY*.65);
   cx.fillStyle='rgba(0,0,0,.58)';
   roundRect(cx,x,y,w,h,4);cx.fill();
   cx.strokeStyle=fps>=50?'rgba(105,240,174,.7)':fps>=30?'rgba(255,215,64,.75)':'rgba(239,83,80,.75)';
@@ -1114,7 +1113,7 @@ function loop(now){
 
   cx.save();cx.translate(sx,sy);
 
-  // Draw cached static arena & pixel audience
+  // Draw cached static empty arena
   drawRing(W,H);
   drawAud();
 
