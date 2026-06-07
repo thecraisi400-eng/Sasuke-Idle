@@ -9,7 +9,7 @@ const ST={
 };
 const FIRST_ARENA_POWER_RANGE={min:1,max:5};
 const SECOND_ARENA_POWER_RANGE={min:5,max:10};
-const ARENA_POWER_STEP=10;
+const ARENA_POWER_STEP=20;
 const MAX_ROUNDS=1;
 const VS_AUTO_START_MS=4000;
 const RESULT_AUTO_NEXT_MS=7000;
@@ -95,7 +95,7 @@ function arenaEnemyPowerRange(arena=ST.arena){
   const arenaIndex=Math.max(0,Math.floor(Number(arena)||0));
   if(arenaIndex===0)return{...FIRST_ARENA_POWER_RANGE};
   if(arenaIndex===1)return{...SECOND_ARENA_POWER_RANGE};
-  const min=ARENA_POWER_STEP*(arenaIndex-1);
+  const min=SECOND_ARENA_POWER_RANGE.max+ARENA_POWER_STEP*(arenaIndex-2);
   return{min,max:min+ARENA_POWER_STEP};
 }
 function arenaEnemyPower(){
@@ -254,7 +254,8 @@ function mkFighter(isP,x,y,enemyStats=null){
     dashT:0,dashDx:0,dashDy:0,
     strafeD:1,
     lastMv:null,
-    blocking:false,blockT:0
+    blocking:false,blockT:0,
+    visible:true
   };
 }
 
@@ -476,6 +477,7 @@ function startFight(){
     p1=mkFighter(true,cX-55,cY);
     p2=mkFighter(false,cX+55,cY);
   }
+  p1.visible=true;p2.visible=true;
   F.on=true;F.round=1;F.timer=30;F.fx=[];F.shake=0;F.resultSettled=false;F.roundEnding=false;
   F.roundWins=[0,0];F.roundIntroT=0;F.roundIntroText='';
   if(F.currentPlayerPow==null)F.currentPlayerPow=playerPowerFromStats();
@@ -508,6 +510,7 @@ function startFight(){
 
 // ================ AI / PHYSICS ================
 function updFighter(f,en,dt){
+  if(!f||!en||f.visible===false||en.visible===false)return;
   const W=cv.width,H=cv.height;
   const rL=W*.12+22,rR=W*.88-22,rT=H*.15+22,rB=H*.85-22;
 
@@ -691,6 +694,8 @@ function spawnKoExplosion(f){
     F.fx.push({t:'sp',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:.85+Math.random()*.65,ml:1.5,
       color:i%3===0?'#ffffff':(i%3===1?'#ffd740':mainColor),sz:2.5+Math.random()*4});
   }
+  f.visible=false;
+  f.blocking=false;
   F.shake=Math.max(F.shake,.28);
   F.audience.forEach(a=>a.ch=.9+Math.random()*.7);
 }
@@ -810,6 +815,7 @@ function drawAud(){
 }
 
 function drawFighter(f,t){
+  if(!f||f.visible===false)return;
   const bob=Math.sin(f.bob)*2.5;
   const x=f.x,y=f.y+bob;
 
@@ -942,12 +948,12 @@ function drawFx(){
 function drawTimer(W,H){
   if(!F.on)return;
   const t=Math.max(0,Math.ceil(F.timer));
-  cx.fillStyle=t<=5?'#ef5350':'#fff';
-  cx.font='bold '+Math.floor(W*.04)+'px Arial';cx.textAlign='center';
-  cx.fillText('⏱ '+t+'s',W/2,H*.095);
   // Round indicator
-  cx.fillStyle='#888';cx.font='bold '+Math.floor(W*.025)+'px Arial';
-  cx.fillText('ROUND '+F.round,W/2,H*.049);
+  cx.fillStyle='#888';cx.font='bold '+Math.floor(W*.025)+'px Arial';cx.textAlign='center';
+  cx.fillText('ROUND '+F.round,W/2,H*.042);
+  cx.fillStyle=t<=5?'#ef5350':'#fff';
+  cx.font='bold '+Math.floor(W*.04)+'px Arial';
+  cx.fillText('⏱ '+t+'s',W/2,H*.070);
 }
 
 function drawRoundIntro(W,H){
@@ -1003,7 +1009,7 @@ function drawFpsCounter(W,H){
   const label='FPS '+fps;
   const w=Math.ceil(cx.measureText(label).width)+10,h=16;
   const x=Math.max(6,Math.min(ring.l-w-8,W-w-6));
-  const y=Math.max(6,ring.t+8);
+  const y=Math.max(6,ring.t*.6+8);
   cx.fillStyle='rgba(0,0,0,.58)';
   roundRect(cx,x,y,w,h,4);cx.fill();
   cx.strokeStyle=fps>=50?'rgba(105,240,174,.7)':fps>=30?'rgba(255,215,64,.75)':'rgba(239,83,80,.75)';
@@ -1066,7 +1072,7 @@ function loop(now){
       if(!F.paused&&(F.p1.hp<=0||F.p2.hp<=0)){
         endRound(F.p1.hp>0);
       }else if(!F.paused&&F.timer<=0){
-        endRound(F.p1.hp>=F.p2.hp);
+        extendRoundTimer();
       }
       }
     }
@@ -1083,6 +1089,14 @@ function loop(now){
   drawFpsCounter(W,H);
   cx.restore();
   requestAnimationFrame(loop);
+}
+
+function extendRoundTimer(){
+  if(!F.on||F.paused||F.roundEnding)return;
+  F.timer+=30;
+  spawnFx(cv.width/2,cv.height*.22,'+30s TIEMPO EXTRA','#ffd740',20);
+  addLog('⏱ Tiempo extra: +30s hasta que haya KO','h');
+  saveGameNow();
 }
 
 function endRound(p1Won){
@@ -1132,7 +1146,7 @@ function resetRoundFighters(){
     if(!f)return;
     f.x=cX+(i===0?-55:55);f.y=cY;f.vx=0;f.vy=0;f.hp=f.mhp;
     f.st='idle';f.stT=0;f.atkCD=0;f.face=i===0?1:-1;f.stunT=0;f.kbx=0;f.kby=0;
-    f.hurt=0;f.dashT=0;f.blocking=false;f.blockT=0;
+    f.hurt=0;f.dashT=0;f.blocking=false;f.blockT=0;f.visible=true;
   });
 }
 
