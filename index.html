@@ -74,7 +74,15 @@
     <div class="section" id="s-inv"><div class="ph"><span class="pi">🎒</span><span class="pt">INVENTARIO</span><span class="ps">Equipa cinturones, guantes y botas para potenciar a tu luchador. Próximamente...</span></div></div>
     <div class="section" id="s-missions"><div class="ph"><span class="pi">📜</span><span class="pt">MISIONES</span><span class="ps">Completa objetivos diarios y desafíos para conseguir recompensas. Próximamente...</span></div></div>
     <div class="section" id="s-trophy"><div class="ph"><span class="pi">🏆</span><span class="pt">TROFEOS</span><span class="ps">Colecciona logros y demuestra tu dominio en el ring. Próximamente...</span></div></div>
-    <div class="section" id="s-events"><div class="ph"><span class="pi">🎪</span><span class="pt">EVENTOS</span><span class="ps">Torneos especiales con recompensas épicas cada semana. Próximamente...</span></div></div>
+    <div class="section" id="s-events">
+      <div class="event-ring-wrap">
+        <canvas id="eventCv" aria-label="Ring de eventos"></canvas>
+      </div>
+      <div class="event-specs" aria-label="Especificaciones de eventos">
+        <div class="event-spec-panel" id="eventSpecA"></div>
+        <div class="event-spec-panel" id="eventSpecB"></div>
+      </div>
+    </div>
     <div class="section" id="s-shop"><div class="ph"><span class="pi">🏪</span><span class="pt">TIENDA</span><span class="ps">Gasta tus 💎 diamantes en mejoras exclusivas y packs. Próximamente...</span></div></div>
   </div>
   <div class="menu-bar">
@@ -90,6 +98,7 @@
 <script src="pantallaencendida.js" defer></script>
 <script src="guardarpartida.js" defer></script>
 <script src="script.js" defer></script>
+<script src="eventos.js" defer></script>
 
 </body>
 </html>
