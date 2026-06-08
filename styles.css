@@ -124,3 +124,28 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:
 @keyframes cdShrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 
 ::-webkit-scrollbar{width:2px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+
+/* ===== EVENT TOURNAMENT ===== */
+.event-ring-wrap.event-hidden{display:none}
+.event-info,.event-side-note,.event-bracket,.event-roster{height:100%;padding:8px;display:flex;flex-direction:column;gap:7px;overflow:auto}
+.event-title{font-size:13px;font-weight:900;color:#ffd740;text-align:center;letter-spacing:.7px;text-shadow:0 0 10px rgba(255,215,64,.45)}
+.event-info p,.event-info li,.event-side-note span{font-size:9px;line-height:1.35;color:#d8d4ff}
+.event-info ul{padding-left:15px;display:flex;flex-direction:column;gap:4px}
+.event-pay-btn,.event-fight-btn{margin-top:auto;padding:9px 10px;border-radius:8px;border:2px solid #ffd740;background:linear-gradient(180deg,#ff9100,#e65100);color:#fff;font-size:12px;font-weight:900;letter-spacing:.6px;box-shadow:0 0 14px rgba(255,145,0,.42);cursor:pointer}
+.event-pay-btn:active,.event-fight-btn:active{transform:scale(.96)}
+.event-msg,.event-status{font-size:9px;color:#80deea;text-align:center;line-height:1.35}
+.event-side-note{align-items:center;justify-content:center;text-align:center}
+.event-side-icon{font-size:34px}.event-side-note b{font-size:12px;color:#ea80fc}
+.event-bracket{gap:6px}.event-matches{display:flex;flex-direction:column;gap:6px;overflow:auto;max-height:310px;padding-right:2px}
+.event-match{border:1px solid rgba(128,216,255,.4);border-radius:8px;background:rgba(5,0,21,.55);padding:4px;box-shadow:inset 0 0 10px rgba(0,229,255,.06)}
+.event-match-head{font-size:7px;text-transform:uppercase;letter-spacing:.5px;color:#80deea;text-align:center;margin-bottom:3px;font-weight:900}
+.event-match-body{display:grid;grid-template-columns:1fr 28px 1fr;align-items:center;gap:3px}
+.event-vs{font-size:10px;font-weight:900;color:#ff6d00;text-align:center;text-shadow:0 0 8px rgba(255,109,0,.55)}
+.event-participant{min-width:0;border:1px solid rgba(124,77,255,.55);border-radius:7px;background:linear-gradient(180deg,rgba(49,27,146,.36),rgba(0,96,100,.18));padding:3px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-align:center;position:relative}
+.event-participant.eliminated{filter:grayscale(1);opacity:.45;background:linear-gradient(180deg,#34343c,#17171d);border-color:#555}
+.event-participant.champion{border-color:#ffd740;box-shadow:0 0 12px rgba(255,215,64,.45)}
+.event-participant.empty{font-size:8px;color:#9e9e9e;min-height:72px}.event-mini-sprite{width:38px;height:38px;display:block}
+.event-p-name{font-size:7px;color:#fff;font-weight:900;line-height:1.05;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.event-p-power{font-size:7px;color:#ffd740;font-weight:900}.event-you{font-size:5.5px;color:#90caf9;font-weight:900;letter-spacing:.3px}
+.event-roster-title{font-size:10px;font-weight:900;color:#80deea;text-align:center;text-transform:uppercase;letter-spacing:.6px}.event-roster-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;overflow:auto;padding-right:2px}
+.event-roster-grid .event-participant{min-height:72px}.event-roster-grid .event-mini-sprite{width:32px;height:32px}
+@media (max-height:680px){.event-matches{max-height:240px}.event-info,.event-side-note,.event-bracket,.event-roster{padding:6px;gap:5px}.event-mini-sprite{width:32px;height:32px}.event-roster-grid .event-mini-sprite{width:28px;height:28px}}
