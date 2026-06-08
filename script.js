@@ -1263,6 +1263,12 @@ function endFight(won){
   F.resultSettled=true;
   F.on=false;
   ST.fights++;
+  if(window.EventTournament&&window.EventTournament.isEventFight&&window.EventTournament.isEventFight()){
+    window.EventTournament.handleFightEnd(!!won);
+    updUI();
+    saveGameNow();
+    return;
+  }
   const ov=$('resOv'),rt=$('resT'),rr=$('resR'),rs=$('resS');
   // Recompensa escalada según el poder del rival (rivales más fuertes dan más oro).
   // Se calcula UNA vez y se usa el MISMO valor para mostrar y para sumar.

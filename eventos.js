@@ -245,9 +245,298 @@
     }
   }
 
+
+  const eventSpecA = document.getElementById('eventSpecA');
+  const eventSpecB = document.getElementById('eventSpecB');
+  const EVENT_ENTRY_COST = 500;
+  const EVENT_MIN_POWER = 1;
+  const EVENT_MAX_POWER = 50;
+  const EVENT_SIZE = 20;
+  const EVENT_NAMES = ['KIBA','ROCK','NEJI','GAARA','LEE','KANKURO','CHOJI','SHINO','KIMI','ZABU','HIDAN','KISAME','ITACHI','MADARA','OBITO','PAIN','OROCHI','JIRAI','MINATO','KAKASHI','RAIKAGE','TOBIRAMA'];
+  const T = {
+    started:false,
+    inFight:false,
+    participants:[],
+    survivors:[],
+    pairs:[],
+    currentOpponent:null,
+    message:''
+  };
+
+  function fmtEventN(n) {
+    if (typeof fmtN === 'function') return fmtN(n);
+    return String(Math.max(0, Math.round(Number(n) || 0)));
+  }
+
+  function eventPlayerPower() {
+    return typeof playerPowerFromStats === 'function' ? playerPowerFromStats() : 1;
+  }
+
+  function activateTab(tabName) {
+    document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.t === tabName));
+    document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+    const target = document.getElementById('s-' + tabName);
+    if (target) target.classList.add('active');
+    if (tabName === 'fight' && typeof rszCv === 'function') rszCv();
+    if (tabName === 'events') refreshWhenVisible();
+  }
+
+  function shuffle(list) {
+    const arr = list.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function makeEventFighter(isPlayer, power, stats) {
+    const fighter = typeof mkFighter === 'function'
+      ? mkFighter(isPlayer, 0, 0, isPlayer ? null : stats)
+      : { col:isPlayer ? '#42a5f5' : '#ef5350', col2:isPlayer ? '#1565c0' : '#b71c1c', glowCol:isPlayer ? 'rgba(66,165,245,.25)' : 'rgba(239,83,80,.25)', isP:isPlayer };
+    if (typeof syncFighterStats === 'function') syncFighterStats(fighter);
+    fighter.power = power;
+    fighter.statPoints = stats || null;
+    return fighter;
+  }
+
+  function buildParticipant(id, isPlayer) {
+    const power = isPlayer ? eventPlayerPower() : randomInt(EVENT_MIN_POWER, EVENT_MAX_POWER);
+    const stats = isPlayer ? null : distributeEnemyStats(power);
+    return {
+      id,
+      isPlayer,
+      name:isPlayer ? 'TÚ' : EVENT_NAMES[(id - 1) % EVENT_NAMES.length] + ' #' + id,
+      power,
+      stats,
+      fighter:makeEventFighter(isPlayer, power, stats),
+      eliminated:false,
+      champion:false,
+      lastResult:null,
+      bye:false
+    };
+  }
+
+  function participantCard(p, side) {
+    if (!p) return '<div class="event-participant empty">DESCANSA</div>';
+    const state = p.eliminated ? ' eliminated' : (p.champion ? ' champion' : '');
+    const tag = p.isPlayer ? '<span class="event-you">TU JUGADOR</span>' : '';
+    return `<div class="event-participant ${side}${state}">
+      <canvas class="event-mini-sprite" width="64" height="64" data-pid="${p.id}"></canvas>
+      <div class="event-p-name">${p.name}</div>
+      ${tag}
+      <div class="event-p-power">Poder ${fmtEventN(p.power)}</div>
+    </div>`;
+  }
+
+  function drawParticipantSprites() {
+    document.querySelectorAll('.event-mini-sprite').forEach(canvas => {
+      const id = Number(canvas.dataset.pid);
+      const p = T.participants.find(item => item.id === id);
+      if (p && typeof drawSpriteSnapshot === 'function') drawSpriteSnapshot(canvas.getContext('2d'), p.fighter);
+    });
+  }
+
+  function renderInfo() {
+    if (!eventSpecA || !eventSpecB) return;
+    if (eventRing) eventRing.style.display = '';
+    eventSpecA.innerHTML = `<div class="event-info">
+      <div class="event-title">🏆 COMPETENCIA DE LUCHA</div>
+      <p>Evento de eliminación con <b>${EVENT_SIZE} jugadores</b> y combates <b>1 vs 1</b>.</p>
+      <ul>
+        <li>Participan rivales entre <b>${EVENT_MIN_POWER}</b> y <b>${EVENT_MAX_POWER}</b> de poder.</li>
+        <li>Entrada obligatoria: <b>${EVENT_ENTRY_COST} 💰</b>.</li>
+        <li>Los 19 rivales reparten su poder al azar entre los 6 slots de LUCHA: Ataque, Defensa, HP, Velocidad, Evasión y Crítico.</li>
+      </ul>
+      <button class="event-pay-btn" type="button" id="eventPayBtn">PAGAR ${EVENT_ENTRY_COST} 💰</button>
+      <div class="event-msg">${T.message || 'Paga la inscripción para generar la tabla del torneo.'}</div>
+    </div>`;
+    eventSpecB.innerHTML = `<div class="event-side-note">
+      <div class="event-side-icon">🎪</div>
+      <b>Reglas del torneo</b>
+      <span>Si ganas, avanzas y se escoge el siguiente oponente al azar.</span>
+      <span>Si pierdes, el botón cambia a RETIRARSE y podrás iniciar otro torneo pagando de nuevo.</span>
+    </div>`;
+    const payBtn = document.getElementById('eventPayBtn');
+    if (payBtn) payBtn.addEventListener('click', startTournament);
+  }
+
+  function renderTournament(actionLabel) {
+    if (!eventSpecA || !eventSpecB) return;
+    if (eventRing) eventRing.style.display = 'none';
+    const rows = T.pairs.map((pair, index) => `<div class="event-match">
+      <div class="event-match-head">Combate ${index + 1}</div>
+      <div class="event-match-body">${participantCard(pair.a, 'left')}<div class="event-vs">VS</div>${participantCard(pair.b, 'right')}</div>
+    </div>`).join('');
+    const allPlayers = T.participants.map(p => participantCard(p, 'grid')).join('');
+    const alive = T.participants.filter(p => !p.eliminated).length;
+    eventSpecA.innerHTML = `<div class="event-bracket">
+      <div class="event-title">🏆 TABLA DEL TORNEO</div>
+      <div class="event-status">${T.message || `Participantes activos: ${alive}/${EVENT_SIZE}`}</div>
+      <div class="event-matches">${rows}</div>
+      <button class="event-fight-btn" type="button" id="eventActionBtn">${actionLabel}</button>
+    </div>`;
+    eventSpecB.innerHTML = `<div class="event-roster">
+      <div class="event-roster-title">20 Participantes</div>
+      <div class="event-roster-grid">${allPlayers}</div>
+    </div>`;
+    drawParticipantSprites();
+    const actionBtn = document.getElementById('eventActionBtn');
+    if (actionBtn) actionBtn.addEventListener('click', () => {
+      if (actionLabel === 'RETIRARSE') retireTournament();
+      else launchPlayerFight();
+    });
+  }
+
+  function startTournament() {
+    const st = window.ST;
+    if (!st) return;
+    if ((Number(st.gold) || 0) < EVENT_ENTRY_COST) {
+      T.message = `No tienes suficiente oro. Necesitas ${EVENT_ENTRY_COST} 💰 para participar.`;
+      renderInfo();
+      return;
+    }
+    st.gold -= EVENT_ENTRY_COST;
+    T.started = true;
+    T.inFight = false;
+    T.currentOpponent = null;
+    T.message = 'Inscripción pagada. Estos son los combates iniciales del evento.';
+    T.participants = [buildParticipant(1, true)];
+    for (let i = 2; i <= EVENT_SIZE; i++) T.participants.push(buildParticipant(i, false));
+    T.survivors = shuffle(T.participants);
+    if (typeof updUI === 'function') updUI();
+    if (typeof saveGameNow === 'function') saveGameNow();
+    buildNextRound();
+  }
+
+  function buildNextRound() {
+    const player = T.participants.find(p => p.isPlayer);
+    if (!player || player.eliminated) {
+      T.message = 'Has sido eliminado del torneo.';
+      renderTournament('RETIRARSE');
+      return;
+    }
+    const active = shuffle(T.survivors.filter(p => !p.eliminated));
+    if (active.length <= 1) {
+      player.champion = true;
+      T.message = '🏆 ¡GANASTE LA COMPETENCIA DE LUCHA!';
+      renderTournament('RETIRARSE');
+      return;
+    }
+    const opponents = active.filter(p => !p.isPlayer);
+    const opponent = opponents[Math.floor(Math.random() * opponents.length)];
+    const rest = active.filter(p => p !== player && p !== opponent);
+    T.currentOpponent = opponent;
+    T.pairs = [{ a:player, b:opponent, playerMatch:true }];
+    for (let i = 0; i < rest.length; i += 2) T.pairs.push({ a:rest[i], b:rest[i + 1] || null, playerMatch:false });
+    T.message = `Tu siguiente rival es ${opponent.name}. Presiona LUCHAR para comenzar.`;
+    renderTournament('LUCHAR');
+  }
+
+  function launchPlayerFight() {
+    const player = T.participants.find(p => p.isPlayer);
+    const opponent = T.currentOpponent;
+    if (!player || !opponent || player.eliminated) return;
+    const fightCanvas = document.getElementById('cv');
+    const w = (fightCanvas && fightCanvas.width) || 320;
+    const h = (fightCanvas && fightCanvas.height) || 260;
+    const cX = w / 2;
+    const cY = h / 2;
+    const p1 = makeEventFighter(true, player.power, null);
+    const p2 = makeEventFighter(false, opponent.power, opponent.stats);
+    p1.x = cX - 55; p1.y = cY; p2.x = cX + 55; p2.y = cY;
+    p1.power = player.power; p2.power = opponent.power; p2.statPoints = opponent.stats;
+    window.F.pendingEnemy = { p1, p2 };
+    window.F.currentPlayerPow = player.power;
+    window.F.currentEnemyPow = opponent.power;
+    window.F.enemyName = opponent.name;
+    T.inFight = true;
+    activateTab('fight');
+    if (typeof startFight === 'function') startFight();
+  }
+
+  function resolveCpuMatches() {
+    const winners = [];
+    const player = T.participants.find(p => p.isPlayer);
+    if (player && !player.eliminated) winners.push(player);
+    T.pairs.forEach(pair => {
+      if (pair.playerMatch) return;
+      if (!pair.b) {
+        pair.a.bye = true;
+        winners.push(pair.a);
+        return;
+      }
+      const scoreA = pair.a.power + randomInt(1, 50);
+      const scoreB = pair.b.power + randomInt(1, 50);
+      const winner = scoreA >= scoreB ? pair.a : pair.b;
+      const loser = winner === pair.a ? pair.b : pair.a;
+      loser.eliminated = true;
+      loser.lastResult = 'lost';
+      winner.lastResult = 'won';
+      winners.push(winner);
+    });
+    T.survivors = winners;
+  }
+
+  function handleFightEnd(won) {
+    T.inFight = false;
+    const player = T.participants.find(p => p.isPlayer);
+    const opponent = T.currentOpponent;
+    if (won) {
+      if (opponent) {
+        opponent.eliminated = true;
+        opponent.lastResult = 'lost';
+      }
+      if (player) player.lastResult = 'won';
+      resolveCpuMatches();
+      T.message = 'Ganaste el combate. Los perdedores aparecen en gris y avanzas a la siguiente fase.';
+      activateTab('events');
+      buildNextRound();
+    } else {
+      if (player) {
+        player.eliminated = true;
+        player.lastResult = 'lost';
+      }
+      if (opponent) opponent.lastResult = 'won';
+      resolveCpuMatches();
+      T.message = 'Perdiste el combate. Presiona RETIRARSE para cerrar la tabla y dejar el ring vacío.';
+      activateTab('events');
+      renderTournament('RETIRARSE');
+    }
+    window.F.currentEnemyPow = null;
+    window.F.currentPlayerPow = null;
+  }
+
+  function retireTournament() {
+    T.started = false;
+    T.inFight = false;
+    T.participants = [];
+    T.survivors = [];
+    T.pairs = [];
+    T.currentOpponent = null;
+    T.message = 'Ring vacío. Puedes pagar de nuevo para iniciar otro torneo.';
+    if (eventRing) eventRing.style.display = '';
+    renderInfo();
+    refreshWhenVisible();
+  }
+
+  function renderEventPanel() {
+    if (T.started) renderTournament(T.participants.some(p => p.isPlayer && p.eliminated) || T.participants.some(p => p.champion) ? 'RETIRARSE' : 'LUCHAR');
+    else renderInfo();
+  }
+
+  window.EventTournament = {
+    isEventFight:() => T.inFight,
+    handleFightEnd,
+    render:renderEventPanel
+  };
+
   document.querySelectorAll('.menu-btn').forEach(button => {
     button.addEventListener('click', () => {
-      if (button.dataset.t === 'events') refreshWhenVisible();
+      if (button.dataset.t === 'events') {
+        renderEventPanel();
+        refreshWhenVisible();
+      }
     });
   });
 
@@ -258,5 +547,5 @@
     observer.observe(eventRing);
   }
 
-  setTimeout(refreshWhenVisible, 80);
+  setTimeout(() => { renderEventPanel(); refreshWhenVisible(); }, 80);
 })();
