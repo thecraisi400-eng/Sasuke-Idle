@@ -132,7 +132,21 @@ function syncFighterStats(f){
 }
 // ================ DOM ================
 const $=id=>document.getElementById(id);
-const cv=$('cv'),cx=cv.getContext('2d');
+const mainCv=$('cv');
+const mainCx=mainCv.getContext('2d');
+let cv=mainCv;
+let cx=mainCx;
+function usingEventFightCanvas(){return !!(window.EventTournament&&window.EventTournament.isEventFight&&window.EventTournament.isEventFight());}
+function selectFightCanvas(){
+  const eventCv=document.getElementById('eventCv');
+  if(usingEventFightCanvas()&&eventCv){
+    cv=eventCv;
+    cx=eventCv.getContext('2d');
+  }else{
+    cv=mainCv;
+    cx=mainCx;
+  }
+}
 
 // Menu tabs
 document.querySelectorAll('.menu-btn').forEach(b=>b.addEventListener('click',()=>{
@@ -141,7 +155,41 @@ document.querySelectorAll('.menu-btn').forEach(b=>b.addEventListener('click',()=
   b.classList.add('active');
   $('s-'+b.dataset.t).classList.add('active');
   if(b.dataset.t==='fight')rszCv();
+  handleFightTabVisibility();
 }));
+
+
+function isFightTabActive(){
+  if(usingEventFightCanvas())return true;
+  const fightSection=$('s-fight');
+  return !!(fightSection&&fightSection.classList.contains('active'));
+}
+function clearFightSystemTimers(){
+  if(F.vsTimer){clearTimeout(F.vsTimer);F.vsTimer=null;F.pausedVsReady=F.vsReady;}
+  if(F.resTimer){clearTimeout(F.resTimer);F.resTimer=null;F.pausedResultReady=$('resOv').classList.contains('show');}
+  if(F.matchTimeout){clearTimeout(F.matchTimeout);F.matchTimeout=null;}
+  if(F.matchTimers&&F.matchTimers.length){F.matchTimers.forEach(id=>clearInterval(id));F.matchTimers=[];}
+  stopCdBar('vsCd');stopCdBar('resCd');
+}
+function pauseFightSystemForTab(){
+  if(F.systemPaused)return;
+  F.systemPaused=true;
+  clearFightSystemTimers();
+  if(F.searching){F.searching=false;$('mmOv').classList.remove('show');}
+  saveGameNow();
+}
+function resumeFightSystemForTab(){
+  if(!F.systemPaused)return;
+  F.systemPaused=false;
+  selectFightCanvas();
+  if(F.pausedVsReady&&F.vsReady){F.pausedVsReady=false;startVsCountdown();}
+  if(F.pausedResultReady&&$('resOv').classList.contains('show')){F.pausedResultReady=false;startResultCountdown();}
+  saveGameNow();
+}
+function handleFightTabVisibility(){
+  if(isFightTabActive())resumeFightSystemForTab();
+  else pauseFightSystemForTab();
+}
 
 // Upgrades
 document.querySelectorAll('.upg-card').forEach(b=>b.addEventListener('click',()=>{
@@ -176,8 +224,8 @@ function addLog(msg,cls){
 
 // ================ CANVAS ================
 function rszCv(){
-  const r=cv.parentElement.getBoundingClientRect();
-  cv.width=Math.floor(r.width);cv.height=Math.floor(r.height);
+  const r=mainCv.parentElement.getBoundingClientRect();
+  mainCv.width=Math.floor(r.width);mainCv.height=Math.floor(r.height);
   F.audience=genAudience();
   buildArenaCache();
 }
@@ -207,7 +255,13 @@ const F={
   resultSettled:false,   // evita pagar la misma pelea más de una vez
   roundIntroT:0,
   roundIntroText:'',
-  roundEnding:false
+  roundEnding:false,
+  fightTabActive:true,
+  systemPaused:false,
+  pausedVsReady:false,
+  pausedResultReady:false,
+  matchTimers:[],
+  matchTimeout:null
 };
 
 // Nombres aleatorios para rivales
@@ -309,6 +363,7 @@ function startResultCountdown(){
 
 // ====== MATCHMAKING ======
 function startMatchmaking(){
+  if(!isFightTabActive())return;
   if(F.on||F.searching||F.vsReady)return;
   if($('resOv').classList.contains('show'))return;
   F.searching=true;
@@ -342,9 +397,17 @@ function startMatchmaking(){
     statusEl.textContent=stages[stageIdx];
   },550);
   // Tras ~2.6 s, mostrar VS
-  setTimeout(()=>{
+  F.matchTimers=[dotsInt,stageInt];
+  F.matchTimeout=setTimeout(()=>{
+    F.matchTimers=[];
+    F.matchTimeout=null;
     clearInterval(dotsInt);
     clearInterval(stageInt);
+    if(!isFightTabActive()){
+      $('mmOv').classList.remove('show');
+      F.searching=false;
+      return;
+    }
     $('mmOv').classList.remove('show');
     F.searching=false;
     showVS();
@@ -443,6 +506,8 @@ function drawSpriteSnapshot(g,f){
 }
 
 function startFight(){
+  if(usingEventFightCanvas()&&typeof window.resizeEventRing==='function')window.resizeEventRing();
+  selectFightCanvas();
   const W=cv.width,H=cv.height;
   const cX=W/2,cY=H/2;
   // Usar los fighters pre-generados en el VS (mantienen consistencia con el poder mostrado)
@@ -890,6 +955,10 @@ function buildArenaCache(){
 }
 
 function drawRing(W,H){
+  if(usingEventFightCanvas()&&typeof window.drawEventFightRing==='function'){
+    window.drawEventFightRing(cx,W,H);
+    return getRingBounds(W,H);
+  }
   if(!F.arenaCache||F.arenaCacheW!==W||F.arenaCacheH!==H)buildArenaCache();
   if(F.arenaCache)cx.drawImage(F.arenaCache,0,0);
   else drawRingTo(cx,W,H);
@@ -1112,6 +1181,7 @@ function updateFpsOverlay(){
 function drawFpsCounter(W,H){}
 
 function loop(now){
+  selectFightCanvas();
   updateFps(now);
   const rawDt=Math.min(.05,(now-lt)/1000);lt=now;
   // dt para animaciones visuales y efectos (sin escalar)
@@ -1121,6 +1191,7 @@ function loop(now){
   gt+=dt;
   const W=cv.width,H=cv.height;
   if(!W||!H){requestAnimationFrame(loop);return;}
+  if(!isFightTabActive()){requestAnimationFrame(loop);return;}
 
   // Shake
   let sx=0,sy=0;
@@ -1302,12 +1373,12 @@ function endFight(won){
 }
 
 // ================ EVENTS ================
-cv.addEventListener('click',()=>{
+mainCv.addEventListener('click',()=>{
   if(!F.on&&!F.searching&&!F.vsReady&&!$('resOv').classList.contains('show')){
     startMatchmaking();
   }
 });
-cv.addEventListener('touchstart',e=>{e.preventDefault();},{passive:false});
+mainCv.addEventListener('touchstart',e=>{e.preventDefault();},{passive:false});
 $('resB').addEventListener('click',()=>{
   // El usuario adelanta manualmente: cancelar el auto-temporizador y la barra.
   if(F.resTimer){clearTimeout(F.resTimer);F.resTimer=null;}
