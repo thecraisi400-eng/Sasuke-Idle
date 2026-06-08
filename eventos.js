@@ -2,9 +2,12 @@
   const eventCanvas = document.getElementById('eventCv');
   if (!eventCanvas) return;
 
-  const ctx = eventCanvas.getContext('2d');
+  const eventCtx = eventCanvas.getContext('2d');
   const eventSection = document.getElementById('s-events');
   const eventRing = eventCanvas.closest('.event-ring-wrap');
+  const fightRing = document.querySelector('.ring-wrap');
+  const fightSection = document.getElementById('s-fight');
+  const upgradeGrid = fightSection ? fightSection.querySelector('.upg-grid') : null;
 
   function roundRect(g, x, y, w, h, r) {
     const radius = Math.min(r, w / 2, h / 2);
@@ -29,7 +32,8 @@
     return { left, right, top, bottom, width: right - left, height: bottom - top };
   }
 
-  function drawEventRing(width, height) {
+  function drawEventRing(width, height, targetCtx) {
+    const ctx = targetCtx || eventCtx;
     const ring = getEventRingBounds(width, height);
     const centerX = (ring.left + ring.right) / 2;
     const centerY = (ring.top + ring.bottom) / 2;
@@ -248,7 +252,7 @@
 
   const eventSpecA = document.getElementById('eventSpecA');
   const eventSpecB = document.getElementById('eventSpecB');
-  const EVENT_ENTRY_COST = 500;
+  const EVENT_ENTRY_COST = 1;
   const EVENT_MIN_POWER = 1;
   const EVENT_MAX_POWER = 50;
   const EVENT_SIZE = 20;
@@ -260,7 +264,8 @@
     survivors:[],
     pairs:[],
     currentOpponent:null,
-    message:''
+    message:'',
+    prizeAwarded:false
   };
 
   function fmtEventN(n) {
@@ -273,11 +278,15 @@
   }
 
   function activateTab(tabName) {
-    document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.t === tabName));
-    document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
-    const target = document.getElementById('s-' + tabName);
-    if (target) target.classList.add('active');
-    if (tabName === 'fight' && typeof rszCv === 'function') rszCv();
+    if (typeof window.switchTab === 'function') {
+      window.switchTab(tabName);
+    } else {
+      document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.t === tabName));
+      document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+      const target = document.getElementById('s-' + tabName);
+      if (target) target.classList.add('active');
+      if (tabName === 'fight' && typeof rszCv === 'function') rszCv();
+    }
     if (tabName === 'events') refreshWhenVisible();
   }
 
@@ -337,19 +346,37 @@
     });
   }
 
+  function moveFightRingToEvents() {
+    if (!fightRing || !eventSection) return;
+    if (eventRing) eventRing.style.display = 'none';
+    eventSection.insertBefore(fightRing, eventSection.firstChild);
+    fightRing.classList.add('event-fight-ring');
+    if (typeof rszCv === 'function') rszCv();
+    if (typeof window.syncFightVisibility === 'function') window.syncFightVisibility();
+  }
+
+  function restoreFightRingHome() {
+    if (!fightRing || !fightSection) return;
+    fightRing.classList.remove('event-fight-ring');
+    fightSection.insertBefore(fightRing, upgradeGrid || fightSection.firstChild);
+    if (eventRing) eventRing.style.display = '';
+    if (typeof rszCv === 'function') rszCv();
+    if (typeof window.syncFightVisibility === 'function') window.syncFightVisibility();
+  }
+
   function renderInfo() {
     if (!eventSpecA || !eventSpecB) return;
     if (eventRing) eventRing.style.display = '';
     eventSpecA.innerHTML = `<div class="event-info">
       <div class="event-title">🏆 COMPETENCIA DE LUCHA</div>
-      <p>Evento de eliminación con <b>${EVENT_SIZE} jugadores</b> y combates <b>1 vs 1</b>.</p>
+      <p>Eliminación de <b>${EVENT_SIZE}</b> jugadores en combates <b>1 vs 1</b>.</p>
       <ul>
-        <li>Participan rivales entre <b>${EVENT_MIN_POWER}</b> y <b>${EVENT_MAX_POWER}</b> de poder.</li>
-        <li>Entrada obligatoria: <b>${EVENT_ENTRY_COST} 💰</b>.</li>
-        <li>Los 19 rivales reparten su poder al azar entre los 6 slots de LUCHA: Ataque, Defensa, HP, Velocidad, Evasión y Crítico.</li>
+        <li>Rivales: <b>${EVENT_MIN_POWER}-${EVENT_MAX_POWER}</b> poder.</li>
+        <li>Entrada: <b>${EVENT_ENTRY_COST} 💰</b>.</li>
+        <li>Gana para avanzar; pierde y queda eliminado.</li>
       </ul>
       <button class="event-pay-btn" type="button" id="eventPayBtn">PAGAR ${EVENT_ENTRY_COST} 💰</button>
-      <div class="event-msg">${T.message || 'Paga la inscripción para generar la tabla del torneo.'}</div>
+      <div class="event-msg">${T.message || 'Paga para generar la tabla.'}</div>
     </div>`;
     eventSpecB.innerHTML = `<div class="event-side-note">
       <div class="event-side-icon">🎪</div>
@@ -378,6 +405,11 @@
     </div>`;
     eventSpecB.innerHTML = `<div class="event-roster">
       <div class="event-roster-title">20 Participantes</div>
+      <div class="event-prizes" aria-label="Premios del torneo">
+        <span>🥇 1º: <b>2 💎</b></span>
+        <span>🥈 2º: <b>1 💎</b></span>
+        <span>🥉 3º: <b>100 💰</b></span>
+      </div>
       <div class="event-roster-grid">${allPlayers}</div>
     </div>`;
     drawParticipantSprites();
@@ -400,6 +432,7 @@
     T.started = true;
     T.inFight = false;
     T.currentOpponent = null;
+    T.prizeAwarded = false;
     T.message = 'Inscripción pagada. Estos son los combates iniciales del evento.';
     T.participants = [buildParticipant(1, true)];
     for (let i = 2; i <= EVENT_SIZE; i++) T.participants.push(buildParticipant(i, false));
@@ -407,6 +440,26 @@
     if (typeof updUI === 'function') updUI();
     if (typeof saveGameNow === 'function') saveGameNow();
     buildNextRound();
+  }
+
+  function awardPlayerPrize(place) {
+    if (T.prizeAwarded) return '';
+    const st = window.ST;
+    if (!st) return '';
+    T.prizeAwarded = true;
+    if (place === 1) {
+      st.diamonds = (Number(st.diamonds) || 0) + 2;
+      return ' Premio: +2 💎.';
+    }
+    if (place === 2) {
+      st.diamonds = (Number(st.diamonds) || 0) + 1;
+      return ' Premio: +1 💎.';
+    }
+    if (place === 3) {
+      st.gold = (Number(st.gold) || 0) + 100;
+      return ' Premio: +100 💰.';
+    }
+    return '';
   }
 
   function buildNextRound() {
@@ -419,7 +472,9 @@
     const active = shuffle(T.survivors.filter(p => !p.eliminated));
     if (active.length <= 1) {
       player.champion = true;
-      T.message = '🏆 ¡GANASTE LA COMPETENCIA DE LUCHA!';
+      T.message = '🏆 ¡GANASTE LA COMPETENCIA DE LUCHA!' + awardPlayerPrize(1);
+      if (typeof updUI === 'function') updUI();
+      if (typeof saveGameNow === 'function') saveGameNow();
       renderTournament('RETIRARSE');
       return;
     }
@@ -451,7 +506,8 @@
     window.F.currentEnemyPow = opponent.power;
     window.F.enemyName = opponent.name;
     T.inFight = true;
-    activateTab('fight');
+    activateTab('events');
+    moveFightRingToEvents();
     if (typeof startFight === 'function') startFight();
   }
 
@@ -480,6 +536,7 @@
 
   function handleFightEnd(won) {
     T.inFight = false;
+    restoreFightRingHome();
     const player = T.participants.find(p => p.isPlayer);
     const opponent = T.currentOpponent;
     if (won) {
@@ -493,13 +550,15 @@
       activateTab('events');
       buildNextRound();
     } else {
+      const activeBeforeLoss = T.survivors.filter(p => !p.eliminated).length;
+      const prizeText = activeBeforeLoss <= 2 ? awardPlayerPrize(2) : (activeBeforeLoss <= 4 ? awardPlayerPrize(3) : '');
       if (player) {
         player.eliminated = true;
         player.lastResult = 'lost';
       }
       if (opponent) opponent.lastResult = 'won';
       resolveCpuMatches();
-      T.message = 'Perdiste el combate. Presiona RETIRARSE para cerrar la tabla y dejar el ring vacío.';
+      T.message = 'Perdiste el combate.' + prizeText + ' Presiona RETIRARSE para cerrar la tabla y dejar el ring vacío.';
       activateTab('events');
       renderTournament('RETIRARSE');
     }
@@ -508,12 +567,14 @@
   }
 
   function retireTournament() {
+    restoreFightRingHome();
     T.started = false;
     T.inFight = false;
     T.participants = [];
     T.survivors = [];
     T.pairs = [];
     T.currentOpponent = null;
+    T.prizeAwarded = false;
     T.message = 'Ring vacío. Puedes pagar de nuevo para iniciar otro torneo.';
     if (eventRing) eventRing.style.display = '';
     renderInfo();
@@ -524,6 +585,10 @@
     if (T.started) renderTournament(T.participants.some(p => p.isPlayer && p.eliminated) || T.participants.some(p => p.champion) ? 'RETIRARSE' : 'LUCHAR');
     else renderInfo();
   }
+
+  window.EventRingRenderer = {
+    drawTo:(targetCtx, width, height) => drawEventRing(width, height, targetCtx)
+  };
 
   window.EventTournament = {
     isEventFight:() => T.inFight,
