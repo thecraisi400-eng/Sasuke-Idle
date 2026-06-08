@@ -128,8 +128,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:
 /* ===== EVENT TOURNAMENT ===== */
 .event-ring-wrap.event-hidden{display:none}
 .event-info,.event-side-note,.event-bracket,.event-roster{height:100%;padding:8px;display:flex;flex-direction:column;gap:7px;overflow:auto}
+.event-info{overflow:hidden;gap:5px}
+.event-info .event-pay-btn{padding:7px 8px;font-size:11px}
+.event-fight-ring{border-color:#7c4dff;box-shadow:0 0 20px rgba(124,77,255,.22),inset 0 0 30px rgba(0,0,0,.55);margin-bottom:5px}
 .event-title{font-size:13px;font-weight:900;color:#ffd740;text-align:center;letter-spacing:.7px;text-shadow:0 0 10px rgba(255,215,64,.45)}
 .event-info p,.event-info li,.event-side-note span{font-size:9px;line-height:1.35;color:#d8d4ff}
+.event-info p,.event-info li{font-size:8.5px;line-height:1.22}
 .event-info ul{padding-left:15px;display:flex;flex-direction:column;gap:4px}
 .event-pay-btn,.event-fight-btn{margin-top:auto;padding:9px 10px;border-radius:8px;border:2px solid #ffd740;background:linear-gradient(180deg,#ff9100,#e65100);color:#fff;font-size:12px;font-weight:900;letter-spacing:.6px;box-shadow:0 0 14px rgba(255,145,0,.42);cursor:pointer}
 .event-pay-btn:active,.event-fight-btn:active{transform:scale(.96)}
@@ -146,6 +150,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#06060e;font-family:
 .event-participant.champion{border-color:#ffd740;box-shadow:0 0 12px rgba(255,215,64,.45)}
 .event-participant.empty{font-size:8px;color:#9e9e9e;min-height:72px}.event-mini-sprite{width:38px;height:38px;display:block}
 .event-p-name{font-size:7px;color:#fff;font-weight:900;line-height:1.05;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.event-p-power{font-size:7px;color:#ffd740;font-weight:900}.event-you{font-size:5.5px;color:#90caf9;font-weight:900;letter-spacing:.3px}
-.event-roster-title{font-size:10px;font-weight:900;color:#80deea;text-align:center;text-transform:uppercase;letter-spacing:.6px}.event-roster-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;overflow:auto;padding-right:2px}
+.event-roster-title{font-size:10px;font-weight:900;color:#80deea;text-align:center;text-transform:uppercase;letter-spacing:.6px}.event-prizes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}.event-prizes span{border:1px solid rgba(255,215,64,.45);border-radius:6px;background:rgba(255,145,0,.12);color:#fff3c4;font-size:7px;font-weight:900;text-align:center;padding:3px 2px;line-height:1.1}.event-prizes b{color:#ffd740}.event-roster-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;overflow:auto;padding-right:2px}
 .event-roster-grid .event-participant{min-height:72px}.event-roster-grid .event-mini-sprite{width:32px;height:32px}
 @media (max-height:680px){.event-matches{max-height:240px}.event-info,.event-side-note,.event-bracket,.event-roster{padding:6px;gap:5px}.event-mini-sprite{width:32px;height:32px}.event-roster-grid .event-mini-sprite{width:28px;height:28px}}

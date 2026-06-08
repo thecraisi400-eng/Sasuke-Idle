@@ -135,13 +135,63 @@ const $=id=>document.getElementById(id);
 const cv=$('cv'),cx=cv.getContext('2d');
 
 // Menu tabs
-document.querySelectorAll('.menu-btn').forEach(b=>b.addEventListener('click',()=>{
-  document.querySelectorAll('.menu-btn').forEach(x=>x.classList.remove('active'));
+function getActiveTabName(){
+  const active=document.querySelector('.menu-btn.active');
+  return active?active.dataset.t:'fight';
+}
+function isFightSystemVisible(){
+  const tab=getActiveTabName();
+  return tab==='fight'||(tab==='events'&&window.EventTournament&&window.EventTournament.isEventFight&&window.EventTournament.isEventFight());
+}
+function clearMatchmakingTimers(){
+  (F.matchmakingTimers||[]).forEach(timer=>{
+    if(timer&&timer.type==='interval')clearInterval(timer.id);
+    else if(timer)clearTimeout(timer.id);
+  });
+  F.matchmakingTimers=[];
+}
+function trackFightTimer(id,type='timeout'){
+  F.matchmakingTimers.push({id,type});
+  return id;
+}
+function pauseFightSystemForTab(){
+  F.fightVisible=false;
+  F.pausedByTab=true;
+  if(F.vsTimer){clearTimeout(F.vsTimer);F.vsTimer=null;}
+  if(F.resTimer){clearTimeout(F.resTimer);F.resTimer=null;}
+  clearMatchmakingTimers();
+  stopCdBar('vsCd');stopCdBar('resCd');
+  if(F.searching){
+    F.searchPausedByTab=true;
+    F.searching=false;
+    $('mmOv').classList.remove('show');
+  }
+}
+function resumeFightSystemForTab(){
+  const wasHidden=!F.fightVisible;
+  F.fightVisible=true;
+  F.pausedByTab=false;
+  if(getActiveTabName()==='fight')rszCv();
+  if(!wasHidden)return;
+  if(F.searchPausedByTab){
+    F.searchPausedByTab=false;
+    startMatchmaking();
+  }else if(F.vsReady)startVsCountdown();
+  else if($('resOv').classList.contains('show'))startResultCountdown();
+}
+function syncFightVisibility(){
+  if(isFightSystemVisible())resumeFightSystemForTab();
+  else pauseFightSystemForTab();
+}
+function switchTab(tabName){
+  document.querySelectorAll('.menu-btn').forEach(x=>x.classList.toggle('active',x.dataset.t===tabName));
   document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');
-  $('s-'+b.dataset.t).classList.add('active');
-  if(b.dataset.t==='fight')rszCv();
-}));
+  const target=$('s-'+tabName);
+  if(target)target.classList.add('active');
+  if(tabName==='fight')rszCv();
+  syncFightVisibility();
+}
+document.querySelectorAll('.menu-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.t)));
 
 // Upgrades
 document.querySelectorAll('.upg-card').forEach(b=>b.addEventListener('click',()=>{
@@ -207,7 +257,11 @@ const F={
   resultSettled:false,   // evita pagar la misma pelea más de una vez
   roundIntroT:0,
   roundIntroText:'',
-  roundEnding:false
+  roundEnding:false,
+  fightVisible:true,
+  pausedByTab:false,
+  searchPausedByTab:false,
+  matchmakingTimers:[]
 };
 
 // Nombres aleatorios para rivales
@@ -282,21 +336,23 @@ function stopCdBar(id){
 
 // Tras encontrar al rival: barra de 4s bajo "PELEAR" -> inicia la pelea automáticamente.
 function startVsCountdown(){
+  if(!isFightSystemVisible())return;
   if(F.vsTimer)clearTimeout(F.vsTimer);
   runCdBar('vsCd',VS_AUTO_START_MS);
   F.vsTimer=setTimeout(()=>{
     F.vsTimer=null;
-    if(F.vsReady)startFight();
+    if(F.vsReady&&isFightSystemVisible())startFight();
   },VS_AUTO_START_MS);
 }
 
 // Tras el resultado (VICTORIA/DERROTA): barra de 7s bajo "SIGUIENTE PELEA" -> busca nuevo rival.
 function startResultCountdown(){
+  if(!isFightSystemVisible())return;
   if(F.resTimer)clearTimeout(F.resTimer);
   runCdBar('resCd',RESULT_AUTO_NEXT_MS);
   F.resTimer=setTimeout(()=>{
     F.resTimer=null;
-    if($('resOv').classList.contains('show')){
+    if($('resOv').classList.contains('show')&&isFightSystemVisible()){
       $('resOv').classList.remove('show');
       F.currentEnemyPow=null;
       F.currentPlayerPow=null;
@@ -309,6 +365,7 @@ function startResultCountdown(){
 
 // ====== MATCHMAKING ======
 function startMatchmaking(){
+  if(!isFightSystemVisible())return;
   if(F.on||F.searching||F.vsReady)return;
   if($('resOv').classList.contains('show'))return;
   F.searching=true;
@@ -333,22 +390,27 @@ function startMatchmaking(){
   ];
   let stageIdx=0;
   dotsEl.textContent='.';
-  const dotsInt=setInterval(()=>{
+  clearMatchmakingTimers();
+  const dotsInt=trackFightTimer(setInterval(()=>{
     dots=(dots%3)+1;
     dotsEl.textContent='.'.repeat(dots);
-  },220);
-  const stageInt=setInterval(()=>{
+  },220),'interval');
+  const stageInt=trackFightTimer(setInterval(()=>{
     stageIdx=Math.min(stages.length-1,stageIdx+1);
     statusEl.textContent=stages[stageIdx];
-  },550);
+  },550),'interval');
   // Tras ~2.6 s, mostrar VS
-  setTimeout(()=>{
-    clearInterval(dotsInt);
-    clearInterval(stageInt);
+  trackFightTimer(setTimeout(()=>{
+    clearMatchmakingTimers();
+    if(!isFightSystemVisible()){
+      F.searching=false;
+      $('mmOv').classList.remove('show');
+      return;
+    }
     $('mmOv').classList.remove('show');
     F.searching=false;
     showVS();
-  },2600);
+  },2600));
 }
 
 function showVS(){
@@ -443,6 +505,7 @@ function drawSpriteSnapshot(g,f){
 }
 
 function startFight(){
+  if(!isFightSystemVisible())return;
   const W=cv.width,H=cv.height;
   const cX=W/2,cY=H/2;
   // Usar los fighters pre-generados en el VS (mantienen consistencia con el poder mostrado)
@@ -890,6 +953,10 @@ function buildArenaCache(){
 }
 
 function drawRing(W,H){
+  if(window.EventTournament&&window.EventTournament.isEventFight&&window.EventTournament.isEventFight()&&window.EventRingRenderer){
+    window.EventRingRenderer.drawTo(cx,W,H);
+    return getRingBounds(W,H);
+  }
   if(!F.arenaCache||F.arenaCacheW!==W||F.arenaCacheH!==H)buildArenaCache();
   if(F.arenaCache)cx.drawImage(F.arenaCache,0,0);
   else drawRingTo(cx,W,H);
@@ -1133,17 +1200,18 @@ function loop(now){
   drawAud();
 
   if(F.on&&F.p1&&F.p2){
+    const fightActive=isFightSystemVisible();
     // Presentacion entre rounds
     if(F.roundIntroT>0){
-      F.roundIntroT-=sdt;
+      if(fightActive)F.roundIntroT-=sdt;
       drawFighter(F.p1,gt);drawFighter(F.p2,gt);
       drawRoundIntro(W,H);
     }else if(F.countdown>0){
-      F.countdown-=sdt;
+      if(fightActive)F.countdown-=sdt;
       drawFighter(F.p1,gt);drawFighter(F.p2,gt);
       drawCountdown(W,H);
     }else{
-      if(F.paused){
+      if(F.paused||!fightActive){
         drawFighter(F.p1,gt);drawFighter(F.p2,gt);
         drawTimer(W,H);
       }else{
@@ -1303,7 +1371,7 @@ function endFight(won){
 
 // ================ EVENTS ================
 cv.addEventListener('click',()=>{
-  if(!F.on&&!F.searching&&!F.vsReady&&!$('resOv').classList.contains('show')){
+  if(isFightSystemVisible()&&!F.on&&!F.searching&&!F.vsReady&&!$('resOv').classList.contains('show')){
     startMatchmaking();
   }
 });
@@ -1317,7 +1385,7 @@ $('resB').addEventListener('click',()=>{
   F.currentPlayerPow=null;
   updUI();
   saveGameNow();
-  setTimeout(startMatchmaking,200);
+  if(isFightSystemVisible())setTimeout(startMatchmaking,200);
 });
 // Botón "¡PELEAR!" del VS screen
 $('arenaPrev').addEventListener('click',()=>{
@@ -1336,7 +1404,7 @@ $('arenaNext').addEventListener('click',()=>{
   resetEncounterForArenaChange();
   updUI();
   saveGameNow();
-  setTimeout(startMatchmaking,200);
+  if(isFightSystemVisible())setTimeout(startMatchmaking,200);
 });
 $('vsGo').addEventListener('click',()=>{
   // El usuario adelanta manualmente: cancelar el auto-temporizador y la barra.
@@ -1382,7 +1450,7 @@ function resumeSavedTransition(){
 
 // ================ INIT ================
 loadSavedGame();
-window.ST=ST;window.F=F;
+window.ST=ST;window.F=F;window.switchTab=switchTab;window.syncFightVisibility=syncFightVisibility;
 window.addEventListener('pagehide',saveGameImmediately);
 window.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveGameImmediately();});
 setInterval(saveGameNow,5000);
