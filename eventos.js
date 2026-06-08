@@ -2,7 +2,7 @@
   const eventCanvas = document.getElementById('eventCv');
   if (!eventCanvas) return;
 
-  const ctx = eventCanvas.getContext('2d');
+  const eventCtx = eventCanvas.getContext('2d');
   const eventSection = document.getElementById('s-events');
   const eventRing = eventCanvas.closest('.event-ring-wrap');
 
@@ -29,7 +29,8 @@
     return { left, right, top, bottom, width: right - left, height: bottom - top };
   }
 
-  function drawEventRing(width, height) {
+  function drawEventRing(width, height, targetCtx) {
+    const ctx = targetCtx || eventCtx;
     const ring = getEventRingBounds(width, height);
     const centerX = (ring.left + ring.right) / 2;
     const centerY = (ring.top + ring.bottom) / 2;
@@ -236,7 +237,7 @@
       eventCanvas.width = width;
       eventCanvas.height = height;
     }
-    drawEventRing(width, height);
+    drawEventRing(width, height, eventCtx);
   }
 
   function refreshWhenVisible() {
@@ -245,6 +246,9 @@
     }
   }
 
+
+  window.drawEventFightRing = (targetCtx, width, height) => drawEventRing(width, height, targetCtx);
+  window.resizeEventRing = resizeEventRing;
 
   const eventSpecA = document.getElementById('eventSpecA');
   const eventSpecB = document.getElementById('eventSpecB');
@@ -342,12 +346,15 @@
     if (eventRing) eventRing.style.display = '';
     eventSpecA.innerHTML = `<div class="event-info">
       <div class="event-title">🏆 COMPETENCIA DE LUCHA</div>
-      <p>Evento de eliminación con <b>${EVENT_SIZE} jugadores</b> y combates <b>1 vs 1</b>.</p>
+      <p>Eliminación <b>1 vs 1</b> con <b>${EVENT_SIZE} jugadores</b>.</p>
       <ul>
-        <li>Participan rivales entre <b>${EVENT_MIN_POWER}</b> y <b>${EVENT_MAX_POWER}</b> de poder.</li>
-        <li>Entrada obligatoria: <b>${EVENT_ENTRY_COST} 💰</b>.</li>
-        <li>Los 19 rivales reparten su poder al azar entre los 6 slots de LUCHA: Ataque, Defensa, HP, Velocidad, Evasión y Crítico.</li>
+        <li>Rivales: <b>${EVENT_MIN_POWER}-${EVENT_MAX_POWER}</b> poder.</li>
+        <li>Entrada: <b>${EVENT_ENTRY_COST} 💰</b>.</li>
+        <li>Stats aleatorias en Ataque, Defensa, HP, Velocidad, Evasión y Crítico.</li>
       </ul>
+      <div class="event-prizes">
+        <span>🥇 1.º: <b>2 💎</b></span><span>🥈 2.º: <b>1 💎</b></span><span>🥉 3.º: <b>100 💰</b></span>
+      </div>
       <button class="event-pay-btn" type="button" id="eventPayBtn">PAGAR ${EVENT_ENTRY_COST} 💰</button>
       <div class="event-msg">${T.message || 'Paga la inscripción para generar la tabla del torneo.'}</div>
     </div>`;
@@ -363,7 +370,7 @@
 
   function renderTournament(actionLabel) {
     if (!eventSpecA || !eventSpecB) return;
-    if (eventRing) eventRing.style.display = 'none';
+    if (eventRing) eventRing.style.display = '';
     const rows = T.pairs.map((pair, index) => `<div class="event-match">
       <div class="event-match-head">Combate ${index + 1}</div>
       <div class="event-match-body">${participantCard(pair.a, 'left')}<div class="event-vs">VS</div>${participantCard(pair.b, 'right')}</div>
@@ -398,6 +405,7 @@
     }
     st.gold -= EVENT_ENTRY_COST;
     T.started = true;
+    T.prizeAwarded = false;
     T.inFight = false;
     T.currentOpponent = null;
     T.message = 'Inscripción pagada. Estos son los combates iniciales del evento.';
@@ -407,6 +415,24 @@
     if (typeof updUI === 'function') updUI();
     if (typeof saveGameNow === 'function') saveGameNow();
     buildNextRound();
+  }
+
+  function awardTournamentPrize(place) {
+    const st = window.ST;
+    if (!st || T.prizeAwarded || ![1, 2, 3].includes(place)) return;
+    T.prizeAwarded = true;
+    if (place === 1) {
+      st.diamonds = (Number(st.diamonds) || 0) + 2;
+      T.message = '🏆 ¡GANASTE LA COMPETENCIA DE LUCHA! Premio: +2 💎';
+    } else if (place === 2) {
+      st.diamonds = (Number(st.diamonds) || 0) + 1;
+      T.message = '🥈 Segundo lugar. Premio: +1 💎';
+    } else if (place === 3) {
+      st.gold = (Number(st.gold) || 0) + 100;
+      T.message = '🥉 Tercer lugar. Premio: +100 💰';
+    }
+    if (typeof updUI === 'function') updUI();
+    if (typeof saveGameNow === 'function') saveGameNow();
   }
 
   function buildNextRound() {
@@ -419,7 +445,7 @@
     const active = shuffle(T.survivors.filter(p => !p.eliminated));
     if (active.length <= 1) {
       player.champion = true;
-      T.message = '🏆 ¡GANASTE LA COMPETENCIA DE LUCHA!';
+      awardTournamentPrize(1);
       renderTournament('RETIRARSE');
       return;
     }
@@ -437,7 +463,8 @@
     const player = T.participants.find(p => p.isPlayer);
     const opponent = T.currentOpponent;
     if (!player || !opponent || player.eliminated) return;
-    const fightCanvas = document.getElementById('cv');
+    if (typeof refreshWhenVisible === 'function') refreshWhenVisible();
+    const fightCanvas = document.getElementById('eventCv') || document.getElementById('cv');
     const w = (fightCanvas && fightCanvas.width) || 320;
     const h = (fightCanvas && fightCanvas.height) || 260;
     const cX = w / 2;
@@ -451,7 +478,8 @@
     window.F.currentEnemyPow = opponent.power;
     window.F.enemyName = opponent.name;
     T.inFight = true;
-    activateTab('fight');
+    activateTab('events');
+    if (typeof window.resizeEventRing === 'function') window.resizeEventRing();
     if (typeof startFight === 'function') startFight();
   }
 
@@ -493,13 +521,15 @@
       activateTab('events');
       buildNextRound();
     } else {
+      const activeBeforeLoss = T.survivors.filter(p => !p.eliminated).length;
       if (player) {
         player.eliminated = true;
         player.lastResult = 'lost';
       }
       if (opponent) opponent.lastResult = 'won';
       resolveCpuMatches();
-      T.message = 'Perdiste el combate. Presiona RETIRARSE para cerrar la tabla y dejar el ring vacío.';
+      awardTournamentPrize(activeBeforeLoss <= 2 ? 2 : (activeBeforeLoss <= 4 ? 3 : 0));
+      if (!T.prizeAwarded) T.message = 'Perdiste el combate. Presiona RETIRARSE para cerrar la tabla y dejar el ring vacío.';
       activateTab('events');
       renderTournament('RETIRARSE');
     }
@@ -509,6 +539,7 @@
 
   function retireTournament() {
     T.started = false;
+    T.prizeAwarded = false;
     T.inFight = false;
     T.participants = [];
     T.survivors = [];
