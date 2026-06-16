@@ -225,7 +225,7 @@
   .menu-btn:not(.active):active{color:#9aa3d6}
 
   /* -- Panel del COLISEO -- */
-  #room.coliseo-mode > :not(#coliseo-panel):not(#lucha-panel){visibility:hidden}
+  #room.coliseo-mode > :not(#coliseo-panel):not(#lucha-panel):not(#fps-counter){visibility:hidden}
   #coliseo-panel{
     position:absolute;inset:0;z-index:20;display:none;
     grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:10px;
@@ -250,7 +250,50 @@
   }
   #lucha-panel.show{display:block}
 
-  /* Toast */
+
+
+  /* -- HUD FPS sobre el escenario -- */
+  #fps-counter{
+    position:absolute;left:10px;top:58px;z-index:30;padding:5px 10px;border-radius:11px;
+    background:rgba(5,8,18,.78);border:1px solid rgba(255,255,255,.16);color:#6bff9b;
+    font-size:12px;font-weight:900;letter-spacing:.5px;text-shadow:0 1px 2px #000;box-shadow:0 4px 12px rgba(0,0,0,.35);
+  }
+
+  /* -- Ring de boxeo / LUCHA -- */
+  #lucha-panel{overflow:hidden;cursor:pointer;}
+  .fight-ring{position:absolute;inset:0;overflow:hidden;background:linear-gradient(180deg,#28395c 0%,#10152d 36%,#0b0d18 100%)}
+  .fight-ring.shake{animation:ringShake .26s linear 2}
+  @keyframes ringShake{0%,100%{transform:translate(0,0)}25%{transform:translate(3px,-2px)}50%{transform:translate(-3px,2px)}75%{transform:translate(2px,1px)}}
+  .ring-light{position:absolute;top:-60px;width:150px;height:165px;border-radius:50%;background:radial-gradient(circle,rgba(255,246,190,.55),rgba(255,246,190,0) 66%);filter:blur(2px)}
+  .ring-light.l1{left:12px}.ring-light.l2{left:128px}.ring-light.l3{right:8px}
+  .ring-crowd{position:absolute;left:0;right:0;top:76px;height:80px;background:repeating-radial-gradient(circle at 10px 12px,#25305c 0 4px,#131833 5px 10px);opacity:.78;border-top:3px solid #0b0d18;border-bottom:5px solid #0b0d18}
+  .ring-floor{position:absolute;left:16px;right:16px;bottom:24px;height:210px;clip-path:polygon(14% 10%,86% 10%,100% 74%,0 74%);background:linear-gradient(145deg,#4aa7d9,#226aa0 55%,#155174);border:4px solid #10131d;box-shadow:0 22px 30px rgba(0,0,0,.6),inset 0 0 30px rgba(255,255,255,.14)}
+  .ring-floor:before{content:'';position:absolute;inset:18px 34px 46px;border:2px dashed rgba(255,255,255,.45);clip-path:polygon(10% 8%,90% 8%,100% 80%,0 80%)}
+  .ring-logo{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) skewX(-8deg);font-size:25px;font-weight:900;color:rgba(255,255,255,.36);letter-spacing:2px;text-shadow:0 2px 0 rgba(0,0,0,.2)}
+  .ring-rope{position:absolute;left:34px;right:34px;height:5px;border-radius:99px;background:#f5f7ff;box-shadow:0 2px 0 #aab2ca,0 4px 5px rgba(0,0,0,.35)}
+  .ring-rope.r1{top:132px}.ring-rope.r2{top:158px;background:#e83b3b}.ring-rope.r3{top:184px;background:#f5f7ff}
+  .ring-post{position:absolute;width:18px;height:96px;border-radius:6px;background:linear-gradient(90deg,#f3d35b,#b38323);border:3px solid #5b3511;box-shadow:0 5px 8px rgba(0,0,0,.5)}
+  .ring-post.p1{left:26px;top:116px}.ring-post.p2{right:26px;top:116px}.ring-post.p3{left:62px;bottom:72px}.ring-post.p4{right:62px;bottom:72px}
+  .fight-timer{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:5;background:rgba(0,0,0,.7);border:2px solid #ffd000;color:#fff;padding:5px 18px;border-radius:18px;font-size:18px;font-weight:900;text-shadow:0 2px 2px #000}
+  .ring-prompt{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:8;background:rgba(5,8,18,.82);border:1px solid rgba(255,255,255,.18);color:#fff;padding:8px 14px;border-radius:18px;font-size:12px;font-weight:900;white-space:nowrap;animation:pulsePrompt 1.2s infinite}
+  @keyframes pulsePrompt{50%{transform:translateX(-50%) scale(1.05);color:#ffd000}}
+  .fighter{position:absolute;width:58px;height:92px;z-index:6;transition:left .55s linear,top .55s linear,transform .18s ease;filter:drop-shadow(0 8px 6px rgba(0,0,0,.45))}
+  .fighter svg{width:100%;height:100%;overflow:visible;animation:battleBounce .42s ease-in-out infinite}.fighter.enemy svg{filter:hue-rotate(145deg) saturate(1.35)}
+  .fighter.attacking{transform:scale(1.08)}.fighter.hit{transform:translateX(-6px) scale(.96)}
+  @keyframes battleBounce{50%{transform:translateY(-2px)}}
+  .hpbar{position:absolute;left:50%;top:-11px;transform:translateX(-50%);width:58px;height:7px;background:#34090d;border:1px solid #111;border-radius:99px;overflow:hidden}.hpbar span{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff1f32,#ff6b6b)}
+  .damage-pop{position:absolute;z-index:15;font-size:24px;font-weight:900;color:#fff;text-shadow:0 2px 5px #000;animation:dmgUp .8s ease-out forwards;pointer-events:none}.damage-pop.cpu{color:#ff3232}.damage-pop.crit{font-size:34px;color:#ffe14d;animation:dmgUp .8s ease-out forwards,critWobble .28s linear 3}
+  @keyframes dmgUp{to{opacity:0;transform:translateY(-45px) scale(1.12)}}@keyframes critWobble{50%{margin-left:7px}}
+  .versus-modal,.result-modal{position:absolute;inset:24px;z-index:20;border-radius:18px;background:rgba(8,10,22,.94);border:2px solid rgba(255,255,255,.18);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;box-shadow:0 18px 45px rgba(0,0,0,.65)}
+  .versus-row{width:100%;display:flex;align-items:center;justify-content:space-around}.versus-card{text-align:center;font-weight:900}.versus-card .mini{width:75px;height:105px;margin:auto}.versus-title{font-size:30px;color:#ffd000;font-weight:900;margin:10px 0;text-shadow:0 3px 0 #000}.searching{position:absolute;z-index:10;left:50%;top:48%;transform:translate(-50%,-50%);color:#fff;font-size:18px;font-weight:900;text-shadow:0 3px 4px #000}
+  .countdown{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);z-index:25;color:#ffd000;font-size:86px;font-weight:900;text-shadow:0 5px 8px #000;animation:countPop .8s ease}@keyframes countPop{from{transform:translate(-50%,-50%) scale(.4);opacity:.2}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+  .boom{position:absolute;width:18px;height:18px;border-radius:50%;z-index:18;background:#fff;box-shadow:0 0 0 10px #ffe14d,0 0 0 22px #ff7a00,0 0 45px 30px rgba(255,64,0,.8);animation:explode 1.2s ease-out forwards}@keyframes explode{to{transform:scale(4);opacity:0}}
+  .result-modal{inset:62px 42px}.result-modal.win{background:rgba(135,255,163,.92);color:#10351a}.result-modal.lose{background:rgba(255,125,125,.92);color:#421010}.result-title{font-size:34px;font-weight:900}.reward{font-size:20px;font-weight:900;margin:12px}.reload{width:80%;height:10px;border-radius:99px;background:rgba(0,0,0,.25);overflow:hidden}.reload span{display:block;height:100%;width:100%;background:#fff;animation:reloadReverse 4s linear forwards}@keyframes reloadReverse{to{width:0}}
+  #stats-grid.fight-stats{visibility:visible!important;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr;height:270px;padding:10px;gap:10px}.fight-stat-panel{background:linear-gradient(180deg,#1b2145,#10142b);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:10px;color:#eef2ff;box-shadow:0 10px 22px rgba(0,0,0,.3)}.fight-stat-panel h3{text-align:center;color:#ffd000;font-size:17px;margin-bottom:7px}.fight-row{display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:900;margin:5px 0;padding:5px;border-radius:8px;background:rgba(0,0,0,.24)}.fight-row .stat-name{font-size:9px}.fight-row.high{color:#72ff93}.fight-row.low{color:#ff6666}.fight-row.tie{color:#aab0c8}
+
+
+
+/* Toast */
   #toast{
     position:absolute;left:50%;bottom:84px;transform:translateX(-50%) translateY(20px);
     background:rgba(10,12,26,.95);color:#fff;padding:9px 18px;border-radius:24px;font-weight:700;font-size:12px;
@@ -275,6 +318,7 @@
 
       <!-- Sala de entrenamiento -->
       <div id="room">
+        <div id="fps-counter">FPS 60</div>
         <!-- Fondo: suelo, paredes, luces -->
         <svg id="room-svg" viewBox="0 0 400 350" preserveAspectRatio="none">
           <defs>
@@ -928,9 +972,11 @@ function setColiseoHidden(hidden){
   if(hidden){
     coliseoPanel.classList.add('show');
     luchaPanel.classList.remove('show');
+    stopFight();
   }else{
     coliseoPanel.classList.remove('show');
     luchaPanel.classList.remove('show');
+    stopFight();
   }
   // Cuadro central inferior: rejilla de estadísticas
   statsGrid.style.visibility = hidden ? 'hidden' : '';
@@ -941,6 +987,9 @@ function openLuchaPanel(){
   if(!coliseoActive) return;
   coliseoPanel.classList.remove('show');
   luchaPanel.classList.add('show');
+  fightState.active = true;
+  fightState.phase = 'idle';
+  renderRing();
   toast('🥊 LUCHA');
 }
 
@@ -985,6 +1034,112 @@ document.querySelectorAll('.menu-btn').forEach(btn=>{
   });
 });
 
+
+
+/* ============================================================
+   LUCHA: ring, emparejamiento, batalla y recompensas
+   ============================================================ */
+const fightState = {
+  active:false, phase:'idle', enemy:null, timers:[], playerEl:null, enemyEl:null,
+  seconds:45, roundTimer:null, aiTimer:null, hitTimer:null
+};
+function clearFightTimers(){
+  fightState.timers.forEach(t=>clearTimeout(t)); fightState.timers=[];
+  [fightState.roundTimer,fightState.aiTimer,fightState.hitTimer].forEach(t=>{ if(t) clearInterval(t); });
+  fightState.roundTimer=fightState.aiTimer=fightState.hitTimer=null;
+}
+function makeFighterSvg(enemy=false){
+  return `<div class="hpbar"><span></span></div><svg viewBox="0 0 50 80" preserveAspectRatio="xMidYMax meet">
+    <g class="limb"><rect x="18" y="63" width="6" height="14" rx="3" fill="#8f8f8f" stroke="#555" stroke-width="1.6"/><ellipse cx="21" cy="78" rx="5" ry="2.5" fill="#454545"/></g>
+    <g class="limb"><rect x="26" y="63" width="6" height="14" rx="3" fill="#8f8f8f" stroke="#555" stroke-width="1.6"/><ellipse cx="29" cy="78" rx="5" ry="2.5" fill="#454545"/></g>
+    <g class="limb"><rect x="11" y="42" width="6" height="22" rx="3" fill="#8f8f8f" stroke="#555" stroke-width="1.6"/>${enemy?'<circle cx="14" cy="64" r="5" fill="#d33" stroke="#600"/>':''}</g>
+    <g class="limb"><rect x="33" y="42" width="6" height="22" rx="3" fill="#8f8f8f" stroke="#555" stroke-width="1.6"/>${enemy?'<circle cx="36" cy="64" r="5" fill="#d33" stroke="#600"/>':''}</g>
+    <g><circle cx="25" cy="60" r="19" fill="${enemy?'#b8a0a0':'#a0a0a0'}" stroke="#555" stroke-width="2"/>
+    ${enemy?'<path d="M15 43 Q25 34 35 43" stroke="#321" stroke-width="5" fill="none" stroke-linecap="round"/>':''}
+    <rect x="18" y="55" width="4" height="4" rx="1.5" fill="#222"/><rect x="28" y="55" width="4" height="4" rx="1.5" fill="#222"/>
+    <line x1="17" y1="52" x2="22" y2="52" stroke="#222" stroke-width="1.5"/><line x1="28" y1="52" x2="33" y2="52" stroke="#222" stroke-width="1.5"/><line x1="21" y1="64" x2="29" y2="64" stroke="#222" stroke-width="1.5"/></g></svg>`;
+}
+function renderRing(){
+  luchaPanel.innerHTML = `<div class="fight-ring" id="fight-ring">
+    <div class="ring-light l1"></div><div class="ring-light l2"></div><div class="ring-light l3"></div><div class="fight-timer" id="fight-timer">45</div><div class="ring-crowd"></div>
+    <div class="ring-post p1"></div><div class="ring-post p2"></div><div class="ring-post p3"></div><div class="ring-post p4"></div><div class="ring-rope r1"></div><div class="ring-rope r2"></div><div class="ring-rope r3"></div>
+    <div class="ring-floor"><div class="ring-logo">GYM HERO</div></div><div class="ring-prompt" id="ring-prompt">TOCA EL RING PARA BUSCAR RIVAL</div>
+  </div>`;
+  document.getElementById('fight-ring').addEventListener('click', ()=>{ if(fightState.phase==='idle') findOpponent(); });
+}
+function clonePlayerStats(){
+  return {ATAQUE:game.stats.ATAQUE.level,DEFENSA:game.stats.DEFENSA.level,HP:game.stats.HP.level,VELOCIDAD:game.stats.VELOCIDAD.level,CRITICO:game.stats.CRITICO.level,EVASION:game.stats.EVASION.level};
+}
+function buildEnemyStats(){
+  const levels = ORDER.reduce((a,k)=>a+game.stats[k].level,0);
+  const enemyLevels = Object.fromEntries(ORDER.map(k=>[k,0]));
+  for(let i=0;i<levels;i++) enemyLevels[ORDER[Math.floor(Math.random()*ORDER.length)]]++;
+  const enemy = { levels: enemyLevels };
+  enemy.attack = 2 + enemyLevels.ATAQUE * 3;
+  enemy.defense = 2 + enemyLevels.DEFENSA * 3;
+  enemy.maxHp = 18 + enemyLevels.HP * 12;
+  enemy.currentHp = enemy.maxHp;
+  enemy.moveSpeed = 1 + enemyLevels.VELOCIDAD * .05;
+  enemy.hitSpeedMs = Math.max(250, 560 - enemyLevels.VELOCIDAD * 18);
+  enemy.critChance = roundStat(enemyLevels.CRITICO * .15);
+  enemy.evasionChance = roundStat(enemyLevels.EVASION * .15);
+  enemy.critThreshold = BATTLE_THRESHOLDS.CRITICO;
+  enemy.evasionThreshold = BATTLE_THRESHOLDS.EVASION;
+  enemy.defenseReduction = getDefenseReduction(enemy.defense);
+  return enemy;
+}
+function battleValuesFromPlayer(){ const p=syncPlayerBattleStats(); p.levels=clonePlayerStats(); p.currentHp=p.maxHp; return p; }
+function renderFightStats(player, enemy){
+  statsGrid.className='fight-stats';
+  statsGrid.innerHTML = ['TU','CPU'].map((title,idx)=>`<div class="fight-stat-panel"><h3>${title}</h3>${ORDER.map(k=>{
+    const lv = idx?enemy.levels[k]:player.levels[k], other=idx?player.levels[k]:enemy.levels[k];
+    const cls = lv>other?'high':(lv<other?'low':'tie');
+    const val = idx ? (k==='ATAQUE'?enemy.attack:k==='DEFENSA'?enemy.defense:k==='HP'?enemy.maxHp:k==='VELOCIDAD'?enemy.levels[k]:k==='CRITICO'?enemy.critChance+'%':enemy.evasionChance+'%') : formatStatValue(k, game.stats[k].value);
+    return `<div class="fight-row ${cls}"><span class="stat-name">${ICONOS[k]} ${k}</span><span>Nv.${lv} · ${val}</span></div>`}).join('')}</div>`).join('');
+}
+function findOpponent(){
+  fightState.phase='searching'; document.getElementById('ring-prompt')?.remove();
+  const ring=document.getElementById('fight-ring'); ring.insertAdjacentHTML('beforeend','<div class="searching">🔎 BUSCANDO RIVAL...</div>');
+  fightState.timers.push(setTimeout(()=>showVersus(),900));
+}
+function showVersus(){
+  const player=battleValuesFromPlayer(), enemy=buildEnemyStats(); fightState.player=player; fightState.enemy=enemy; renderFightStats(player,enemy);
+  document.querySelector('.searching')?.remove();
+  document.getElementById('fight-ring').insertAdjacentHTML('beforeend',`<div class="versus-modal"><div class="versus-title">RIVAL ENCONTRADO</div><div class="versus-row"><div class="versus-card"><div class="mini">${makeFighterSvg(false)}</div><div>TU</div></div><div class="versus-title">VS</div><div class="versus-card"><div class="mini enemy">${makeFighterSvg(true)}</div><div>CPU</div></div></div><div>La pelea inicia en 4 segundos...</div></div>`);
+  fightState.phase='versus'; fightState.timers.push(setTimeout(()=>startCountdown(),4000));
+}
+function startCountdown(){
+  document.querySelector('.versus-modal')?.remove(); createFighters(); let n=3; fightState.phase='countdown';
+  const tick=()=>{ const old=document.querySelector('.countdown'); if(old) old.remove(); if(n>0){document.getElementById('fight-ring').insertAdjacentHTML('beforeend',`<div class="countdown">${n}</div>`); n--; fightState.timers.push(setTimeout(tick,900));} else startBattle();}; tick();
+}
+function createFighters(){
+  const ring=document.getElementById('fight-ring');
+  ring.insertAdjacentHTML('beforeend',`<div id="player-fighter" class="fighter player" style="left:145px;top:210px">${makeFighterSvg(false)}</div><div id="enemy-fighter" class="fighter enemy" style="left:205px;top:210px">${makeFighterSvg(true)}</div>`);
+  fightState.playerEl=document.getElementById('player-fighter'); fightState.enemyEl=document.getElementById('enemy-fighter'); updateHpBars();
+}
+function startBattle(){
+  document.querySelector('.countdown')?.remove(); fightState.phase='battle'; fightState.seconds=45; updateTimer();
+  fightState.roundTimer=setInterval(()=>{fightState.seconds--; if(fightState.seconds<=0) fightState.seconds=45; updateTimer();},1000);
+  fightState.aiTimer=setInterval(randomMove,620); fightState.hitTimer=setInterval(exchangeHits,520);
+}
+function updateTimer(){ const el=document.getElementById('fight-timer'); if(el) el.textContent=fightState.seconds; }
+function randomMove(){
+  [[fightState.playerEl,15],[fightState.enemyEl,210]].forEach(([el,base])=>{ if(!el) return; el.style.left=(base+Math.random()*115)+'px'; el.style.top=(158+Math.random()*82)+'px'; });
+}
+function exchangeHits(){ if(fightState.phase!=='battle') return; doHit(fightState.player,fightState.enemy,fightState.playerEl,fightState.enemyEl,false); if(fightState.enemy.currentHp<=0) return finishFight(true); doHit(fightState.enemy,fightState.player,fightState.enemyEl,fightState.playerEl,true); if(fightState.player.currentHp<=0) finishFight(false); }
+function doHit(attacker,defender,aEl,dEl,cpu){
+  aEl.classList.add('attacking'); setTimeout(()=>aEl.classList.remove('attacking'),150); const res=resolveBattleHit(attacker,defender); if(!res.evaded){ dEl.classList.add('hit'); setTimeout(()=>dEl.classList.remove('hit'),130); popDamage(dEl,res.damage,res.critical,cpu); if(res.critical) document.getElementById('fight-ring').classList.add('shake'), setTimeout(()=>document.getElementById('fight-ring')?.classList.remove('shake'),520);} else popDamage(dEl,'MISS',false,cpu); updateHpBars(); }
+function popDamage(el,txt,crit,cpu){ const r=el.getBoundingClientRect(), pr=luchaPanel.getBoundingClientRect(), sc=getScale(); const d=document.createElement('div'); d.className='damage-pop '+(cpu?'cpu ':'')+(crit?'crit':''); d.textContent=(crit?'CRIT ':'')+txt; d.style.left=((r.left-pr.left)/sc+20)+'px'; d.style.top=((r.top-pr.top)/sc-5)+'px'; luchaPanel.appendChild(d); setTimeout(()=>d.remove(),850); }
+function updateHpBars(){ [['player',fightState.playerEl,fightState.player],['enemy',fightState.enemyEl,fightState.enemy]].forEach(([_,el,f])=>{ if(el&&f) el.querySelector('.hpbar span').style.width=Math.max(0,(f.currentHp/f.maxHp)*100)+'%'; }); }
+function finishFight(playerWon){
+  if(fightState.phase==='result') return; fightState.phase='result'; clearFightTimers(); const loser=playerWon?fightState.enemyEl:fightState.playerEl, winner=playerWon?fightState.playerEl:fightState.enemyEl;
+  if(loser){ const x=parseFloat(loser.style.left)+28,y=parseFloat(loser.style.top)+45; loser.style.opacity='0'; document.getElementById('fight-ring').insertAdjacentHTML('beforeend',`<div class="boom" style="left:${x}px;top:${y}px"></div>`); }
+  if(winner) winner.style.left='171px', winner.style.top='190px'; const reward=playerWon?Math.max(5,Math.round(10+game.stats.ATAQUE.level+game.stats.HP.level)):2; game.gold+=reward; refreshStats();
+  fightState.timers.push(setTimeout(()=>{ document.getElementById('fight-ring').insertAdjacentHTML('beforeend',`<div class="result-modal ${playerWon?'win':'lose'}"><div class="result-title">${playerWon?'GANASTE':'PERDISTE'}</div><div class="reward">+${reward} oro 💰</div><div class="reload"><span></span></div></div>`); fightState.timers.push(setTimeout(()=>resetFightForNext(),4000)); },900));
+}
+function resetFightForNext(){ clearFightTimers(); renderRing(); findOpponent(); }
+function stopFight(){ clearFightTimers(); fightState.phase='idle'; fightState.active=false; statsGrid.className=''; buildStatCards(); }
+
 /* Toast */
 let toastTimer = null;
 function toast(msg){
@@ -994,6 +1149,22 @@ function toast(msg){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=> t.classList.remove('show'), 1600);
 }
+
+
+
+/* Contador visual de FPS fijado al área del escenario */
+let fpsFrames = 0, fpsLast = performance.now();
+function tickFps(now){
+  fpsFrames++;
+  if(now - fpsLast >= 500){
+    const fps = Math.min(60, Math.round((fpsFrames * 1000) / (now - fpsLast)));
+    const el = document.getElementById('fps-counter');
+    if(el) el.textContent = 'FPS ' + fps;
+    fpsFrames = 0; fpsLast = now;
+  }
+  requestAnimationFrame(tickFps);
+}
+requestAnimationFrame(tickFps);
 
 /* ============================================================
    INICIO
