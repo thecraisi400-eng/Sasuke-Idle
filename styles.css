@@ -579,3 +579,40 @@
     border:1px solid rgba(255,255,255,.15);z-index:50;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;
   }
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ===== COMBATE DINÁMICO: movimiento, barras sobre personajes y golpes ===== */
+  .fighter{
+    transition: left .06s linear, bottom .06s linear, transform .08s linear;
+    transform-origin:50% 100%;
+    will-change:left,bottom,transform;
+  }
+  .fighter.moving svg .leg-right{animation:boxStepR .34s ease-in-out infinite}
+  .fighter.moving svg .leg-left{animation:boxStepL .34s ease-in-out infinite}
+  .fighter.moving svg .arm-right{animation:walkAr .34s ease-in-out infinite}
+  .fighter.moving svg .arm-left{animation:walkAl .34s ease-in-out infinite}
+  .fighter.strike svg .arm-right{animation:fightJab .22s ease-out 1}
+  .fighter.strike svg .torso{animation:fightLean .22s ease-out 1}
+  @keyframes fightJab{0%{transform:rotate(-16deg)}55%{transform:rotate(74deg) translateY(-2px)}100%{transform:rotate(-16deg)}}
+  @keyframes fightLean{0%,100%{transform:translateX(0) rotate(0)}55%{transform:translateX(2px) rotate(6deg)}}
+  .fighter-hp{
+    position:absolute;left:50%;top:-13px;transform:translateX(-50%);
+    width:58px;height:7px;background:rgba(35,0,0,.82);border:1px solid rgba(255,255,255,.35);
+    border-radius:999px;overflow:hidden;z-index:4;box-shadow:0 1px 4px rgba(0,0,0,.65);
+  }
+  .fighter-hp-fill{
+    width:100%;height:100%;background:linear-gradient(90deg,#9b0000,#ff2222,#ff6868);
+    border-radius:999px;transition:width .2s ease;box-shadow:0 0 7px rgba(255,0,0,.45);
+  }
+  .fight-float.player-hit{color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.85),0 0 7px rgba(255,255,255,.9)}
+  .fight-float.enemy-hit{color:#ff2d2d;text-shadow:0 2px 4px rgba(0,0,0,.85),0 0 8px rgba(255,0,0,.75)}
+  .fight-float.crit{font-size:32px;color:#ffe14d;text-shadow:0 2px 5px rgba(0,0,0,.85),0 0 14px #ff9f00;animation:fightCritFloat 1.15s ease-out forwards}
+  @keyframes fightCritFloat{
+    0%{opacity:0;transform:translate(-50%,0) scale(.6) rotate(-4deg)}
+    12%{opacity:1;transform:translate(-52%,-6px) scale(1.38) rotate(4deg)}
+    25%{transform:translate(-48%,-12px) scale(1.28) rotate(-3deg)}
+    100%{opacity:0;transform:translate(-50%,-56px) scale(1.05) rotate(0)}
+  }
+  .ring-shake{animation:ringShake .34s linear}
+  @keyframes ringShake{
+    0%,100%{transform:translate(0,0)}20%{transform:translate(-3px,2px)}40%{transform:translate(3px,-2px)}60%{transform:translate(-2px,-1px)}80%{transform:translate(2px,1px)}
+  }
