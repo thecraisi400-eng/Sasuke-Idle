@@ -213,8 +213,8 @@ function startFightCountdown(enemy){
   // Poner luchadores en el ring
   const fp = document.getElementById('fighter-player');
   const fe = document.getElementById('fighter-enemy');
-  fp.innerHTML = buildFighterSVG(false, null);
-  fe.innerHTML = buildFighterSVG(true, enemy);
+  fp.innerHTML = '<div class="fighter-hp"><div class="fighter-hp-fill"></div></div>' + buildFighterSVG(false, null);
+  fe.innerHTML = '<div class="fighter-hp"><div class="fighter-hp-fill"></div></div>' + buildFighterSVG(true, enemy);
   fp.style.display='block';
   fe.style.display='block';
   // animación punch idle
@@ -243,14 +243,14 @@ function startFightCountdown(enemy){
 
 function beginCombat(enemy){
   const hud = document.getElementById('fight-hud');
-  hud.style.display='flex';
+  hud.style.display='none';
   document.getElementById('hp-enemy-name').textContent = enemy.name;
 
   const player = {
     attack: game.stats.ATAQUE.value,
     defense: game.stats.DEFENSA.value,
-    maxHp: Math.round(game.stats.HP.value),
-    hp: Math.round(game.stats.HP.value),
+    maxHp: Math.max(1, Math.round(game.stats.HP.value)),
+    hp: Math.max(1, Math.round(game.stats.HP.value)),
     crit: game.stats.CRITICO.value,
     eva: game.stats.EVASION.value,
     speed: game.stats.VELOCIDAD.value
@@ -258,43 +258,137 @@ function beginCombat(enemy){
   const foe = {
     attack: enemy.stats.ATAQUE,
     defense: enemy.stats.DEFENSA,
-    maxHp: Math.round(enemy.stats.HP),
-    hp: Math.round(enemy.stats.HP),
+    maxHp: Math.max(1, Math.round(enemy.stats.HP)),
+    hp: Math.max(1, Math.round(enemy.stats.HP)),
     crit: enemy.stats.CRITICO,
     eva: enemy.stats.EVASION,
     speed: enemy.stats.VELOCIDAD
   };
 
-  updateHpBars(player, foe);
-
+  const fp = document.getElementById('fighter-player');
+  const fe = document.getElementById('fighter-enemy');
   const floatLayer = document.getElementById('fight-float-layer');
-  function floatDmg(x,y,text,cls){
+  const fightLayer = document.getElementById('fight-layer');
+  const layerW = fightLayer.clientWidth || 346;
+  const layerH = fightLayer.clientHeight || 308;
+  const bounds = { minX: 22, maxX: layerW - 74, minY: 24, maxY: layerH - 120 };
+
+  const actors = {
+    player: makeActor(fp, player, 76, 55, 1, true),
+    enemy: makeActor(fe, foe, layerW - 128, layerH - 142, -1, false)
+  };
+
+  let fightOver = false;
+  let rafId = 0;
+  let lastTime = performance.now();
+
+  updateHpBars(player, foe);
+  retarget(actors.player, true);
+  retarget(actors.enemy, true);
+  rafId = requestAnimationFrame(tickCombat);
+
+  function makeActor(el, stats, x, y, facing, isPlayer){
+    const svg = el.querySelector('svg');
+    if(svg) svg.classList.remove('punching');
+    el.classList.add('moving');
+    return {
+      el, stats, x, y, targetX: x, targetY: y, facing, isPlayer,
+      nextDecision: 0, nextAttack: performance.now() + (isPlayer ? 450 : 720),
+      stunUntil: 0, strikeUntil: 0,
+      speedPx: 46 + Math.min(95, stats.speed * 7)
+    };
+  }
+
+  function randomBetween(a,b){ return a + Math.random()*(b-a); }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function distance(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+
+  function retarget(actor, forceRandom=false){
+    const rival = actor.isPlayer ? actors.enemy : actors.player;
+    const hunt = !forceRandom && Math.random() < 0.68;
+    if(hunt){
+      const side = actor.x < rival.x ? -1 : 1;
+      actor.targetX = clamp(rival.x + side * randomBetween(34, 56), bounds.minX, bounds.maxX);
+      actor.targetY = clamp(rival.y + randomBetween(-22, 22), bounds.minY, bounds.maxY);
+    } else {
+      actor.targetX = randomBetween(bounds.minX, bounds.maxX);
+      actor.targetY = randomBetween(bounds.minY, bounds.maxY);
+    }
+    actor.nextDecision = performance.now() + randomBetween(420, 980);
+  }
+
+  function tickCombat(now){
+    if(fightOver) return;
+    const dt = Math.min(0.035, (now - lastTime) / 1000);
+    lastTime = now;
+    updateActor(actors.player, actors.enemy, now, dt);
+    updateActor(actors.enemy, actors.player, now, dt);
+    rafId = requestAnimationFrame(tickCombat);
+  }
+
+  function updateActor(actor, rival, now, dt){
+    actor.facing = actor.x <= rival.x ? 1 : -1;
+    if(now > actor.nextDecision || Math.hypot(actor.targetX-actor.x, actor.targetY-actor.y) < 5) retarget(actor);
+    if(now > actor.stunUntil){
+      const dx = actor.targetX - actor.x;
+      const dy = actor.targetY - actor.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const step = actor.speedPx * dt;
+      actor.x += dx / len * Math.min(step, Math.abs(dx));
+      actor.y += dy / len * Math.min(step, Math.abs(dy));
+    }
+    if(distance(actor, rival) < 60 && now >= actor.nextAttack) doHit(actor, rival, now);
+    actor.el.style.left = actor.x + 'px';
+    actor.el.style.bottom = actor.y + 'px';
+    actor.el.style.transform = `scaleX(${actor.facing})`;
+    actor.el.style.setProperty('--fx', actor.facing);
+    actor.el.style.zIndex = String(32 + Math.round((bounds.maxY - actor.y) / 8));
+  }
+
+  function floatDmg(actor, text, cls){
     const d = document.createElement('div');
     d.className = 'fight-float ' + (cls||'');
     d.textContent = text;
-    d.style.left = x+'px'; d.style.top = y+'px';
+    d.style.left = (actor.x + 27) + 'px';
+    d.style.top = (layerH - actor.y - 80) + 'px';
     floatLayer.appendChild(d);
-    setTimeout(()=>d.remove(),1100);
+    setTimeout(()=>d.remove(),1150);
   }
 
-  function doHit(attacker, defender, isPlayerAttacking){
-    // evasion
-    if(Math.random()*100 > 94 && Math.random()*100 < 94 + defender.eva){
-      floatDmg(isPlayerAttacking?235:115, 48, 'EVADE', 'evade');
-      return false;
+  function doHit(attacker, defender, now){
+    attacker.nextAttack = now + Math.max(430, 980 - attacker.stats.speed * 38) + Math.random()*220;
+    attacker.el.classList.remove('strike'); void attacker.el.offsetWidth; attacker.el.classList.add('strike');
+    setTimeout(()=>attacker.el.classList.remove('strike'), 230);
+
+    if(Math.random()*100 < Math.min(38, defender.stats.eva)){
+      floatDmg(defender, 'EVADE', 'evade');
+      retarget(defender, true);
+      return;
     }
-    const crit = Math.random()*100 > 93 && Math.random()*100 < 93 + attacker.crit;
-    let dmg = Math.max(1, Math.round(attacker.attack));
-    if(crit) dmg *= 2;
-    const reduction = Math.min(0.30, defender.defense * 0.006);
-    dmg = Math.max(1, Math.round(dmg * (1-reduction)));
-    defender.hp = Math.max(0, defender.hp - dmg);
-    // anim hit
-    const targetEl = isPlayerAttacking ? document.getElementById('fighter-enemy') : document.getElementById('fighter-player');
-    targetEl.classList.remove('hit-anim'); void targetEl.offsetWidth; targetEl.classList.add('hit-anim');
-    floatDmg(isPlayerAttacking?235:115, 52, crit ? '¡'+dmg+'!':'-'+dmg, crit?'crit':'');
+
+    const crit = Math.random()*100 < Math.min(42, 6 + attacker.stats.crit);
+    let dmg = Math.max(4, Math.round(attacker.stats.attack * randomBetween(1.15, 1.55)));
+    if(crit) dmg = Math.round(dmg * 2.05);
+    const reduction = Math.min(0.34, defender.stats.defense * 0.0055);
+    dmg = Math.max(3, Math.round(dmg * (1 - reduction)));
+    defender.stats.hp = Math.max(0, defender.stats.hp - dmg);
+
+    defender.el.classList.remove('hit-anim'); void defender.el.offsetWidth; defender.el.classList.add('hit-anim');
+    const push = crit ? randomBetween(16, 26) : randomBetween(7, 15);
+    defender.x = clamp(defender.x + attacker.facing * push, bounds.minX, bounds.maxX);
+    defender.y = clamp(defender.y + randomBetween(-10, 10), bounds.minY, bounds.maxY);
+    defender.stunUntil = now + (crit ? 230 : 120);
+    retarget(defender, true);
+
+    floatDmg(defender, crit ? '¡-'+dmg+'!' : '-'+dmg, crit ? 'crit' : (attacker.isPlayer ? 'player-hit' : 'enemy-hit'));
+    if(crit) shakeRing();
     updateHpBars(player, foe);
-    return defender.hp <= 0;
+    if(defender.stats.hp <= 0) endFight(attacker.isPlayer);
+  }
+
+  function shakeRing(){
+    ringApron.classList.remove('ring-shake'); void ringApron.offsetWidth; ringApron.classList.add('ring-shake');
+    setTimeout(()=>ringApron.classList.remove('ring-shake'), 360);
   }
 
   function updateHpBars(p,f){
@@ -304,35 +398,18 @@ function beginCombat(enemy){
     document.getElementById('hp-enemy-fill').style.width = fpct+'%';
     document.getElementById('hp-player-txt').textContent = p.hp+' / '+p.maxHp;
     document.getElementById('hp-enemy-txt').textContent = f.hp+' / '+f.maxHp;
+    const pFill = fp.querySelector('.fighter-hp-fill');
+    const eFill = fe.querySelector('.fighter-hp-fill');
+    if(pFill) pFill.style.width = ppct+'%';
+    if(eFill) eFill.style.width = fpct+'%';
   }
-
-  const playerInterval = Math.max(380, 820 - player.speed*38);
-  const enemyInterval  = Math.max(420, 860 - foe.speed*38);
-
-  let fightOver = false;
-  const pTimer = setInterval(()=>{
-    if(fightOver) return;
-    if(doHit(player, foe, true)){
-      endFight(true);
-    }
-  }, playerInterval);
-
-  const eTimer = setTimeout(()=>{
-    const eInt = setInterval(()=>{
-      if(fightOver){ clearInterval(eInt); return; }
-      if(doHit(foe, player, false)){
-        endFight(false);
-      }
-    }, enemyInterval);
-    // store to clear later
-    window._enemyFightInt = eInt;
-  }, enemyInterval*0.55);
 
   function endFight(playerWon){
     if(fightOver) return;
     fightOver = true;
-    clearInterval(pTimer);
-    if(window._enemyFightInt) clearInterval(window._enemyFightInt);
+    cancelAnimationFrame(rafId);
+    fp.classList.remove('moving','strike');
+    fe.classList.remove('moving','strike');
     fightActive = false;
     const res = document.getElementById('fight-result');
     res.style.display='block';
@@ -345,7 +422,6 @@ function beginCombat(enemy){
       fightActive = false;
       toast('Toca el ring para buscar otro rival');
     };
-    // recompensa
     if(playerWon){
       game.gold += 12;
       game.crystal += 2;
