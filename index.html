@@ -252,10 +252,10 @@
 
   /* FPS Counter */
   #fps-counter {
-    position: absolute;
+    position: fixed;
     top: 5px;
     left: 10px;
-    z-index: 100;
+    z-index: 9999;
     color: #00ff00;
     font-family: monospace;
     font-size: 11px;
@@ -525,7 +525,7 @@
   .hp-box.enemy .hp-fill{background:linear-gradient(90deg,#ff5a4a,#ffb36b)}
   .hp-txt{font-size:9.5px;color:#cbd2f0}
   .fighter{
-    position:absolute;bottom:44px;width:56px;height:84px;z-index:32;
+    position:absolute;bottom:44px;width:52px;height:77px;z-index:32;
     transition: left .18s linear, transform .12s;
     filter: drop-shadow(0 5px 6px rgba(0,0,0,.45));
   }
@@ -726,7 +726,7 @@
             <circle cx="16" cy="100" r="7" fill="#3a3f55" stroke="#0e111c" stroke-width="2"/>
             <circle cx="106" cy="100" r="7" fill="#3a3f55" stroke="#0e111c" stroke-width="2"/>
           </svg>
-          <div class="hint" style="left:50%;top:-2px;transform:translateX(-50%)">🏃 Caminadora</div>
+          <div class="hint" style="left:50%;top:-2px;transform:translateX(calc(-50% - 7px))">🏃 Caminadora</div>
         </div>
 
         <!-- SACO DE BOXEO -->
