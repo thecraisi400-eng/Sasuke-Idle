@@ -1,3 +1,4 @@
+(()=>{
 /* ============================================================
    LUCHA: funcionamiento al seleccionar la opción LUCHA dentro del Coliseo
    ============================================================ */
@@ -11,3 +12,4 @@ function openLuchaPanel(){
 }
 
 luchaBtn.addEventListener('click', openLuchaPanel);
+})();

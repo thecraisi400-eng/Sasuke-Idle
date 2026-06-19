@@ -1,3 +1,4 @@
+(()=>{
 /* ============================================================
    COLISEO: ocultar/mostrar el contenido de los dos cuadros centrales
    (sala de entrenamiento y rejilla de estadísticas)
@@ -62,3 +63,4 @@ window.GymHeroColiseo = {
   setHidden: setColiseoHidden,
   isActive: () => coliseoActive
 };
+})();
