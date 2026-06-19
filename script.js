@@ -28,7 +28,7 @@ const game = {
   }
 };
 
-const ORDER = ["ATAQUE","DEFENSA","HP","VELOCIDAD","CRITICO","EVASION"];
+const ORDER = ["ATAQUE","DEFENSA","VELOCIDAD","CRITICO","HP","EVASION"];
 
 /* ============================================================
    REFERENCIAS DOM
