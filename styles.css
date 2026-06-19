@@ -424,3 +424,14 @@
   .lucha-found-body{position:relative;padding:16px 12px;display:flex;flex-direction:column;align-items:center;background:radial-gradient(circle at 18% 20%,rgba(110,168,255,.16),transparent 55%),radial-gradient(circle at 82% 20%,rgba(255,90,90,.14),transparent 55%)}
   .lucha-found-arena{display:flex;align-items:center;justify-content:center;width:100%;margin-bottom:10px}
   .lucha-fcard{width:108px;display:flex;flex-direction:column;align-items:center;position:relative}.lucha-fcard-glow{position:absolute;top:6px;left:50%;margin-left:-32px;width:64px;height:64px;border-radius:50%;filter:blur(9px);opacity:.55;z-index:0}.lucha-fcard-sprite-wrap{position:relative;width:100%;height:78px;display:flex;align-items:flex-start;justify-content:center;z-index:1}.lucha-fcard-sprite-wrap .lucha-character{width:80px;height:125px;transform:translateY(-10%) scale(.66);transform-origin:top center;flex-shrink:0}.lucha-fcard.cpu .lucha-fcard-sprite-wrap .lucha-character{transform:translateY(-10%) scale(-.66,.66)}.lucha-fcard-name{font-size:10px;font-weight:800;margin-top:3px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);max-width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lucha-fcard-tag{font-size:7px;letter-spacing:.6px;color:#9aa0d0;margin-top:1px;text-transform:uppercase}.lucha-fcard-power{margin-top:6px;font-size:9px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:2px 8px;font-weight:700;color:#dfe2f5}.lucha-vs-impact{position:relative;width:38px;height:78px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.lucha-vs-burst{position:absolute;left:50%;top:50%;margin:-27px 0 0 -27px;width:54px;height:54px;border-radius:50%;background:repeating-conic-gradient(from 0deg,rgba(255,90,90,.4) 0deg 4deg,transparent 4deg 24deg);animation:luchaSpin 3s linear infinite;z-index:0}.lucha-vs-impact-text{position:relative;z-index:1;font-size:21px;font-weight:900;color:#ff5050;text-shadow:0 0 14px rgba(255,80,80,.85)}
+
+/* LUCHA: estadísticas completas sin scroll y temporizador único */
+.lucha-ring-header .gold{display:none!important}
+.lucha-stats-col{height:275px}
+.lucha-stats-header{height:34px}
+.lucha-stats-scroll{overflow:visible;padding:6px 10px;display:flex;flex-direction:column;gap:4px}
+.lucha-stat-card{padding:4px 9px;margin-bottom:0}
+.lucha-stat-card-label{font-size:10px;gap:6px}
+.lucha-stat-card-value{font-size:14px}
+.lucha-stat-card-top{margin-bottom:3px}
+.lucha-stat-card-bar{height:6px}
