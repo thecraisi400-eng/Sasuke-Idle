@@ -443,7 +443,10 @@ window.GymHero = {
   syncPlayerBattleStats,
   resolveBattleHit,
   rollCriticalHit,
-  rollEvasion
+  rollEvasion,
+  getStatsSnapshot: () => JSON.parse(JSON.stringify(game.stats)),
+  getPowerValue,
+  addGold: (amount) => { game.gold += amount; refreshStats(); return game.gold; }
 };
 
 /* ============================================================

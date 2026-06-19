@@ -4,6 +4,7 @@
    (sala de entrenamiento y rejilla de estadísticas)
    ============================================================ */
 const { room, statsGrid, coliseoPanel, luchaPanel, toast, getCurrentAction } = window.GymHero;
+const luchaStatsPanel = document.getElementById('lucha-stats-panel');
 let coliseoActive = false;
 function setColiseoHidden(hidden){
   // Cuadro central superior: sala de entrenamiento
@@ -11,9 +12,13 @@ function setColiseoHidden(hidden){
   if(hidden){
     coliseoPanel.classList.add('show');
     luchaPanel.classList.remove('show');
+    luchaStatsPanel.classList.remove('show');
+    window.GymHeroLucha?.close();
   }else{
     coliseoPanel.classList.remove('show');
     luchaPanel.classList.remove('show');
+    luchaStatsPanel.classList.remove('show');
+    window.GymHeroLucha?.close();
   }
   // Cuadro central inferior: rejilla de estadísticas
   statsGrid.style.visibility = hidden ? 'hidden' : '';
