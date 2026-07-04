@@ -1,248 +1,1809 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>GYM HERO - Respaldo</title>
-<link rel="stylesheet" href="./styles/main.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=393, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Kunai Quest - Auto Battler RPG</title>
+<style>
+  :root {
+    --bg-1: #141833;
+    --bg-2: #1a1f38;
+    --bg-3: #0b0d17;
+    --gold: #ffd54a;
+    --gem: #6ee7ff;
+    --hp: #35d06a;
+    --hp-low: #e74c3c;
+    --accent: #ff7a3c;
+    --panel: rgba(11,13,23,.72);
+    --panel-2: rgba(26,31,56,.9);
+    --border: rgba(255,255,255,.08);
+    --text: #e8ecff;
+    --muted: #9aa3c7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #000; color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; height: 100%; }
+  body { display: flex; align-items: center; justify-content: center; }
+  #app {
+    width: 393px; height: 817px; position: relative;
+    background: var(--bg-1);
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    user-select: none; -webkit-user-select: none;
+  }
+
+  /* ===== VIEWPORT (top 470px) ===== */
+  #viewport {
+    position: absolute; top: 0; left: 0; width: 100%; height: 470px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #2a2350 0%, #4a3d6b 35%, #d97a4a 70%, #f2a663 90%, #b6825c 100%);
+  }
+  canvas#scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* HUD */
+  .hud { position: absolute; z-index: 5; color: #fff; pointer-events: none; }
+  .hud-top-left { top: 10px; left: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .hud-top-right { top: 10px; right: 10px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .hud-badge {
+    background: var(--panel); border: 1px solid var(--border);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    padding: 5px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; letter-spacing: .3px;
+    display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.35);
+  }
+  .hud-badge.gold { color: var(--gold); }
+  .hud-badge.gem { color: var(--gem); }
+  .hud-name { font-size: 13px; font-weight: 800; }
+  .hud-power { font-size: 11px; color: var(--gold); }
+  .stage-badge {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, #2a1e5c, #4a3096);
+    border: 1px solid rgba(255,255,255,.15);
+    padding: 4px 12px; border-radius: 8px;
+    font-size: 11px; font-weight: 700; z-index: 5;
+    box-shadow: 0 4px 10px rgba(0,0,0,.4);
+    display: flex; gap: 8px; align-items: center;
+  }
+  .stage-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.25); }
+  /* MODIFICADO: color de progreso a verde */
+  .stage-badge .dot.on { background: var(--hp); box-shadow: 0 0 6px var(--hp); }
+
+  /* Fade transition */
+  #fade {
+    position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none;
+    transition: opacity .5s ease; z-index: 20;
+  }
+  #fade.on { opacity: 1; }
+  /* NUEVO: fade de derrota (un poco más rápido que el de victoria) */
+  #fade.fast { transition: opacity .3s ease; }
+
+  /* World announce */
+  #announce {
+    position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 22px; font-weight: 900; letter-spacing: 2px; color: #fff;
+    text-shadow: 0 2px 12px rgba(0,0,0,.8), 0 0 20px var(--accent);
+    opacity: 0; z-index: 21; pointer-events: none;
+    transition: opacity .3s ease;
+  }
+  #announce.on { opacity: 1; }
+
+  /* Floating damage numbers */
+  .float-num {
+    position: absolute; font-weight: 900; font-size: 14px; color: #fff;
+    text-shadow: 0 2px 4px rgba(0,0,0,.9); pointer-events: none; z-index: 6;
+    animation: floatUp .8s ease-out forwards;
+  }
+  .float-num.crit { color: #ffd54a; font-size: 18px; }
+  .float-num.heal { color: #6bff9e; }
+  @keyframes floatUp {
+    0% { opacity: 0; transform: translateY(0) scale(.6); }
+    20% { opacity: 1; transform: translateY(-6px) scale(1.1); }
+    100% { opacity: 0; transform: translateY(-40px) scale(1); }
+  }
+
+  /* NUEVO: toast flotante dentro del viewport (para avisos ligeros como "sin oro") */
+  .vp-toast {
+    position: absolute; left: 50%; top: 40%;
+    transform: translate(-50%, -50%);
+    background: rgba(20, 10, 10, .82);
+    border: 1px solid rgba(255, 120, 90, .55);
+    color: #ffd54a; font-weight: 800; font-size: 12px;
+    padding: 8px 14px; border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.55);
+    pointer-events: none; z-index: 22;
+    animation: vpToast 1.6s ease-out forwards;
+    white-space: nowrap;
+  }
+  @keyframes vpToast {
+    0%   { opacity: 0; transform: translate(-50%, -30%) scale(.9); }
+    15%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    80%  { opacity: 1; transform: translate(-50%, -60%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -80%) scale(.95); }
+  }
+
+  /* ===== UI (bottom 347px) ===== */
+  #ui {
+    position: absolute; top: 470px; left: 0; width: 100%; height: 347px;
+    background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-3) 100%);
+    border-top: 2px solid rgba(255,255,255,.06);
+    padding: 8px 10px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+
+  /* Scrolls row */
+  .scrolls { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+  .scroll {
+    background: linear-gradient(180deg, #e8c98a 0%, #b98a4a 100%);
+    border: 2px solid #5a3a1a; border-radius: 8px;
+    padding: 6px 10px; position: relative;
+    box-shadow: 0 3px 8px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.4);
+    color: #3a220a; font-weight: 800; font-size: 11px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .scroll.big { flex: 1; padding: 8px 10px; }
+  .scroll .kunai {
+    width: 42px; height: 42px; flex-shrink: 0;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.5));
+  }
+  .scroll .lbl { font-size: 10px; text-transform: uppercase; opacity: .75; }
+  .scroll .val { font-size: 14px; }
+  .scroll.auto { cursor: pointer; transition: transform .1s; }
+  .scroll.auto.off { filter: grayscale(.6) brightness(.85); }
+  .scroll.auto:active { transform: scale(.95); }
+
+  /* NUEVO: animación bounce/flash del contador de kunais */
+  @keyframes kunaiBounce {
+    0%   { transform: scale(1);   color: inherit; text-shadow: none; }
+    30%  { transform: scale(1.35); color: #fff36b; text-shadow: 0 0 10px rgba(255,213,74,.9); }
+    60%  { transform: scale(0.95); color: #ffd54a; text-shadow: 0 0 6px rgba(255,213,74,.6); }
+    100% { transform: scale(1);   color: inherit; text-shadow: none; }
+  }
+  #kunaiCount {
+    display: inline-block;
+    transform-origin: center;
+    will-change: transform, color;
+  }
+  #kunaiCount.bump { animation: kunaiBounce .45s ease-out; }
+
+  /* Equipment grid */
+  .equip-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+  }
+  .equip {
+    background: linear-gradient(180deg, #232a48, #171b30);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 8px;
+    padding: 5px 4px;
+    display: flex; flex-direction: column; align-items: center; gap: 1px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    position: relative; overflow: hidden;
+    cursor: pointer; transition: transform .1s;
+  }
+  .equip:active { transform: scale(.96); }
+  .equip::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(255,255,255,.1), transparent 60%);
+    pointer-events: none;
+  }
+  .equip .emoji { font-size: 20px; line-height: 1; }
+  .equip .name { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; font-weight: 700; }
+  .equip .val { font-size: 12px; font-weight: 800; color: var(--gold); }
+
+  /* Menu buttons */
+  .menu {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 6px; margin-top: auto;
+  }
+  .mbtn {
+    background: linear-gradient(180deg, #3a2f6b 0%, #1e1a3e 100%);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 10px;
+    padding: 8px 4px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    cursor: pointer; transition: all .12s;
+    color: #fff; font-weight: 700;
+    box-shadow: 0 3px 0 rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.15);
+  }
+  .mbtn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.15); }
+  .mbtn .ico { font-size: 20px; }
+  .mbtn .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* Modal */
+  .modal-bg {
+    position: absolute; inset: 0; background: rgba(0,0,0,.75); z-index: 30;
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-bg.on { display: flex; }
+  .modal {
+    background: linear-gradient(180deg, #2a2455, #141833);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 14px; padding: 18px; max-width: 320px; width: 100%;
+    box-shadow: 0 20px 40px rgba(0,0,0,.7);
+    color: #fff; text-align: center;
+  }
+  .modal h3 { font-size: 16px; margin-bottom: 8px; }
+  .modal p { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .modal button {
+    background: linear-gradient(180deg, #ff9d5c, #d95d1e); border: none;
+    color: #fff; padding: 8px 20px; border-radius: 8px; font-weight: 800;
+    cursor: pointer; font-size: 13px;
+  }
+
+  /* NUEVO: Modal de Rangos (NIVEL) */
+  .modal.rangos { max-width: 320px; padding: 14px; }
+  .rangos-list {
+    max-height: 260px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 4px; margin-bottom: 10px;
+    border: 1px solid rgba(255,255,255,.1); border-radius: 10px;
+    background: rgba(0,0,0,.25);
+  }
+  .rango-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 8px;
+    font-weight: 800; font-size: 13px;
+    border: 1px solid rgba(0,0,0,.15);
+    text-shadow: 0 1px 0 rgba(255,255,255,.35);
+  }
+  .rango-item .r-emoji { font-size: 18px; }
+  .gold-level-box {
+    max-height: 90px; overflow-y: auto;
+    background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px; padding: 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .gold-level-box .gold-val { font-size: 20px; font-weight: 900; color: var(--gold); }
+  .gold-level-box .lvl-val { font-size: 13px; color: var(--muted); font-weight: 700; }
+  /* NUEVO: layout comparativo de probabilidades por rareza */
+  .rango-item .r-name { flex: 1; }
+  .rango-item .r-probs { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; }
+  .rango-item .r-cur { opacity: .85; }
+  .rango-item .r-arr { opacity: .6; }
+  .rango-item .r-nxt { color: #0a6b0a; }
+  /* NUEVO: estado del botón de mejora (timer) */
+  .gold-level-box.busy { opacity: .85; }
+  .gold-level-box { cursor: pointer; user-select: none; }
+  .gold-level-box.busy { cursor: not-allowed; }
+
+  /* ===== FORJA (KUNAI FORGER) ===== */
+  .scroll.big { cursor: pointer; overflow: hidden; }
+  .scroll.big.forging {
+    animation: forgeShake .12s ease-in-out infinite;
+    box-shadow: 0 0 18px rgba(255,140,40,.9), 0 0 40px rgba(255,90,20,.6),
+                inset 0 0 12px rgba(255,180,60,.55);
+    filter: brightness(1.15) saturate(1.3);
+  }
+  .scroll.big.forging::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(circle at 30% 55%, rgba(255,220,80,.55), transparent 45%),
+      radial-gradient(circle at 70% 45%, rgba(255,110,30,.55), transparent 45%);
+    animation: forgePulse .35s ease-in-out infinite alternate;
+    border-radius: inherit;
+  }
+  @keyframes forgeShake {
+    0%,100% { transform: translate(0,0) rotate(0deg); }
+    25% { transform: translate(-1px,1px) rotate(-.5deg); }
+    75% { transform: translate(1px,-1px) rotate(.5deg); }
+  }
+  @keyframes forgePulse {
+    from { opacity: .55; }
+    to   { opacity: 1; }
+  }
+  .forge-spark {
+    position: absolute; width: 4px; height: 4px; border-radius: 50%;
+    background: #fff3a8; box-shadow: 0 0 8px #ffb84a, 0 0 14px #ff6a1a;
+    pointer-events: none; z-index: 3;
+    animation: sparkFly .7s ease-out forwards;
+  }
+  @keyframes sparkFly {
+    0%   { opacity: 1; transform: translate(0,0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--sx,20px), var(--sy,-30px)) scale(.2); }
+  }
+  .equip { transition: background .35s ease, border-color .35s ease, box-shadow .35s ease; }
+  .equip.reveal { animation: equipReveal .55s ease-out; }
+  @keyframes equipReveal {
+    0%   { transform: scale(.85); box-shadow: 0 0 0 rgba(255,255,255,0); }
+    50%  { transform: scale(1.08); box-shadow: 0 0 22px rgba(255,220,120,.9); }
+    100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,255,255,0); }
+  }
+</style>
 </head>
 <body>
-<div id="stage">
-  <div id="game">
+<div id="app">
 
-    <!-- ====================== PARTE SUPERIOR ====================== -->
-    <div id="top">
-      <!-- Barra de recursos -->
-      <div id="resources">
-        <div class="res"><span class="ico">💰</span><span id="gold">0</span></div>
-        <div class="res"><span class="ico">💎</span><span id="crystal">0</span></div>
-        <div class="res"><span class="ico">💲</span><span id="dollar">0</span></div>
-        <div class="res power"><span class="ico">💪</span><span id="power">0</span></div>
-      </div>
+  <div id="viewport">
+    <canvas id="scene" width="393" height="470"></canvas>
 
-      <!-- Sala de entrenamiento -->
-      <div id="room">
-        <div id="fps-counter"><span class="fps-label">FPS</span><span id="fps-value">60</span></div>
-
-        <!-- Fondo: suelo, paredes, luces -->
-        <svg id="room-svg" viewBox="0 0 400 350" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#41527a"/><stop offset="1" stop-color="#2c3958"/>
-            </linearGradient>
-            <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#9a6634"/><stop offset="1" stop-color="#c98a48"/>
-            </linearGradient>
-            <radialGradient id="glow"><stop offset="0" stop-color="#fff4c2" stop-opacity=".85"/><stop offset="1" stop-color="#fff4c2" stop-opacity="0"/></radialGradient>
-            <linearGradient id="win" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd0ff"/><stop offset="1" stop-color="#cfeaff"/></linearGradient>
-          </defs>
-
-          <!-- Pared -->
-          <rect x="0" y="0" width="400" height="186" fill="url(#wall)"/>
-          <!-- Paneles de pared -->
-          <g stroke="#243150" stroke-width="1.5" opacity=".5">
-            <line x1="100" y1="0" x2="100" y2="186"/><line x1="200" y1="0" x2="200" y2="186"/>
-            <line x1="300" y1="0" x2="300" y2="186"/><line x1="0" y1="93" x2="400" y2="93"/>
-          </g>
-          <!-- Ventana -->
-          <rect x="34" y="34" width="74" height="66" rx="4" fill="url(#win)" stroke="#243150" stroke-width="3"/>
-          <line x1="71" y1="34" x2="71" y2="100" stroke="#243150" stroke-width="3"/>
-          <line x1="34" y1="67" x2="108" y2="67" stroke="#243150" stroke-width="3"/>
-          <!-- Cartel de gimnasio -->
-          <rect x="170" y="40" width="96" height="52" rx="6" fill="#1b2240" stroke="#3a4480" stroke-width="2"/>
-          <text x="220" y="64" text-anchor="middle" font-size="15" font-weight="900" fill="#ffd000" font-family="Trebuchet MS">GYM</text>
-          <text x="220" y="82" text-anchor="middle" font-size="9" font-weight="700" fill="#ff7a6b" font-family="Trebuchet MS">HERO</text>
-
-          <!-- Luces de techo -->
-          <circle cx="90" cy="14" r="26" fill="url(#glow)"/>
-          <circle cx="210" cy="14" r="26" fill="url(#glow)"/>
-          <circle cx="330" cy="14" r="26" fill="url(#glow)"/>
-          <g fill="#2a3354" stroke="#1a2038" stroke-width="1.5">
-            <rect x="78" y="0" width="24" height="10" rx="2"/><rect x="198" y="0" width="24" height="10" rx="2"/><rect x="318" y="0" width="24" height="10" rx="2"/>
-          </g>
-          <!-- Espejo -->
-          <rect x="350" y="50" width="70" height="80" rx="3" fill="#aab8d8" opacity=".35" stroke="#243150" stroke-width="2"/>
-
-          <!-- Zócalo -->
-          <rect x="0" y="180" width="400" height="9" fill="#6b4423"/>
-          <!-- Suelo -->
-          <rect x="0" y="189" width="400" height="161" fill="url(#floor)"/>
-          <!-- Tablones del suelo -->
-          <g stroke="#7a4f24" stroke-width="1.5" opacity=".6">
-            <line x1="0" y1="214" x2="400" y2="214"/><line x1="0" y1="244" x2="400" y2="244"/>
-            <line x1="0" y1="278" x2="400" y2="278"/><line x1="0" y1="316" x2="400" y2="316"/>
-          </g>
-          <g stroke="#b07a43" stroke-width="1" opacity=".5">
-            <line x1="60" y1="189" x2="60" y2="214"/><line x1="180" y1="189" x2="180" y2="214"/>
-            <line x1="300" y1="189" x2="300" y2="214"/>
-            <line x1="40" y1="214" x2="40" y2="244"/><line x1="150" y1="214" x2="150" y2="244"/>
-            <line x1="270" y1="214" x2="270" y2="244"/><line x1="350" y1="214" x2="350" y2="244"/>
-            <line x1="90" y1="244" x2="90" y2="278"/><line x1="220" y1="244" x2="220" y2="278"/>
-            <line x1="330" y1="244" x2="330" y2="278"/>
-          </g>
-          <!-- Viñeta -->
-          <rect x="0" y="0" width="400" height="350" fill="url(#vig)" opacity="0"/>
-        </svg>
-
-        <!-- MÁQUINA DE PESAS -->
-        <div id="weight-machine" class="machine" data-action="weights">
-          <svg viewBox="0 0 118 132" width="100%">
-            <!-- Rack -->
-            <rect x="20" y="20" width="8" height="92" rx="3" fill="#2b3047" stroke="#11141f" stroke-width="2"/>
-            <rect x="90" y="20" width="8" height="92" rx="3" fill="#2b3047" stroke="#11141f" stroke-width="2"/>
-            <!-- Barra con pesas -->
-            <rect x="10" y="30" width="98" height="6" rx="3" fill="#5a6070" stroke="#11141f" stroke-width="2"/>
-            <g stroke="#11141f" stroke-width="2">
-              <circle cx="14" cy="33" r="11" fill="#3a3f55"/><circle cx="14" cy="33" r="6" fill="#2b3047"/>
-              <circle cx="104" cy="33" r="11" fill="#3a3f55"/><circle cx="104" cy="33" r="6" fill="#2b3047"/>
-            </g>
-            <!-- Banco -->
-            <rect x="22" y="74" width="74" height="16" rx="6" fill="#3a2a22" stroke="#11141f" stroke-width="2"/>
-            <rect x="22" y="74" width="74" height="6" rx="3" fill="#5a4034"/>
-            <!-- Patas -->
-            <rect x="26" y="88" width="7" height="34" rx="2" fill="#2b3047" stroke="#11141f" stroke-width="2"/>
-            <rect x="85" y="88" width="7" height="34" rx="2" fill="#2b3047" stroke="#11141f" stroke-width="2"/>
-            <!-- Soporte de pesas con mancuernas -->
-            <rect x="40" y="104" width="38" height="6" rx="2" fill="#2b3047" stroke="#11141f" stroke-width="2"/>
-            <g stroke="#11141f" stroke-width="1.5">
-              <rect x="44" y="98" width="3" height="8" rx="1" fill="#444a60"/>
-              <circle cx="45.5" cy="98" r="4" fill="#3a3f55"/><circle cx="45.5" cy="98" r="2" fill="#2b3047"/>
-              <rect x="71" y="98" width="3" height="8" rx="1" fill="#444a60"/>
-              <circle cx="72.5" cy="98" r="4" fill="#3a3f55"/><circle cx="72.5" cy="98" r="2" fill="#2b3047"/>
-            </g>
-          </svg>
-          <div class="hint" style="left:50%;top:-2px;transform:translateX(-50%)">🏋️ Pesas</div>
-        </div>
-
-        <!-- CAMINADORA -->
-        <div id="treadmill" class="machine" data-action="treadmill">
-          <svg viewBox="0 0 132 110" width="100%">
-            <!-- Consola -->
-            <rect x="86" y="2" width="40" height="44" rx="5" fill="#1c2238" stroke="#0e111c" stroke-width="2"/>
-            <rect x="92" y="8" width="28" height="18" rx="3" fill="#2a3354"/>
-            <text x="106" y="21" text-anchor="middle" font-size="8" font-weight="800" fill="#6bff9b" font-family="Trebuchet MS">0.0</text>
-            <rect x="94" y="32" width="10" height="8" rx="2" fill="#3a4480"/><rect x="108" y="32" width="10" height="8" rx="2" fill="#3a4480"/>
-            <!-- Soporte consola -->
-            <rect x="98" y="44" width="16" height="22" fill="#2b3047" stroke="#0e111c" stroke-width="2"/>
-            <!-- Barra -->
-            <rect x="84" y="40" width="44" height="7" rx="3" fill="#3a3f55" stroke="#0e111c" stroke-width="2"/>
-            <!-- Base / cinta -->
-            <rect x="2" y="62" width="118" height="38" rx="10" fill="#15192a" stroke="#0e111c" stroke-width="2"/>
-            <!-- Cinta (banda) -->
-            <rect x="8" y="68" width="106" height="22" rx="6" fill="#2b3047" stroke="#0e111c" stroke-width="1.5"/>
-            <clipPath id="beltclip"><rect x="9" y="69" width="104" height="20" rx="6"/></clipPath>
-            <g clip-path="url(#beltclip)">
-              <g id="belt-stripes">
-                <g fill="#1a1f33">
-                  <rect x="-20" y="69" width="8" height="20"/><rect x="2" y="69" width="8" height="20"/>
-                  <rect x="24" y="69" width="8" height="20"/><rect x="46" y="69" width="8" height="20"/>
-                  <rect x="68" y="69" width="8" height="20"/><rect x="90" y="69" width="8" height="20"/>
-                  <rect x="112" y="69" width="8" height="20"/><rect x="134" y="69" width="8" height="20"/>
-                </g>
-              </g>
-            </g>
-            <!-- Ruedas -->
-            <circle cx="16" cy="100" r="7" fill="#3a3f55" stroke="#0e111c" stroke-width="2"/>
-            <circle cx="106" cy="100" r="7" fill="#3a3f55" stroke="#0e111c" stroke-width="2"/>
-          </svg>
-          <div class="hint" style="left:calc(50% - 20px);top:-2px;transform:translateX(-50%)">🏃 Caminadora</div>
-        </div>
-
-        <!-- SACO DE BOXEO -->
-        <div id="boxing-bag" class="machine" data-action="punch">
-          <svg viewBox="0 0 78 230" width="100%" height="100%" style="overflow:visible">
-            <!-- Soporte de techo -->
-            <rect x="30" y="-16" width="18" height="16" rx="3" fill="#2b3047" stroke="#11141f" stroke-width="2"/>
-            <!-- Cadenas -->
-            <g stroke="#777" stroke-width="2.5">
-              <line x1="34" y1="0" x2="34" y2="20"/><line x1="44" y1="0" x2="44" y2="20"/>
-            </g>
-            <rect x="30" y="16" width="18" height="6" rx="2" fill="#2b3047" stroke="#11141f" stroke-width="2"/>
-            <!-- Saco (balanceable) -->
-            <g id="bag-swing">
-              <g stroke="#7a1f1f" stroke-width="2.5">
-                <path d="M22 22 Q39 14 56 22 L58 150 Q39 168 20 150 Z" fill="#c92f2f"/>
-              </g>
-              <!-- Brillo -->
-              <path d="M28 30 Q26 80 30 140" stroke="#e85a5a" stroke-width="6" fill="none" opacity=".55" stroke-linecap="round"/>
-              <!-- Cinta superior -->
-              <rect x="24" y="24" width="30" height="9" fill="#1c1c28"/>
-              <rect x="24" y="60" width="30" height="5" fill="#1c1c28" opacity=".8"/>
-              <rect x="22" y="150" width="36" height="8" rx="3" fill="#1c1c28"/>
-            </g>
-          </svg>
-          <div class="hint" style="left:50%;top:60px;transform:translateX(-50%)">🥊 Saco</div>
-        </div>
-
-        <!-- PERSONAJE -->
-        <div id="character" style="width:59px;height:90px;left:125px;bottom:125px">
-          <div id="char-shadow" style="width:48px"></div>
-          <svg id="char-svg" viewBox="-12 -3 24 34" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%">
-            <ellipse class="boxer-shadow" cx="0" cy="18" rx="7" ry="2" fill="#000" fill-opacity="0.5"/>
-            <g class="boxer-body">
-              <rect class="leg-left" x="-4" y="20" width="4" height="8" rx="1" fill="#1a1a3a"/>
-              <rect class="leg-right" x="0" y="20" width="4" height="8" rx="1" fill="#1a1a3a"/>
-              <rect x="-5" y="8" width="10" height="12" rx="2" fill="#2255aa"/>
-              <circle cx="0" cy="4" r="5" fill="#e0b090"/>
-              <circle cx="-1.6" cy="2.3" r="1.1" fill="#fff" fill-opacity="0.22"/>
-              <rect class="glove left"  x="-7" y="9" width="5" height="7" rx="2" fill="#1a3d80"/>
-              <rect class="glove right" x="2"  y="9" width="5" height="7" rx="2" fill="#1a3d80"/>
-            </g>
-          </svg>
-        </div>
-
-        <!-- Capa de textos flotantes -->
-        <div id="float-layer"></div>
-
-        <!-- Botón cancelar -->
-        <button id="cancel-btn">✕ DETENER</button>
-
-        <!-- Panel del COLISEO -->
-        <div id="coliseo-panel">
-          <button id="lucha-btn" class="coliseo-card coliseo-option" type="button">
-            <span class="coliseo-ico">🥊</span>
-            <span>LUCHA</span>
-          </button>
-          <button id="marcas-btn" class="coliseo-card coliseo-option" type="button">
-            <span class="coliseo-ico">🏆</span>
-            <span>MARCAS</span>
-          </button>
-          <div class="coliseo-card coliseo-empty"></div>
-          <div class="coliseo-card coliseo-empty"></div>
-        </div>
-
-        <!-- Panel vacío de LUCHA -->
-        <div id="lucha-panel"></div>
-
-        <!-- Panel vacío de MARCAS -->
-        <div id="marcas-panel"></div>
-      </div>
+    <!-- HUD -->
+    <div class="hud hud-top-left">
+      <div class="hud-badge gold">💰 <span id="gold">1,234</span></div>
+      <div class="hud-badge gem">💎 <span id="gems">56</span></div>
+      <!-- NUEVO: contador de FPS debajo de la moneda de diamante -->
+      <div class="hud-badge" id="fpsBadge" style="color:#9aa3c7;">FPS: 60</div>
+    </div>
+    <div class="hud hud-top-right">
+      <div class="hud-badge"><span class="hud-name">🥷 Ryu</span></div>
+      <div class="hud-badge hud-power">⚡ Poder: <span id="power">0</span></div>
+    </div>
+    <div class="stage-badge">
+      <span>🌍 Mundo <span id="world">1</span></span>
+      <span class="dot" id="d1"></span>
+      <span class="dot" id="d2"></span>
+      <span class="dot" id="d3"></span>
     </div>
 
-    <!-- ====================== PARTE INFERIOR ====================== -->
-    <div id="bottom">
-      <!-- Rejilla de estadísticas 3x2 -->
-      <div id="stats-grid"></div>
-      <div id="lucha-stats-panel"></div>
-
-      <!-- Menú principal -->
-      <nav id="menu">
-        <button class="menu-btn active" data-menu="ENTRENAR"><span class="m-ico">🏋️</span>ENTRENAR</button>
-        <button class="menu-btn" data-menu="COLISEO"><span class="m-ico">⚔️</span>COLISEO</button>
-        <button class="menu-btn" data-menu="EVENTOS"><span class="m-ico">🎉</span>EVENTOS</button>
-        <button class="menu-btn" data-menu="CLANES"><span class="m-ico">🛡️</span>CLANES</button>
-        <button class="menu-btn" data-menu="MISIONES"><span class="m-ico">📜</span>MISIONES</button>
-        <button class="menu-btn" data-menu="TIENDA"><span class="m-ico">🛒</span>TIENDA</button>
-      </nav>
-    </div>
-
-    <div id="toast"></div>
+    <div id="fade"></div>
+    <div id="announce"></div>
   </div>
+
+  <div id="ui">
+    <!-- Scrolls -->
+    <div class="scrolls">
+      <div class="scroll big" style="flex-direction:column; align-items:center; justify-content:center; gap:2px;">
+        <!-- MODIFICADO: layout vertical centrado; se quitó el icono SVG para centrar el texto en el scroll -->
+        <div class="lbl" style="font-size:18px; text-transform:none; opacity:1; line-height:1;">🗡️ <span id="kunaiCount">30</span></div> <!-- MODIFICADO: cantidad actual arriba del scroll, más grande y centrada -->
+        <div class="val" style="margin-top:8px; text-align:center;">KUNAI FORGER</div> <!-- MODIFICADO: nombre movido al centro del scroll y bajado un poco -->
+      </div>
+      <div class="scroll" id="nivelBtn" style="cursor:pointer">
+        <div style="text-align:center">
+          <div class="lbl">Nivel</div>
+          <div class="val" style="font-size:14px" id="rankLabel">⚪ Común</div>
+        </div>
+      </div>
+      <div class="scroll auto off" id="autoBtn">
+        <div style="text-align:center">
+          <div class="lbl">Auto</div>
+          <div class="val">🤖 <span id="autoState">OFF</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Equipment -->
+    <div class="equip-grid">
+      <div class="equip" data-stat="hp"><div class="emoji">❤️</div><div class="name">HP</div><div class="val" id="s-hp">100</div></div>
+      <div class="equip" data-stat="atk"><div class="emoji">⚔️</div><div class="name">Ataque</div><div class="val" id="s-atk">15</div></div>
+      <div class="equip" data-stat="def"><div class="emoji">🛡️</div><div class="name">Defensa</div><div class="val" id="s-def">5</div></div>
+      <div class="equip" data-stat="agi"><div class="emoji">💨</div><div class="name">Agilidad</div><div class="val" id="s-agi">8</div></div>
+      <div class="equip" data-stat="crit"><div class="emoji">🎯</div><div class="name">Crítico</div><div class="val" id="s-crit">1%</div></div>
+      <div class="equip" data-stat="spd"><div class="emoji">⚡</div><div class="name">Velocidad</div><div class="val" id="s-spd">10</div></div>
+      <div class="equip" data-stat="eva"><div class="emoji">🔄</div><div class="name">Evasión</div><div class="val" id="s-eva">1%</div></div>
+      <div class="equip" data-stat="reg"><div class="emoji">💚</div><div class="name">Regen</div><div class="val" id="s-reg">1</div></div>
+    </div>
+
+    <!-- Menu -->
+    <div class="menu">
+      <div class="mbtn" data-menu="evento"><div class="ico">🎪</div><div class="lbl">Evento</div></div>
+      <div class="mbtn" data-menu="mazmorra"><div class="ico">🏰</div><div class="lbl">Mazmorras</div></div>
+      <div class="mbtn" data-menu="batalla"><div class="ico">⚔️</div><div class="lbl">Batalla</div></div>
+      <div class="mbtn" data-menu="heroe"><div class="ico">🦸</div><div class="lbl">Héroe</div></div>
+      <div class="mbtn" data-menu="clanes"><div class="ico">👥</div><div class="lbl">Clanes</div></div>
+      <div class="mbtn" data-menu="tienda"><div class="ico">🛒</div><div class="lbl">Tienda</div></div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="modal">
+    <div class="modal">
+      <h3 id="mTitle">Sección</h3>
+      <p id="mBody">Próximamente...</p>
+      <button onclick="document.getElementById('modal').classList.remove('on')">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- NUEVO: Modal de Rangos (abre al pulsar NIVEL) -->
+  <div class="modal-bg" id="rangosModal">
+    <div class="modal rangos">
+      <h3>🏆 Rangos</h3>
+      <!-- MODIFICADO: lista de rangos ahora se renderiza dinámicamente -->
+      <div class="rangos-list" id="rangosList"></div>
+      <div class="gold-level-box" id="lvlBox">
+        <div class="gold-val"><span id="lvlCost">100,000</span> 💰</div>
+        <div class="lvl-val" id="rangosLvl">Slots 0/8</div>
+      </div>
+      <button style="margin-top:12px" onclick="document.getElementById('rangosModal').classList.remove('on')">Cerrar</button>
+    </div>
+  </div>
+
 </div>
-<script src="./js/core.js"></script>
-<script src="./js/enemigos.js"></script>
-<script src="./js/coliseo.js"></script>
-<script src="./js/lucha.js"></script>
-<script src="./js/marcas.js"></script>
+
+<script>
+"use strict";
+
+/* ====== GAME STATE ====== */
+const state = {
+  gold: 100, gems: 10,
+  world: 1, stage: 0,
+  auto: false,
+  kunaiLv: 1,
+  rank: 0,           // NUEVO: rango actual (0..11)
+  kunais: 5,
+  lvlCost: 100000,   // MODIFICADO: costo fijo para subir de rango
+  lvlTimerEnd: 0,
+  stats: { hp: 100, atk: 15, def: 5, agi: 8, crit: 1, spd: 10, eva: 1, reg: 1 },
+};
+function power() {
+  const s = state.stats;
+  return s.hp + s.atk*3 + s.def*2 + s.agi*2 + s.crit + s.spd*2 + s.eva + s.reg*3 + state.kunaiLv*5;
+}
+function fmt(n){ return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,","); }
+// NUEVO: formateador compacto del Poder (k, M, B, T, Qa, Qi...)
+function fmtPower(n){
+  n = Math.floor(Number(n) || 0);
+  if (n < 1000) return String(n);
+  const units = ['k','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];
+  let u = -1, v = n;
+  while (v >= 1000 && u < units.length - 1) { v /= 1000; u++; }
+  let str;
+  if (v >= 100)      str = Math.floor(v).toString();                       // 100..999 -> entero
+  else if (v >= 10) {                                                      // 10..99.9 -> 1 decimal
+    str = (Math.floor(v * 10) / 10).toFixed(1);
+    if (str.endsWith('.0')) str = str.slice(0, -2);
+  } else {                                                                 // 1..9.99 -> 2 decimales
+    str = (Math.floor(v * 100) / 100).toFixed(2);
+  }
+  return str + units[u];
+}
+// FIN NUEVO
+
+/* ====== CANVAS SCENE ====== */
+const canvas = document.getElementById('scene');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const GROUND_Y = 330; // path center y
+
+let cameraX = 0;
+let worldTime = 0;
+
+/* --- Procedural background elements --- */
+// MODIFICADO: montañas más realistas (perfiles con crestas y picos naturales usando multi-octava)
+function makeMountains(seed, layers) {
+  const rng = mulberry32(seed);
+  const arr = [];
+  for (let l=0; l<layers; l++) {
+    const pts = [];
+    const step = 12 + l*3;
+    const baseY = 240 - l*22;
+    const amp = 60 - l*10;
+    const phase1 = rng()*Math.PI*2;
+    const phase2 = rng()*Math.PI*2;
+    const phase3 = rng()*Math.PI*2;
+    let x = -80;
+    while (x < 2400) {
+      const n1 = Math.sin(x*0.017 + phase1);
+      const n2 = Math.sin(x*0.052 + phase2) * 0.45;
+      const n3 = Math.sin(x*0.11  + phase3) * 0.22;
+      const jitter = (rng()-0.5) * 0.3;
+      const y = baseY - Math.abs(n1 + n2 + n3 + jitter) * amp;
+      pts.push({ x, y });
+      x += step;
+    }
+    arr.push(pts);
+  }
+  return arr;
+}
+function mulberry32(a) {
+  return function() {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = a; t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
+let mountains = makeMountains(state.world*11, 3);
+// procedural props: trees + bushes in world-space, generated ahead as needed
+const props = [];
+let propFrontier = -100;
+function generateProps(untilX) {
+  const rng = mulberry32(state.world*99 + Math.floor(propFrontier));
+  while (propFrontier < untilX) {
+    const type = Math.random() < 0.65 ? 'tree' : (Math.random() < 0.6 ? 'bush' : 'pine');
+    const layer = Math.random() < 0.5 ? 'back' : 'front';
+    props.push({
+      x: propFrontier + Math.random()*40,
+      type, layer,
+      y: layer === 'back' ? 240 + Math.random()*20 : 380 + Math.random()*40,
+      size: 0.8 + Math.random()*0.7,
+      variant: Math.floor(Math.random()*3)
+    });
+    propFrontier += 30 + Math.random()*50;
+  }
+}
+generateProps(1200);
+
+/* --- Drawing helpers --- */
+function drawSky() {
+  // MODIFICADO: sol totalmente estático (sin parallax ni animación)
+  const sunX = 300;
+  const sunY = 110;
+  const grd = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 90);
+  grd.addColorStop(0, 'rgba(255,220,150,.9)');
+  grd.addColorStop(0.4, 'rgba(255,150,90,.4)');
+  grd.addColorStop(1, 'rgba(255,150,90,0)');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = '#ffd88a';
+  ctx.beginPath(); ctx.arc(sunX, sunY, 22, 0, Math.PI*2); ctx.fill();
+}
+function drawMountainLayer(pts, offsetX, color, base) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(-10, base);
+  for (const p of pts) {
+    const x = p.x - offsetX;
+    if (x < -60 || x > W+60) continue;
+    ctx.lineTo(x, p.y);
+  }
+  ctx.lineTo(W+10, base);
+  ctx.closePath();
+  ctx.fill();
+}
+// MODIFICADO: renderizado más realista con gradiente, sombra lateral y nieves en picos altos
+function drawMountains() {
+  const palettes = [
+    { top:'#2a2149', bot:'#1a1430', snow:'rgba(220,225,255,.65)' },
+    { top:'#3a3068', bot:'#241d48', snow:'rgba(235,238,255,.8)' },
+    { top:'#544689', bot:'#382e63', snow:'rgba(255,255,255,.92)' },
+  ];
+  for (let i=0; i<mountains.length; i++) {
+    const par = 0.08 + i*0.06;
+    const pal = palettes[i] || palettes[palettes.length-1];
+    const off = cameraX*par;
+    const pts = mountains[i];
+
+    // silueta principal con gradiente vertical
+    const grd = ctx.createLinearGradient(0, 90, 0, 260);
+    grd.addColorStop(0, pal.top);
+    grd.addColorStop(1, pal.bot);
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.moveTo(-10, 260);
+    for (const p of pts) {
+      const x = p.x - off;
+      if (x < -80 || x > W+80) continue;
+      ctx.lineTo(x, p.y);
+    }
+    ctx.lineTo(W+10, 260);
+    ctx.closePath();
+    ctx.fill();
+
+    // sombra sutil en la cara descendente derecha de cada pico
+    ctx.fillStyle = 'rgba(0,0,0,.18)';
+    for (let j=1; j<pts.length-1; j++) {
+      const a = pts[j], b = pts[j+1];
+      if (b.y <= a.y) continue; // sólo laderas descendentes
+      const x1 = a.x - off, x2 = b.x - off;
+      if (x2 < -60 || x1 > W+60) continue;
+      ctx.beginPath();
+      ctx.moveTo(x1, a.y);
+      ctx.lineTo(x2, b.y);
+      ctx.lineTo(x2, b.y + 26);
+      ctx.lineTo(x1, a.y + 22);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // nieve sólo en los picos más altos de la capa superior
+    if (i === mountains.length-1) {
+      ctx.fillStyle = pal.snow;
+      for (let j=1; j<pts.length-1; j++) {
+        const p = pts[j];
+        if (p.y < pts[j-1].y && p.y < pts[j+1].y && p.y < 150) {
+          const x = p.x - off;
+          if (x < -20 || x > W+20) continue;
+          const s = Math.max(6, Math.min(14, (160 - p.y) * 0.35));
+          ctx.beginPath();
+          ctx.moveTo(x - s, p.y + s*0.55);
+          ctx.lineTo(x - s*0.35, p.y + s*0.15);
+          ctx.lineTo(x, p.y - 2);
+          ctx.lineTo(x + s*0.4, p.y + s*0.2);
+          ctx.lineTo(x + s, p.y + s*0.6);
+          ctx.lineTo(x + s*0.4, p.y + s*0.85);
+          ctx.lineTo(x - s*0.4, p.y + s*0.85);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+    }
+  }
+}
+function drawGround() {
+  // distant grass field
+  const g = ctx.createLinearGradient(0, 250, 0, 470);
+  g.addColorStop(0, '#3d5a2a');
+  g.addColorStop(0.5, '#4a6b34');
+  g.addColorStop(1, '#2d4020');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 260, W, 210);
+
+  // grass tuft texture
+  ctx.fillStyle = 'rgba(60,90,40,.5)';
+  const off = (cameraX*0.9) % 12;
+  for (let x=-off; x<W+12; x+=12) {
+    for (let y=270; y<460; y+=18) {
+      ctx.fillRect(x + (y%24?0:6), y + Math.sin(x*0.3)*2, 3, 5);
+    }
+  }
+}
+function drawPath() {
+  // dirt path in center vertical band around GROUND_Y
+  const y1 = GROUND_Y - 30, y2 = GROUND_Y + 40;
+  const g = ctx.createLinearGradient(0, y1, 0, y2);
+  g.addColorStop(0, '#6b4a2a');
+  g.addColorStop(0.5, '#8a6238');
+  g.addColorStop(1, '#5a3a20');
+  ctx.fillStyle = g;
+  // irregular edges
+  ctx.beginPath();
+  const off = cameraX * 1;
+  ctx.moveTo(0, y1);
+  for (let x=0; x<=W; x+=8) {
+    const n = Math.sin((x+off)*0.05)*3 + Math.sin((x+off)*0.13)*2;
+    ctx.lineTo(x, y1 + n);
+  }
+  for (let x=W; x>=0; x-=8) {
+    const n = Math.sin((x+off)*0.06)*3 + Math.sin((x+off)*0.11)*2;
+    ctx.lineTo(x, y2 + n);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // pebbles
+  ctx.fillStyle = 'rgba(40,25,10,.5)';
+  for (let i=0; i<40; i++) {
+    const wx = i*23 - (cameraX % 23);
+    const wy = y1 + 10 + ((i*7)%50);
+    ctx.beginPath(); ctx.arc(wx, wy, 1.5, 0, Math.PI*2); ctx.fill();
+  }
+}
+function drawTree(px, py, size, variant) {
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.scale(size, size);
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.ellipse(0, 4, 22, 6, 0, 0, Math.PI*2); ctx.fill();
+  // trunk
+  ctx.fillStyle = '#3a2410';
+  ctx.fillRect(-4, -30, 8, 30);
+  // foliage - layered greens
+  const greens = ['#2a4a1a', '#3d6b25', '#4f8a30'];
+  for (let i=0; i<3; i++) {
+    ctx.fillStyle = greens[i];
+    ctx.beginPath();
+    ctx.arc(-10+i*3, -40-i*8, 20-i*3, 0, Math.PI*2);
+    ctx.arc(10-i*2, -38-i*7, 18-i*3, 0, Math.PI*2);
+    ctx.arc(0, -52-i*4, 20-i*3, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+function drawPine(px, py, size) {
+  ctx.save(); ctx.translate(px, py); ctx.scale(size, size);
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.ellipse(0, 4, 16, 5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#3a2410';
+  ctx.fillRect(-3, -25, 6, 25);
+  ctx.fillStyle = '#1e3f18';
+  ctx.beginPath();
+  ctx.moveTo(-18, -25); ctx.lineTo(18, -25); ctx.lineTo(0, -50); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#2b5a22';
+  ctx.beginPath();
+  ctx.moveTo(-15, -40); ctx.lineTo(15, -40); ctx.lineTo(0, -62); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#3a7a2c';
+  ctx.beginPath();
+  ctx.moveTo(-12, -54); ctx.lineTo(12, -54); ctx.lineTo(0, -74); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function drawBush(px, py, size) {
+  ctx.save(); ctx.translate(px, py); ctx.scale(size, size);
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.ellipse(0, 3, 14, 4, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#2f5820';
+  ctx.beginPath();
+  ctx.arc(-8, -4, 8, 0, Math.PI*2);
+  ctx.arc(8, -4, 8, 0, Math.PI*2);
+  ctx.arc(0, -10, 10, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#4a8030';
+  ctx.beginPath();
+  ctx.arc(-4, -12, 5, 0, Math.PI*2);
+  ctx.arc(6, -10, 5, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+function drawProps(layer) {
+  const par = layer === 'back' ? 0.5 : 1.0;
+  for (const p of props) {
+    if (p.layer !== layer) continue;
+    const sx = p.x - cameraX*par;
+    if (sx < -60 || sx > W+60) continue;
+    if (p.type === 'tree') drawTree(sx, p.y, p.size * (layer==='back'?0.7:1), p.variant);
+    else if (p.type === 'pine') drawPine(sx, p.y, p.size * (layer==='back'?0.7:1));
+    else drawBush(sx, p.y, p.size * (layer==='back'?0.6:0.9));
+  }
+}
+
+/* ====== ENTITIES ====== */
+class Entity {
+  constructor(opts) {
+    Object.assign(this, opts);
+    this.hp = this.maxHp;
+    this.atkCd = 0;
+    this.hitFlash = 0;
+    this.walkPhase = Math.random()*Math.PI*2;
+    this.alive = true;
+    this.deathTimer = 0;
+    this.lunge = 0; // NUEVO: desplazamiento temporal al chocar (px hacia el enemigo)
+  }
+}
+
+let hero, enemies = [];
+function initHero() {
+  hero = new Entity({
+    isHero: true,
+    x: 100, // world x
+    y: GROUND_Y,
+    maxHp: state.stats.hp,
+    atk: state.stats.atk + state.kunaiLv*3,
+    def: state.stats.def,
+    crit: state.stats.crit,
+    eva: state.stats.eva,
+    reg: state.stats.reg,
+    spd: 0.8 + state.stats.spd*0.03,
+    walkSpd: 1.2,
+    color: '#5a8ac6',
+    range: 45,
+    facing: 1,
+  });
+}
+initHero();
+
+/* Enemies */
+const enemyTypes = [
+  { name:'goblin', color:'#6a8f3a', accent:'#c94a2a', size: 1 },
+  { name:'wolf',   color:'#5a5a5a', accent:'#2a2a2a', size: 1.1 },
+  { name:'orc',    color:'#3d6b45', accent:'#c9a04a', size: 1.2 },
+  { name:'bat',    color:'#4a2a5a', accent:'#c94aa0', size: 0.9 },
+];
+
+let waveCooldown = 4.0; // MODIFICADO: 4s de caminata antes de la primera oleada
+let inCombat = false;
+let stageEnemiesRemaining = 3; // (legacy, no usado con el nuevo sistema de oleadas)
+
+function spawnWave() {
+  // MODIFICADO: mundos 1-2 = 1 enemigo por oleada; mundo 3+ = 1..3 aleatorio
+  const count = state.world >= 3 ? (1 + Math.floor(Math.random()*3)) : 1;
+  const worldMult = 1 + (state.world-1)*0.35;
+  for (let i=0; i<count; i++) {
+    const t = enemyTypes[Math.floor(Math.random()*enemyTypes.length)];
+    const e = new Entity({
+      isHero: false,
+      x: hero.x + 260 + i*35,
+      y: GROUND_Y,
+      maxHp: Math.round(35 * worldMult + Math.random()*15),
+      atk: Math.round(6 * worldMult + Math.random()*4),
+      def: Math.round(2 * worldMult),
+      crit: 5, eva: 3, reg: 0,
+      spd: 0.7 + Math.random()*0.3,
+      walkSpd: 0.9 + Math.random()*0.4,
+      color: t.color,
+      accent: t.accent,
+      type: t.name,
+      size: t.size,
+      range: 30,
+      facing: -1,
+    });
+    enemies.push(e);
+  }
+  inCombat = true;
+}
+
+/* ====== DRAW CHARACTERS ====== */
+// NUEVO: escala uniforme para agrandar sprites en +7px (base ~40px -> 47px)
+const SPRITE_SCALE = (40 + 7) / 40;
+function drawHero(e) {
+  // MODIFICADO: aplica desplazamiento de "choque" según el sentido del héroe
+  const sx = e.x - cameraX + (e.lunge || 0) * (e.facing || 1);
+  const sy = e.y;
+  ctx.save();
+  if (e.hitFlash > 0) ctx.globalAlpha = 0.7;
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(sx, sy+3, 14, 4, 0, 0, Math.PI*2); ctx.fill();
+  // NUEVO: escalar el dibujo del héroe manteniendo pies como pivote (no afecta física/colisión)
+  ctx.translate(sx, sy); ctx.scale(SPRITE_SCALE, SPRITE_SCALE); ctx.translate(-sx, -sy);
+  // FIN NUEVO
+
+  const bob = Math.sin(e.walkPhase)*2;
+  const legSwing = Math.sin(e.walkPhase)*4;
+
+  // legs
+  ctx.fillStyle = '#1a1e35';
+  ctx.fillRect(sx-6, sy-14 + bob, 4, 14 + legSwing);
+  ctx.fillRect(sx+2, sy-14 + bob, 4, 14 - legSwing);
+
+  // body (ninja gi)
+  ctx.fillStyle = '#3a4a6b';
+  ctx.fillRect(sx-9, sy-32 + bob, 18, 20);
+  ctx.fillStyle = '#c94a2a'; // belt
+  ctx.fillRect(sx-9, sy-18 + bob, 18, 3);
+
+  // head with mask
+  ctx.fillStyle = '#e8c9a0';
+  ctx.beginPath(); ctx.arc(sx, sy-40 + bob, 8, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#1a1e35'; // mask
+  ctx.fillRect(sx-8, sy-42 + bob, 16, 5);
+  ctx.fillRect(sx-8, sy-36 + bob, 16, 4);
+  // eyes
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(sx-4, sy-40 + bob, 2, 2);
+  ctx.fillRect(sx+2, sy-40 + bob, 2, 2);
+  // headband
+  ctx.fillStyle = '#c94a2a';
+  ctx.fillRect(sx-9, sy-46 + bob, 18, 2);
+
+  // arm holding kunai
+  const attackSwing = e.atkCd > 0 && e.atkCd < 0.15 ? -12 : 0;
+  ctx.strokeStyle = '#3a4a6b'; ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(sx+6, sy-26 + bob);
+  ctx.lineTo(sx+14 + attackSwing, sy-20 + bob + attackSwing);
+  ctx.stroke();
+  // kunai in hand
+  ctx.fillStyle = '#d4dbec';
+  ctx.beginPath();
+  ctx.moveTo(sx+14 + attackSwing, sy-22 + bob + attackSwing);
+  ctx.lineTo(sx+22 + attackSwing, sy-18 + bob + attackSwing);
+  ctx.lineTo(sx+14 + attackSwing, sy-14 + bob + attackSwing);
+  ctx.closePath(); ctx.fill();
+
+  ctx.restore();
+  drawHpBar(e, sx, sy-58);
+}
+
+function drawEnemy(e) {
+  // MODIFICADO: aplica desplazamiento de "choque" según el sentido del enemigo
+  const sx = e.x - cameraX + (e.lunge || 0) * (e.facing || 1);
+  const sy = e.y;
+  ctx.save();
+  const alpha = e.alive ? (e.hitFlash > 0 ? 0.6 : 1) : Math.max(0, 1 - e.deathTimer*2);
+  ctx.globalAlpha = alpha;
+  const scale = e.size * SPRITE_SCALE * (e.alive ? 1 : 1 + e.deathTimer); // MODIFICADO: aplica SPRITE_SCALE (+7px uniforme) al enemigo
+  const bob = e.alive ? Math.sin(e.walkPhase)*1.5 : 0;
+
+  // shadow
+  ctx.globalAlpha = alpha * 0.35;
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.ellipse(sx, sy+3, 12*scale, 4, 0, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = alpha;
+
+  ctx.translate(sx, sy + bob);
+  ctx.scale(scale, scale);
+  ctx.scale(e.facing, 1);
+
+  if (e.type === 'goblin') {
+    // body
+    ctx.fillStyle = e.color;
+    ctx.fillRect(-8, -20, 16, 18);
+    // head
+    ctx.beginPath(); ctx.arc(0, -28, 9, 0, Math.PI*2); ctx.fill();
+    // ears
+    ctx.beginPath();
+    ctx.moveTo(-8, -30); ctx.lineTo(-14, -34); ctx.lineTo(-8, -26); ctx.closePath();
+    ctx.moveTo(8, -30); ctx.lineTo(14, -34); ctx.lineTo(8, -26); ctx.closePath();
+    ctx.fill();
+    // eyes
+    ctx.fillStyle = '#ffdd44';
+    ctx.fillRect(-5, -30, 3, 2); ctx.fillRect(2, -30, 3, 2);
+    // legs
+    ctx.fillStyle = '#3a4a1a';
+    ctx.fillRect(-6, -3, 4, 5); ctx.fillRect(2, -3, 4, 5);
+    // weapon (club)
+    ctx.fillStyle = e.accent;
+    ctx.fillRect(8, -18, 3, 12);
+  } else if (e.type === 'wolf') {
+    // 4-leg body
+    ctx.fillStyle = e.color;
+    ctx.beginPath(); ctx.ellipse(0, -10, 14, 8, 0, 0, Math.PI*2); ctx.fill();
+    // head
+    ctx.beginPath(); ctx.ellipse(-12, -14, 7, 5, 0, 0, Math.PI*2); ctx.fill();
+    // ears
+    ctx.beginPath();
+    ctx.moveTo(-14, -18); ctx.lineTo(-16, -22); ctx.lineTo(-12, -18); ctx.closePath();
+    ctx.moveTo(-10, -18); ctx.lineTo(-8, -22); ctx.lineTo(-6, -18); ctx.closePath();
+    ctx.fill();
+    // legs
+    ctx.fillStyle = e.accent;
+    ctx.fillRect(-10, -4, 3, 6); ctx.fillRect(-4, -4, 3, 6);
+    ctx.fillRect(4, -4, 3, 6); ctx.fillRect(10, -4, 3, 6);
+    // tail
+    ctx.strokeStyle = e.color; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(12, -12); ctx.lineTo(20, -18); ctx.stroke();
+    // eye
+    ctx.fillStyle = '#ff4444';
+    ctx.fillRect(-15, -15, 2, 2);
+  } else if (e.type === 'orc') {
+    ctx.fillStyle = e.color;
+    ctx.fillRect(-10, -22, 20, 20);
+    ctx.beginPath(); ctx.arc(0, -30, 10, 0, Math.PI*2); ctx.fill();
+    // tusks
+    ctx.fillStyle = '#eee';
+    ctx.fillRect(-4, -26, 2, 4); ctx.fillRect(2, -26, 2, 4);
+    // eyes
+    ctx.fillStyle = '#ff4444';
+    ctx.fillRect(-5, -32, 3, 2); ctx.fillRect(2, -32, 3, 2);
+    // legs
+    ctx.fillStyle = '#2a4a25';
+    ctx.fillRect(-8, -3, 5, 5); ctx.fillRect(3, -3, 5, 5);
+    // axe
+    ctx.fillStyle = '#5a3a1a'; ctx.fillRect(10, -20, 3, 16);
+    ctx.fillStyle = e.accent; ctx.beginPath();
+    ctx.moveTo(10, -20); ctx.lineTo(18, -22); ctx.lineTo(18, -14); ctx.lineTo(10, -12); ctx.closePath(); ctx.fill();
+  } else { // bat
+    ctx.fillStyle = e.color;
+    ctx.beginPath(); ctx.arc(0, -18, 8, 0, Math.PI*2); ctx.fill();
+    // wings flap
+    const wf = Math.sin(worldTime*8)*6;
+    ctx.beginPath();
+    ctx.moveTo(-6, -18); ctx.lineTo(-20, -20 + wf); ctx.lineTo(-16, -14 + wf); ctx.lineTo(-6, -14); ctx.closePath();
+    ctx.moveTo(6, -18); ctx.lineTo(20, -20 + wf); ctx.lineTo(16, -14 + wf); ctx.lineTo(6, -14); ctx.closePath();
+    ctx.fill();
+    // eyes
+    ctx.fillStyle = e.accent;
+    ctx.fillRect(-4, -20, 2, 2); ctx.fillRect(2, -20, 2, 2);
+  }
+  ctx.restore();
+  if (e.alive) drawHpBar(e, sx, sy - 48);
+}
+
+function drawHpBar(e, x, y) {
+  const w = 34, h = 5;
+  const pct = Math.max(0, e.hp / e.maxHp);
+  ctx.save();
+  // frame
+  ctx.fillStyle = 'rgba(0,0,0,.7)';
+  ctx.fillRect(x-w/2-1, y-1, w+2, h+2);
+  ctx.fillStyle = '#1a1e35';
+  ctx.fillRect(x-w/2, y, w, h);
+  const col = pct > 0.5 ? '#35d06a' : (pct > 0.25 ? '#e6c02a' : '#e74c3c');
+  const g = ctx.createLinearGradient(x-w/2, y, x-w/2, y+h);
+  g.addColorStop(0, col); g.addColorStop(1, shade(col,-30));
+  ctx.fillStyle = g;
+  ctx.fillRect(x-w/2, y, w*pct, h);
+  // gloss
+  ctx.fillStyle = 'rgba(255,255,255,.3)';
+  ctx.fillRect(x-w/2, y, w*pct, 1);
+  // border
+  ctx.strokeStyle = 'rgba(255,255,255,.25)';
+  ctx.lineWidth = 0.5;
+  ctx.strokeRect(x-w/2, y, w, h);
+  // numbers
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 8px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${Math.ceil(e.hp)}`, x, y-2); // MODIFICADO: mostrar únicamente el HP actual sobre la barra
+  ctx.restore();
+}
+function shade(hex, amt) {
+  const c = parseInt(hex.slice(1),16);
+  let r = (c>>16)+amt, g = ((c>>8)&255)+amt, b = (c&255)+amt;
+  r = Math.max(0,Math.min(255,r)); g = Math.max(0,Math.min(255,g)); b = Math.max(0,Math.min(255,b));
+  return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+
+/* ====== FLOATING NUMBERS ====== */
+function floatNumber(worldX, worldY, text, cls='') {
+  const vp = document.getElementById('viewport');
+  const el = document.createElement('div');
+  el.className = 'float-num ' + cls;
+  el.textContent = text;
+  el.style.left = (worldX - cameraX) + 'px';
+  el.style.top = worldY + 'px';
+  vp.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+
+/* ====== COMBAT ====== */
+function positionEnemiesAround(target) {
+  // MODIFICADO: enemigos se colocan MUY cerca del héroe para forzar combate cuerpo a cuerpo
+  const alive = enemies.filter(e => e.alive);
+  alive.forEach((e, i) => {
+    const angle = -0.5 + (i / Math.max(1, alive.length-1)) * 1.0;
+    const dist = 22; // MODIFICADO: distancia de choque (antes 32)
+    e.targetX = target.x + Math.cos(angle) * dist;
+    e.targetY = target.y + Math.sin(angle) * 6;
+  });
+}
+
+function attack(attacker, target) {
+  // NUEVO: "choque" físico — el atacante avanza y el objetivo retrocede
+  attacker.lunge = 10;
+  target.lunge = -6;
+  // evade check
+  if (Math.random()*100 < target.eva) {
+    floatNumber(target.x, target.y-60, 'MISS', '');
+    return;
+  }
+  let dmg = Math.max(1, attacker.atk - target.def * 0.5);
+  let crit = false;
+  if (Math.random()*100 < attacker.crit) { dmg = Math.round(dmg * 2); crit = true; }
+  dmg = Math.round(dmg + (Math.random()*3-1));
+  target.hp -= dmg;
+  target.hitFlash = 0.15;
+  // camera shake
+  shakeAmt = Math.min(8, shakeAmt + (crit?5:2.5));
+  floatNumber(target.x, target.y-60, '-'+dmg, crit?'crit':'');
+  if (target.hp <= 0) {
+    target.hp = 0;
+    target.alive = false;
+    target.deathTimer = 0;
+    if (!target.isHero) {
+      // MODIFICADO: se eliminó el oro por-kill; ahora el oro se otorga por oleada completada
+      const anyAlive = enemies.some(e => e.alive && e !== target);
+      if (!anyAlive) {
+        state.stage = Math.min(3, state.stage + 1); // oleada completada
+        // NUEVO: oro por oleada — 7 base en mundo 1, x1.20 por cada mundo siguiente
+        const waveGold = 7 * Math.pow(1.20, state.world - 1);
+        state.gold += waveGold;
+        floatNumber(target.x, target.y - 40, '+' + waveGold.toFixed(2) + '💰', 'heal'); // MODIFICADO: 2 decimales
+        // FIN NUEVO
+        // recompensa fija de 1 kunai por oleada completada
+        const kReward = 1;
+        state.kunais += kReward;
+        floatNumber(target.x, target.y - 22, '+' + kReward + '🗡️', 'heal');
+        updateHud();
+        if (state.stage >= 3) {
+          nextWorld();
+        }
+      } else {
+        updateHud();
+      }
+    } else {
+      // MODIFICADO: héroe derrotado -> flashback negro y reinicio del mundo actual
+      heroDefeat();
+    }
+  }
+}
+
+let shakeAmt = 0;
+
+// NUEVO: reinicio por derrota (flashback negro, mismo mundo, oleada 1)
+let _defeatLock = false; // NUEVO: evita reentradas durante el fade
+function heroDefeat() {
+  if (_defeatLock) return;
+  _defeatLock = true;
+  const fade = document.getElementById('fade');
+  fade.classList.add('fast', 'on');
+  setTimeout(() => {
+    if (state.world > 1) state.world--; // MODIFICADO: derrota -> mundo anterior
+    mountains = makeMountains(state.world*11, 3); // NUEVO: regenerar terreno del mundo previo
+    state.stage = 0;
+    enemies = [];
+    inCombat = false;
+    waveCooldown = 4.0;
+    cameraX = 0;
+    hero.x = 100;
+    hero.alive = true;
+    hero.hp = hero.maxHp;
+    hero.hitFlash = 0;
+    hero.atkCd = 0;
+    updateHud();
+    _defeatLock = false; // NUEVO: liberar tras reinicio
+    showAnnounce('¡Derrotado!');
+    setTimeout(() => {
+      fade.classList.remove('on');
+      setTimeout(() => fade.classList.remove('fast'), 350);
+    }, 120);
+  }, 320);
+}
+
+function completeStage() {
+  // (legacy, sin uso con el nuevo sistema)
+  state.stage++;
+  updateHud();
+  if (state.stage > 3) nextWorld();
+}
+function nextWorld() {
+  // MODIFICADO: flashback al siguiente mundo (fade normal .5s)
+  const fade = document.getElementById('fade');
+  fade.classList.add('on');
+  setTimeout(() => {
+    state.world++;
+    state.stage = 0; // MODIFICADO: reiniciar círculos de oleada
+    waveCooldown = 4.0; // MODIFICADO
+    inCombat = false;
+    enemies = [];
+    cameraX = 0;
+    hero.x = 100;
+    hero.hp = hero.maxHp;
+    // regenerate world
+    mountains = makeMountains(state.world*11, 3);
+    props.length = 0; propFrontier = -100;
+    generateProps(1200);
+    // MODIFICADO: se eliminó la recompensa de 💎 por completar mundo (los diamantes ya no se obtienen)
+    // state.gems += 5 + state.world;
+    updateHud();
+    showAnnounce(`🌍 Mundo ${state.world}`);
+    setTimeout(() => fade.classList.remove('on'), 100);
+  }, 500);
+}
+function showAnnounce(text) {
+  const a = document.getElementById('announce');
+  a.textContent = text;
+  a.classList.add('on');
+  setTimeout(() => a.classList.remove('on'), 1500);
+}
+
+/* ====== GAME LOOP ====== */
+let last = performance.now();
+// NUEVO: contador de FPS (ventana deslizante de ~500 ms)
+let _fpsFrames = 0, _fpsLast = performance.now(), _fpsEl = null;
+function loop(now) {
+  const dt = Math.min(0.05, (now - last)/1000);
+  last = now;
+  worldTime += dt;
+  update(dt);
+  render();
+  // NUEVO: actualizar FPS visible siempre
+  _fpsFrames++;
+  if (now - _fpsLast >= 500) {
+    if (!_fpsEl) _fpsEl = document.getElementById('fpsBadge');
+    if (_fpsEl) _fpsEl.textContent = 'FPS: ' + Math.round((_fpsFrames * 1000) / (now - _fpsLast));
+    _fpsFrames = 0; _fpsLast = now;
+  }
+  requestAnimationFrame(loop);
+}
+
+function update(dt) {
+  // regen
+  if (hero.alive) hero.hp = Math.min(hero.maxHp, hero.hp + hero.reg * dt);
+
+  // hit flash decay + NUEVO: decaimiento del "lunge" (choque) para héroe y enemigos
+  hero.hitFlash = Math.max(0, hero.hitFlash - dt);
+  hero.lunge *= Math.max(0, 1 - dt * 10);
+  for (const e of enemies) {
+    e.hitFlash = Math.max(0, e.hitFlash - dt);
+    e.lunge *= Math.max(0, 1 - dt * 10);
+    if (!e.alive) e.deathTimer += dt;
+  }
+
+  // walking phase
+  if (!inCombat) {
+    hero.walkPhase += dt * 8;
+    // move hero forward in world
+    hero.x += hero.walkSpd * 60 * dt;
+    // move camera to keep hero centered when past viewport center
+    const targetCam = hero.x - W/2;
+    if (targetCam > cameraX) cameraX = targetCam;
+    // ensure props generated ahead
+    if (propFrontier < cameraX + 800) generateProps(cameraX + 1200);
+
+    waveCooldown -= dt;
+    if (waveCooldown <= 0 && enemies.filter(e=>e.alive).length === 0) {
+      spawnWave();
+    }
+  } else {
+    // combat: enemies approach then attack
+    const alive = enemies.filter(e => e.alive);
+    if (alive.length === 0) {
+      // wave clear
+      enemies = enemies.filter(e => e.deathTimer < 1.0);
+      inCombat = false;
+      waveCooldown = 4.0; // MODIFICADO: 4s de caminata entre oleadas
+      return;
+    }
+    positionEnemiesAround(hero);
+    for (const e of alive) {
+      const dx = (e.targetX ?? e.x) - e.x;
+      const dy = (e.targetY ?? e.y) - e.y;
+      const d = Math.hypot(dx, dy);
+      if (d > 2) {
+        e.x += (dx/d) * e.walkSpd * 60 * dt;
+        e.y += (dy/d) * e.walkSpd * 30 * dt;
+        e.walkPhase += dt * 10;
+      } else {
+        // attack
+        e.atkCd -= dt;
+        if (e.atkCd <= 0) {
+          e.atkCd = 1.4 / e.spd;
+          attack(e, hero);
+        }
+      }
+    }
+    // MODIFICADO: el héroe SOLO ataca cuerpo a cuerpo — espera a que un enemigo esté cerca
+    hero.atkCd -= dt;
+    const MELEE = 34; // NUEVO: rango de melee (px) para permitir ataque
+    if (hero.atkCd <= 0 && alive.length) {
+      // find closest
+      let closest = alive[0], best = Infinity;
+      for (const e of alive) {
+        const d = Math.hypot(e.x - hero.x, e.y - hero.y);
+        if (d < best) { best = d; closest = e; }
+      }
+      if (best <= MELEE) {
+        hero.facing = closest.x >= hero.x ? 1 : -1; // NUEVO: mira al objetivo al chocar
+        hero.atkCd = 0.9 / hero.spd;
+        attack(hero, closest);
+      } else {
+        hero.atkCd = 0.05; // NUEVO: espera activa; reintenta cuando esté en rango
+      }
+    }
+  }
+
+  // shake decay
+  shakeAmt = Math.max(0, shakeAmt - dt*30);
+
+  // cull dead
+  enemies = enemies.filter(e => e.alive || e.deathTimer < 1.0);
+}
+
+function render() {
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  if (shakeAmt > 0.1) {
+    ctx.translate((Math.random()-0.5)*shakeAmt, (Math.random()-0.5)*shakeAmt);
+  }
+  drawSky();
+  drawMountains();
+  drawGround();
+  drawProps('back');
+  drawPath();
+  // sort entities by y for depth
+  const all = [hero, ...enemies].sort((a,b) => a.y - b.y);
+  for (const e of all) {
+    if (e.isHero) drawHero(e);
+    else drawEnemy(e);
+  }
+  drawProps('front');
+  ctx.restore();
+}
+
+/* ====== HUD/UI ====== */
+function updateHud() {
+  document.getElementById('gold').textContent = fmtPower(state.gold); // MODIFICADO: formato compacto entero
+  document.getElementById('gems').textContent = fmtPower(state.gems); // MODIFICADO: formato compacto entero
+  document.getElementById('world').textContent = state.world;
+  document.getElementById('power').textContent = fmtPower(power()); // MODIFICADO: formato compacto (k/M/B...)
+  const rankLbl = document.getElementById('rankLabel');
+  if (rankLbl) {
+    try {
+      const r = RARITIES[state.rank];
+      if (r) rankLbl.textContent = `${r.emoji} ${r.name}`;
+    } catch (_) { /* RARITIES aún no inicializado en el primer updateHud() */ }
+  }
+  const kcEl = document.getElementById('kunaiCount');
+  if (kcEl) {
+    const nuevo = fmt(state.kunais);
+    if (kcEl.textContent !== nuevo) {
+      kcEl.textContent = nuevo;
+      kcEl.classList.remove('bump');
+      void kcEl.offsetWidth;
+      kcEl.classList.add('bump');
+    }
+  }
+  for (const [k,v] of Object.entries(state.stats)) {
+    const el = document.getElementById('s-'+k);
+    if (el) el.textContent = (k==='crit'||k==='eva') ? v+'%' : v;
+  }
+  for (let i=1; i<=3; i++) {
+    document.getElementById('d'+i).classList.toggle('on', i <= state.stage);
+  }
+}
+updateHud();
+
+// MODIFICADO: eliminada la funcionalidad de mejora de los 8 slots de equipamiento.
+// Los slots permanecen visibles pero sin ningún evento asignado.
+
+// NUEVO: definición de rarezas (orden fijo, mismo índice que columnas de PROBS)
+const RARITIES = [
+  { emoji:'⚪', name:'Común',      bg:'#f2f2f2', fg:'#555' },
+  { emoji:'🟢', name:'Poco Común', bg:'#d4f0d4', fg:'#2f6b2f' },
+  { emoji:'🔵', name:'Raro',       bg:'#cfe4fb', fg:'#1e4a80' },
+  { emoji:'🟣', name:'Épico',      bg:'#e6d1f2', fg:'#5a2a80' },
+  { emoji:'🟠', name:'Legendario', bg:'#ffe0bf', fg:'#8a4a10' },
+  { emoji:'🟡', name:'Mítico',     bg:'#fff5b8', fg:'#7a6a10' },
+  { emoji:'🔴', name:'Ancestral',  bg:'#ffcfcf', fg:'#8a2020' },
+  { emoji:'💠', name:'Celestial',  bg:'#cff2f7', fg:'#146a80' },
+  { emoji:'💖', name:'Exótico',    bg:'#fbd0e4', fg:'#8a2a5a' },
+  { emoji:'🔱', name:'Divino',     bg:'#e0d4f7', fg:'#4a2a8a' },
+  { emoji:'🌌', name:'Cósmico',    bg:'#d1d6f0', fg:'#2a3080' },
+  { emoji:'👑', name:'Infinito',   bg:'#ffeeb0', fg:'#8a6a10' },
+];
+// NUEVO: tabla de probabilidades (índice = nivel-1, 12 columnas por rareza)
+const PROBS = [
+  [100,0,0,0,0,0,0,0,0,0,0,0],[99.11,0.89,0,0,0,0,0,0,0,0,0,0],[96.53,3.47,0,0,0,0,0,0,0,0,0,0],
+  [91.56,8.44,0,0,0,0,0,0,0,0,0,0],[83.63,16.37,0,0,0,0,0,0,0,0,0,0],[72.84,27.16,0,0,0,0,0,0,0,0,0,0],
+  [60.12,39.81,0.07,0,0,0,0,0,0,0,0,0],[46.91,52.82,0.27,0,0,0,0,0,0,0,0,0],[34.61,64.55,0.84,0,0,0,0,0,0,0,0,0],
+  [24.16,73.55,2.29,0,0,0,0,0,0,0,0,0],[15.95,78.43,5.62,0,0,0,0,0,0,0,0,0],[9.94,78.07,11.99,0,0,0,0,0,0,0,0,0],
+  [5.86,72.33,21.81,0,0,0,0,0,0,0,0,0],[3.26,62.46,34.27,0.01,0,0,0,0,0,0,0,0],[1.72,50.15,48.07,0.06,0,0,0,0,0,0,0,0],
+  [0.86,37.49,61.43,0.22,0,0,0,0,0,0,0,0],[0.41,25.99,72.93,0.67,0,0,0,0,0,0,0,0],[0.18,16.79,81.16,1.87,0,0,0,0,0,0,0,0],
+  [0.08,10.15,85.01,4.76,0,0,0,0,0,0,0,0],[0,5.76,83.56,10.68,0,0,0,0,0,0,0,0],[0,3.07,76.51,20.42,0,0,0,0,0,0,0,0],
+  [0,1.54,64.92,33.52,0.02,0,0,0,0,0,0,0],[0,0.73,50.84,48.33,0.10,0,0,0,0,0,0,0],[0,0.32,36.63,62.68,0.37,0,0,0,0,0,0,0],
+  [0,0.13,24.36,74.34,1.17,0,0,0,0,0,0,0],[0,0.05,14.99,81.71,3.25,0,0,0,0,0,0,0],[0,0,8.57,83.35,8.08,0,0,0,0,0,0,0],
+  [0,0,4.56,78.36,17.08,0,0,0,0,0,0,0],[0,0,2.26,67.22,30.52,0,0,0,0,0,0,0],[0,0,1.05,52.42,46.47,0.06,0,0,0,0,0,0],
+  [0,0,0.46,37.52,61.83,0.19,0,0,0,0,0,0],[0,0,0.19,24.84,74.45,0.52,0,0,0,0,0,0],[0,0,0,15.22,83.47,1.31,0,0,0,0,0,0],
+  [0,0,0,8.68,88.24,3.08,0,0,0,0,0,0],[0,0,0,4.61,88.42,6.97,0,0,0,0,0,0],[0,0,0,2.29,83.19,14.52,0,0,0,0,0,0],
+  [0,0,0,1.06,73.49,25.45,0,0,0,0,0,0],[0,0,0,0.46,61.02,38.51,0.01,0,0,0,0,0],[0,0,0,0.19,47.78,52.00,0.03,0,0,0,0,0],
+  [0,0,0,0,35.33,64.55,0.12,0,0,0,0,0],[0,0,0,0,24.77,74.84,0.39,0,0,0,0,0],[0,0,0,0,16.48,82.42,1.10,0,0,0,0,0],
+  [0,0,0,0,10.45,86.72,2.83,0,0,0,0,0],[0,0,0,0,6.32,87.11,6.57,0,0,0,0,0],[0,0,0,0,3.65,83.12,13.22,0.01,0,0,0,0],
+  [0,0,0,0,2.01,75.31,22.66,0.02,0,0,0,0],[0,0,0,0,1.05,64.39,34.49,0.07,0,0,0,0],[0,0,0,0,0.52,51.85,47.43,0.20,0,0,0,0],
+  [0,0,0,0,0.25,39.31,59.94,0.50,0,0,0,0],[0,0,0,0,0,28.18,70.69,1.13,0,0,0,0],[0,0,0,0,0,19.19,78.43,2.38,0,0,0,0],
+  [0,0,0,0,0,12.43,82.84,4.73,0,0,0,0],[0,0,0,0,0,7.68,83.62,8.70,0,0,0,0],[0,0,0,0,0,4.54,80.52,14.94,0,0,0,0],
+  [0,0,0,0,0,2.56,73.88,23.55,0.01,0,0,0],[0,0,0,0,0,1.38,64.49,34.10,0.03,0,0,0],[0,0,0,0,0,0.71,53.64,45.55,0.10,0,0,0],
+  [0,0,0,0,0,0.35,42.61,56.76,0.28,0,0,0],[0,0,0,0,0,0.17,32.39,66.72,0.72,0,0,0],[0,0,0,0,0,0,23.57,74.67,1.75,0.01,0,0],
+  [0,0,0,0,0,0,16.48,79.88,3.61,0.03,0,0],[0,0,0,0,0,0,11.04,82.01,6.87,0.08,0,0],[0,0,0,0,0,0,7.10,80.89,11.82,0.19,0,0],
+  [0,0,0,0,0,0,4.39,76.54,18.66,0.41,0,0],[0,0,0,0,0,0,2.61,69.42,27.12,0.85,0,0],[0,0,0,0,0,0,1.49,60.31,36.56,1.64,0,0],
+  [0,0,0,0,0,0,0.82,50.15,46.06,2.97,0,0],[0,0,0,0,0,0,0.43,40.01,54.42,5.14,0,0],[0,0,0,0,0,0,0.22,30.71,60.67,8.40,0,0],
+  [0,0,0,0,0,0,0,22.68,64.12,13.04,0.16,0],[0,0,0,0,0,0,0,16.09,64.44,19.12,0.35,0],[0,0,0,0,0,0,0,11.02,61.73,26.54,0.71,0],
+  [0,0,0,0,0,0,0,7.29,56.40,34.98,1.33,0],[0,0,0,0,0,0,0,4.65,49.19,43.83,2.33,0],[0,0,0,0,0,0,0,2.87,40.94,52.32,3.86,0.01],
+  [0,0,0,0,0,0,0,1.71,32.55,59.71,6.00,0.03],[0,0,0,0,0,0,0,0.99,24.71,65.25,8.97,0.08],[0,0,0,0,0,0,0,0.55,18.01,68.32,12.93,0.19],
+  [0,0,0,0,0,0,0,0.30,12.60,68.56,18.13,0.41],[0,0,0,0,0,0,0,0,8.44,65.86,24.81,0.89],[0,0,0,0,0,0,0,0,5.43,60.52,32.22,1.83],
+  [0,0,0,0,0,0,0,0,3.35,53.11,39.93,3.61],[0,0,0,0,0,0,0,0,1.99,44.52,47.11,6.38],[0,0,0,0,0,0,0,0,1.13,35.61,52.88,10.38],
+  [0,0,0,0,0,0,0,0,0.62,27.14,56.49,15.75],[0,0,0,0,0,0,0,0,0.32,19.74,57.44,22.50],[0,0,0,0,0,0,0,0,0.16,13.68,55.49,30.67],
+  [0,0,0,0,0,0,0,0,0,9.07,51.00,39.93],[0,0,0,0,0,0,0,0,0,5.75,44.58,49.67],[0,0,0,0,0,0,0,0,0,3.48,37.03,59.49],
+  [0,0,0,0,0,0,0,0,0,2.01,29.35,68.64],[0,0,0,0,0,0,0,0,0,1.11,22.25,76.64],[0,0,0,0,0,0,0,0,0,0.58,16.14,83.28],
+  [0,0,0,0,0,0,0,0,0,0.29,11.23,88.48],[0,0,0,0,0,0,0,0,0,0.14,7.50,92.36],[0,0,0,0,0,0,0,0,0,0,4.81,95.19],
+  [0,0,0,0,0,0,0,0,0,0,2.96,97.04],[0,0,0,0,0,0,0,0,0,0,1.75,98.25],[0,0,0,0,0,0,0,0,0,0,0.99,99.01],
+  [0,0,0,0,0,0,0,0,0,0,0.54,99.46],
+];
+
+// MODIFICADO: muestra sólo Rango Actual y Próximo Rango (todos al 100%)
+function renderRangosList() {
+  const list = document.getElementById('rangosList');
+  if (!list) return;
+  const cur = RARITIES[state.rank];
+  const nxt = RARITIES[state.rank + 1] || null;
+  let html = '';
+  if (cur) {
+    html += `<div class="rango-item" style="background:${cur.bg};color:${cur.fg};">`
+          + `<span class="r-emoji">${cur.emoji}</span>`
+          + `<span class="r-name">${cur.name} <span style="opacity:.7;font-weight:600">(Actual)</span></span>`
+          + `<span class="r-probs"><span class="r-cur">100%</span></span>`
+          + `</div>`;
+  }
+  if (nxt) {
+    html += `<div class="rango-item" style="background:${nxt.bg};color:${nxt.fg};opacity:.85;">`
+          + `<span class="r-emoji">${nxt.emoji}</span>`
+          + `<span class="r-name">${nxt.name} <span style="opacity:.7;font-weight:600">(Próximo)</span></span>`
+          + `<span class="r-probs"><span class="r-cur">🔒</span></span>`
+          + `</div>`;
+  }
+  list.innerHTML = html;
+}
+
+// NUEVO: cuenta cuántos slots están a nivel 100 del Rango Actual
+function slotsAtMax() {
+  let n = 0;
+  for (const s of SLOT_STATS) {
+    if (slotRanks[s] === state.rank && (slotLevels[s] || 0) >= 100) n++;
+  }
+  return n;
+}
+function canRankUp() { return slotsAtMax() === SLOT_STATS.length && state.rank < RARITIES.length - 1; }
+
+// MODIFICADO: caja oro/nivel refleja estado del rango
+function renderLvlBox() {
+  const box = document.getElementById('lvlBox');
+  const lvlEl = document.getElementById('rangosLvl');
+  if (!box || !lvlEl) return;
+  const goldValEl = box.querySelector('.gold-val');
+  const done = slotsAtMax();
+  lvlEl.textContent = `Slots ${done}/${SLOT_STATS.length}`;
+  if (state.lvlTimerEnd > Date.now()) {
+    const s = Math.ceil((state.lvlTimerEnd - Date.now())/1000);
+    const mm = String(Math.floor(s/60)).padStart(2,'0');
+    const ss = String(s%60).padStart(2,'0');
+    goldValEl.innerHTML = `⏳ ${mm}:${ss}`;
+    box.classList.add('busy');
+  } else if (state.rank >= RARITIES.length - 1) {
+    goldValEl.innerHTML = `MAX`;
+    box.classList.add('busy');
+  } else if (!canRankUp()) {
+    goldValEl.innerHTML = `🔒 ${fmt(state.lvlCost)} 💰`;
+    box.classList.add('busy');
+  } else {
+    goldValEl.innerHTML = `<span id="lvlCost">${fmt(state.lvlCost)}</span> 💰`;
+    box.classList.remove('busy');
+  }
+}
+
+// NUEVO: helper de toast flotante dentro del viewport (no bloqueante)
+function showViewportToast(text) {
+  const vp = document.getElementById('viewport');
+  if (!vp) return;
+  const el = document.createElement('div');
+  el.className = 'vp-toast';
+  el.textContent = text;
+  vp.appendChild(el);
+  setTimeout(() => el.remove(), 1650);
+}
+
+// MODIFICADO: tick basado en setInterval — garantiza countdown 59,58,57... aun si rAF se pausa
+let _lvlTickHandle = null;
+function stopLvlTick() {
+  if (_lvlTickHandle !== null) {
+    clearInterval(_lvlTickHandle);
+    _lvlTickHandle = null;
+  }
+}
+function startLvlTick() {
+  if (_lvlTickHandle !== null) return; // ya corriendo
+  // pinta inmediatamente para que se vea el primer valor sin esperar 1s
+  renderLvlBox();
+  _lvlTickHandle = setInterval(() => {
+    if (state.lvlTimerEnd === 0) { stopLvlTick(); return; }
+    if (Date.now() >= state.lvlTimerEnd) {
+      // COMPLETADO -> sube de RANGO, resetea slots al nuevo rango en nivel 0
+      state.lvlTimerEnd = 0;
+      const nextRank = Math.min(RARITIES.length - 1, state.rank + 1);
+      state.rank = nextRank;
+      for (const s of SLOT_STATS) {
+        slotRanks[s] = -1;
+        slotLevels[s] = 0;
+        state.stats[s] = BASE_STATS[s];
+        // Restaura visual del slot al estilo por defecto
+        const slotEl = document.querySelector(`.equip[data-stat="${s}"]`);
+        if (slotEl) { slotEl.style.background=''; slotEl.style.borderColor=''; slotEl.style.color=''; }
+      }
+      hero.maxHp = state.stats.hp;
+      hero.hp    = Math.min(hero.hp, hero.maxHp);
+      hero.atk   = state.stats.atk + state.kunaiLv * 3;
+      hero.def   = state.stats.def;
+      hero.crit  = state.stats.crit;
+      hero.eva   = state.stats.eva;
+      hero.reg   = state.stats.reg;
+      hero.spd   = 0.8 + state.stats.spd * 0.03;
+      updateHud();
+      renderRangosList();
+      renderLvlBox();
+      stopLvlTick();
+      return;
+    }
+    renderLvlBox();
+  }, 250);
+}
+
+// Abrir modal de Rangos al pulsar el scroll "Nivel"
+document.getElementById('nivelBtn').addEventListener('click', () => {
+  renderRangosList();
+  renderLvlBox();
+  if (state.lvlTimerEnd > Date.now()) startLvlTick();
+  document.getElementById('rangosModal').classList.add('on');
+});
+
+// MODIFICADO: click en lvlBox -> requiere todos los slots a nivel 100 del Rango Actual, paga 100k y arranca timer
+document.getElementById('lvlBox').addEventListener('click', () => {
+  if (state.lvlTimerEnd > Date.now()) return;
+  if (state.rank >= RARITIES.length - 1) return;
+  if (!canRankUp()) {
+    showViewportToast(`Requiere los 8 slots a Nivel 100 del Rango Actual`);
+    return;
+  }
+  if (state.gold < state.lvlCost) {
+    showViewportToast(`Necesitas ${fmt(state.lvlCost)} 💰`);
+    return;
+  }
+  state.gold -= state.lvlCost;
+  state.lvlTimerEnd = Date.now() + 60_000;
+  updateHud();
+  renderLvlBox();
+  startLvlTick();
+});
+// ============= FORJA DE KUNAI =============
+// Mapeo slot -> estadística (8 slots, 8 stats)
+const SLOT_STATS = ['hp','atk','def','agi','crit','spd','eva','reg'];
+const BASE_STATS = { hp:100, atk:15, def:5, agi:8, crit:1, spd:10, eva:1, reg:1 };
+const PCT_STATS  = new Set(['crit','eva']);
+const PCT_CAP    = 25;
+
+// MODIFICADO: Progresión de stats.
+// - Stats normales: +3% multiplicativo por nivel; al subir de Rango se traspasa (rank 0 lv 100 == rank 1 lv 1).
+// - Crítico / Evasión: base 1% + 0.016% por cada nivel + 0.016% por cada rango (aditivo, individual por slot).
+function calcStat(stat, rankIdx, level) {
+  const base = BASE_STATS[stat];
+  if (PCT_STATS.has(stat)) {
+    const raw = base + 0.016 * level + 0.016 * rankIdx;
+    return Math.round(raw * 1000) / 1000;
+  }
+  const exp = 100 * rankIdx + level;
+  const raw = base * Math.pow(1.03, exp);
+  return Math.round(raw * 100) / 100;
+}
+// FIN MODIFICADO
+
+// Roll de rareza usando PROBS[nivel-1]; con un pequeño boost (^1.05) para
+// dar "un poquito" de prioridad a las rarezas con mayor %. Precisión 0.001%..100%.
+function rollRarity(level) {
+  const lv = Math.max(1, Math.min(100, level|0));
+  const probs = PROBS[lv - 1];
+  const weights = probs.map(p => p > 0 ? Math.pow(p, 1.05) : 0);
+  const total = weights.reduce((a,b) => a + b, 0);
+  if (total <= 0) return 0;
+  // random en el rango [0.00001, 1)*total para cubrir 0.001%..100%
+  let r = (Math.random() * (1 - 1e-5) + 1e-5) * total;
+  for (let i = 0; i < weights.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return i;
+  }
+  for (let i = weights.length - 1; i >= 0; i--) if (weights[i] > 0) return i;
+  return 0;
+}
+
+// Guarda el rango actual de cada slot (para no bajar de rareza superior automáticamente)
+const slotRanks  = { hp:-1, atk:-1, def:-1, agi:-1, crit:-1, spd:-1, eva:-1, reg:-1 };
+const slotLevels = { hp:0,  atk:0,  def:0,  agi:0,  crit:0,  spd:0,  eva:0,  reg:0  };
+
+function applyForgedItem(stat, rankIdx, level) {
+  const value = calcStat(stat, rankIdx, level);
+  state.stats[stat] = value;
+  slotRanks[stat] = rankIdx;
+  slotLevels[stat] = level;
+
+  // Sincroniza al héroe
+  hero.maxHp = state.stats.hp;
+  hero.hp    = Math.min(hero.hp, hero.maxHp);
+  hero.atk   = state.stats.atk + state.kunaiLv * 3;
+  hero.def   = state.stats.def;
+  hero.crit  = state.stats.crit;
+  hero.eva   = state.stats.eva;
+  hero.reg   = state.stats.reg;
+  hero.spd   = 0.8 + state.stats.spd * 0.03;
+
+  // Recolorea el slot con el color del rango
+  const r = RARITIES[rankIdx];
+  const slotEl = document.querySelector(`.equip[data-stat="${stat}"]`);
+  if (slotEl && r) {
+    slotEl.style.background = r.bg;
+    slotEl.style.borderColor = r.fg;
+    slotEl.style.color = r.fg;
+    const nameEl = slotEl.querySelector('.name');
+    const valEl  = slotEl.querySelector('.val');
+    if (nameEl) nameEl.style.color = r.fg;
+    if (valEl)  valEl.style.color = r.fg;
+    slotEl.classList.remove('reveal');
+    void slotEl.offsetWidth;
+    slotEl.classList.add('reveal');
+  }
+  updateHud();
+}
+
+// Chispas de forja
+function spawnForgeSparks(host, n = 14) {
+  const rect = host.getBoundingClientRect();
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('div');
+    s.className = 'forge-spark';
+    const cx = rect.width/2 - 2;
+    const cy = rect.height/2 - 2;
+    s.style.left = (cx + (Math.random()-0.5)*20) + 'px';
+    s.style.top  = (cy + (Math.random()-0.5)*10) + 'px';
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 25 + Math.random()*35;
+    s.style.setProperty('--sx', Math.cos(ang)*dist + 'px');
+    s.style.setProperty('--sy', (Math.sin(ang)*dist - 10) + 'px');
+    s.style.animationDelay = (Math.random()*0.4) + 's';
+    host.appendChild(s);
+    setTimeout(() => s.remove(), 1200);
+  }
+}
+
+// Etiquetas visibles por stat
+const STAT_LABELS = { hp:'HP', atk:'Ataque', def:'Defensa', agi:'Agilidad', spd:'Velocidad', reg:'Regen', crit:'Crítico', eva:'Evasión' };
+const STAT_EMOJIS = { hp:'❤️', atk:'⚔️', def:'🛡️', agi:'💨', crit:'🎯', spd:'⚡', eva:'🔄', reg:'💚' };
+const MAX_SLOT_LEVEL = 100;
+
+// Popup del resultado (centrado en el cuadro superior / viewport). Auto-cierra 4s.
+function showForgeResult(stat, rankIdx, level, value) {
+  const r = RARITIES[rankIdx];
+  if (!r) return;
+  const host = document.getElementById('viewport') || document.body;
+  let el = document.getElementById('forgeResult');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'forgeResult';
+    el.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9999;min-width:220px;max-width:85%;padding:14px 18px;border-radius:14px;border:3px solid #333;box-shadow:0 10px 30px rgba(0,0,0,.45);font-family:inherit;text-align:center;pointer-events:none;transition:opacity .2s ease;';
+  }
+  if (el.parentNode !== host) host.appendChild(el);
+  el.style.background = r.bg;
+  el.style.borderColor = r.fg;
+  el.style.color = r.fg;
+  const isPct = PCT_STATS.has(stat);
+  const valTxt = isPct ? (Number(value).toFixed(3) + "%") : Number(value).toFixed(2);
+  const itemName = `${STAT_LABELS[stat]} de ${r.name}`;
+  const emo = STAT_EMOJIS[stat] || '';
+  el.innerHTML = `
+    <div style="font-size:28px;line-height:1;margin-bottom:4px;">${emo}</div>
+    <div style="font-size:13px;opacity:.85;margin-bottom:4px;">${r.emoji} ${r.name}</div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:6px;">${itemName}</div>
+    <div style="font-size:12px;opacity:.9;">Nivel <b>${Math.trunc(Number(level))}</b></div>
+    <div style="font-size:20px;font-weight:900;margin-top:6px;">${STAT_LABELS[stat]}: ${valTxt}</div>
+  `;
+  el.style.opacity = '1';
+  clearTimeout(showForgeResult._t);
+  showForgeResult._t = setTimeout(() => { el.style.opacity = '0'; lastShownSlot = null; }, 4000);
+  lastShownSlot = stat;
+}
+
+// Click en cualquiera de los 8 slots -> muestra el objeto equipado actual (toggle)
+let lastShownSlot = null;
+function hideForgeResult() {
+  const el = document.getElementById('forgeResult');
+  if (el) el.style.opacity = '0';
+  clearTimeout(showForgeResult._t);
+  lastShownSlot = null;
+}
+document.querySelectorAll('.equip').forEach(elSlot => {
+  elSlot.addEventListener('click', () => {
+    const stat = elSlot.dataset.stat;
+    const existing = document.getElementById('forgeResult');
+    const isVisible = existing && existing.style.opacity === '1';
+    if (isVisible && lastShownSlot === stat) {
+      hideForgeResult();
+      return;
+    }
+    const rankIdx = slotRanks[stat];
+    if (rankIdx < 0) {
+      // Slot sin forjar aún: muestra ventana informativa con el valor base
+      const host = document.getElementById('viewport') || document.body;
+      let el = document.getElementById('forgeResult');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'forgeResult';
+        el.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9999;min-width:220px;max-width:85%;padding:14px 18px;border-radius:14px;border:3px solid #333;box-shadow:0 10px 30px rgba(0,0,0,.45);font-family:inherit;text-align:center;pointer-events:none;transition:opacity .2s ease;background:rgba(11,13,23,.9);color:#e8ecff;';
+      }
+      if (el.parentNode !== host) host.appendChild(el);
+      el.style.background = 'rgba(11,13,23,.9)';
+      el.style.borderColor = '#555';
+      el.style.color = '#e8ecff';
+      const isPct = PCT_STATS.has(stat);
+      const v = state.stats[stat];
+      const valTxt = isPct ? (Number(v).toFixed(3) + "%") : Number(v).toFixed(2);
+      const emo = STAT_EMOJIS[stat] || '';
+      el.innerHTML = `
+        <div style="font-size:28px;line-height:1;margin-bottom:4px;">${emo}</div>
+        <div style="font-size:13px;opacity:.85;margin-bottom:4px;">Sin forjar</div>
+        <div style="font-size:16px;font-weight:800;margin-bottom:6px;">${STAT_LABELS[stat]}</div>
+        <div style="font-size:12px;opacity:.9;">Nivel <b>0</b></div>
+        <div style="font-size:20px;font-weight:900;margin-top:6px;">${STAT_LABELS[stat]}: ${valTxt}</div>
+      `;
+      el.style.opacity = '1';
+      clearTimeout(showForgeResult._t);
+      showForgeResult._t = setTimeout(() => { el.style.opacity = '0'; lastShownSlot = null; }, 4000);
+      lastShownSlot = stat;
+      return;
+    }
+    showForgeResult(stat, rankIdx, slotLevels[stat] || 1, state.stats[stat]);
+    lastShownSlot = stat;
+  });
+});
+
+let forging = false;
+function forgeKunai() {
+  if (forging) return;
+  if (state.kunais <= 0) {
+    showViewportToast('Sin kunais 🗡️');
+    if (state.auto) stopAutoForge();
+    return;
+  }
+  const scroll = document.querySelector('.scroll.big');
+  if (!scroll) return;
+
+  forging = true;
+  state.kunais--;
+  updateHud();
+
+  scroll.classList.add('forging');
+  const sparkTimer = setInterval(() => spawnForgeSparks(scroll, 5), 180);
+
+  setTimeout(() => {
+    clearInterval(sparkTimer);
+    scroll.classList.remove('forging');
+
+    // MODIFICADO: siempre el Rango Actual (los demás rangos están bloqueados)
+    const rankIdx = state.rank;
+    const slotIdx = Math.floor(Math.random() * SLOT_STATS.length);
+    const stat = SLOT_STATS[slotIdx];
+    const curRank = (typeof slotRanks[stat] === 'number') ? slotRanks[stat] : -1;
+    const curLv   = slotLevels[stat] || 0;
+    const inc = Math.floor(Math.random() * 4) + 1;
+    let itemLevel;
+    if (curRank !== rankIdx) {
+      // Primer objeto del rango en este slot
+      itemLevel = Math.min(MAX_SLOT_LEVEL, inc);
+    } else {
+      itemLevel = Math.min(MAX_SLOT_LEVEL, curLv + inc);
+    }
+    const isUpgrade = (curRank !== rankIdx) || (itemLevel > curLv);
+    if (isUpgrade) {
+      applyForgedItem(stat, rankIdx, itemLevel);
+      const value = calcStat(stat, rankIdx, itemLevel);
+      showForgeResult(stat, rankIdx, itemLevel, value);
+      renderLvlBox(); // refresca contador de slots al máximo
+    } else {
+      const rInfo = RARITIES[rankIdx];
+      const rName = rInfo ? rInfo.name : '';
+      showViewportToast(`Descartado: ${STAT_LABELS[stat]} ${rName} Lv ${itemLevel}`);
+    }
+    // FIN MODIFICADO
+    forging = false;
+  }, 1700);
+}
+
+document.querySelector('.scroll.big').addEventListener('click', forgeKunai);
+
+// Auto-forja: mientras auto=ON y haya kunais, hace clic automáticamente en KUNAI FORGER
+let autoForgeTimer = null;
+function startAutoForge() {
+  clearAutoForgeTimer();
+  autoForgeTimer = setInterval(() => {
+    if (!state.auto) { clearAutoForgeTimer(); return; }
+    if (forging) return;
+    if (state.kunais <= 0) { stopAutoForge(); return; }
+    document.querySelector('.scroll.big').click();
+  }, 400);
+}
+function clearAutoForgeTimer() {
+  if (autoForgeTimer) { clearInterval(autoForgeTimer); autoForgeTimer = null; }
+}
+function stopAutoForge() {
+  clearAutoForgeTimer();
+  // Apagar automáticamente el modo AUTO y actualizar la UI
+  if (state.auto) {
+    state.auto = false;
+    const stateEl = document.getElementById('autoState');
+    const btnEl = document.getElementById('autoBtn');
+    if (stateEl) stateEl.textContent = 'OFF';
+    if (btnEl) btnEl.classList.add('off');
+  }
+}
+// =========================================
+
+
+
+/* Auto toggle */
+document.getElementById('autoBtn').addEventListener('click', () => {
+  state.auto = !state.auto;
+  document.getElementById('autoState').textContent = state.auto ? 'ON' : 'OFF';
+  document.getElementById('autoBtn').classList.toggle('off', !state.auto);
+  if (state.auto) startAutoForge(); else stopAutoForge();
+});
+
+/* Menu modals */
+const menuData = {
+  evento: ['🎪 Evento', 'Evento del festival del kunai. Vuelve pronto para desafíos limitados.'],
+  mazmorra: ['🏰 Mazmorras', 'Explora mazmorras profundas. Se desbloquean al llegar al Mundo 3.'],
+  batalla: ['⚔️ Batalla', 'PvP contra otros ninjas. En preparación.'],
+  heroe: ['🦸 Héroe', `Ryu, ninja de la aldea oculta.\nPoder total: ${power()}\nHP: ${state.stats.hp} | ATK: ${state.stats.atk}`],
+  clanes: ['👥 Clanes', 'Únete a un clan para bonos permanentes.'],
+  tienda: ['🛒 Tienda', `Sube tu Kunai al siguiente nivel por 💎5.\nActual: Nivel ${state.kunaiLv}`],
+};
+document.querySelectorAll('.mbtn').forEach(b => {
+  b.addEventListener('click', () => {
+    const k = b.dataset.menu;
+    if (k === 'tienda') {
+      if (state.gems >= 5) {
+        state.gems -= 5; state.kunaiLv++;
+        hero.atk = state.stats.atk + state.kunaiLv*3;
+        updateHud();
+        openModal('🛒 Tienda', `¡Kunai mejorado a nivel ${state.kunaiLv}!`);
+      } else openModal('🛒 Tienda', 'Necesitas 💎5 para mejorar el Kunai.');
+      return;
+    }
+    if (k === 'heroe') {
+      openModal(menuData[k][0], `Ryu, ninja de la aldea oculta.\nPoder total: ${power()}\nHP: ${state.stats.hp} | ATK: ${state.stats.atk}\nDEF: ${state.stats.def} | CRIT: ${state.stats.crit}%`);
+      return;
+    }
+    openModal(menuData[k][0], menuData[k][1]);
+  });
+});
+function openModal(title, body) {
+  document.getElementById('mTitle').textContent = title;
+  document.getElementById('mBody').textContent = body;
+  document.getElementById('modal').classList.add('on');
+}
+
+requestAnimationFrame(loop);
+</script>
 </body>
 </html>
