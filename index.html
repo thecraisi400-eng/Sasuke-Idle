@@ -462,6 +462,21 @@
     box-shadow:0 2px 6px rgba(0,0,0,.5)}
   .forge-result .fr-close:active{transform:translateY(1px)}
 
+  /* NUEVO - CRIPTA KUNAI: pantalla de combate ninja aislada */
+  .crypt-canvas-wrap{position:absolute;inset:0;z-index:12;display:none;overflow:hidden;background:#050308;box-shadow:inset 0 0 0 1px rgba(255,120,0,.25),inset 0 0 30px rgba(255,80,0,.3)}
+  .app.crypt-mode .crypt-canvas-wrap{display:block}
+  .app.crypt-mode .scene,.app.crypt-mode #hero,.app.crypt-mode #enemies,.app.crypt-mode #fx,.app.crypt-mode #avanzar,.app.crypt-mode .stars,.app.crypt-mode .moon{display:none}
+  .app.crypt-mode .world{min-width:130px}
+  .app.crypt-mode .world-title{font-size:11px;color:#ffd76b;justify-content:center;letter-spacing:1px}
+  .app.crypt-mode #world,.app.crypt-mode .stages{display:none}
+  .crypt-victory{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:13;background:radial-gradient(ellipse at center,rgba(0,0,0,.72),rgba(0,0,0,.9));pointer-events:none}
+  .crypt-victory.show{display:flex}
+  .crypt-victory .cv-banner{border-top:1px solid rgba(255,200,0,.45);border-bottom:1px solid rgba(255,200,0,.45);padding:12px 34px;text-align:center;animation:winPulse .8s ease-in-out infinite alternate}
+  .crypt-victory .cv-label{font-size:10px;letter-spacing:5px;color:#aa8800;font-weight:900}
+  .crypt-victory .cv-name{font-size:34px;font-weight:900;letter-spacing:4px;color:#ffd700;-webkit-text-stroke:1px rgba(255,200,0,.45)}
+  .crypt-victory .cv-sub{font-size:10px;letter-spacing:3px;color:#aaa;font-weight:900}
+  .crypt-rounds{position:absolute;left:10px;bottom:10px;z-index:14;color:#ffd76b;font-weight:900;font-size:11px;text-shadow:0 2px 4px #000;letter-spacing:1px}
+
   /* NUEVO - Ventana de MAZMORRAS (pastel, combina con la paleta del juego) */
   .mazm-ov{position:absolute;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;
     opacity:0;pointer-events:none;transition:opacity .25s ease;background:rgba(20,15,40,.55);backdrop-filter:blur(4px)}
@@ -544,6 +559,13 @@
     <!-- NUEVO - Botón AVANZAR (oculto por defecto) -->
     <div id="avanzar" class="avanzar-btn hidden">📜 AVANZAR</div>
 
+    <!-- NUEVO - CRIPTA KUNAI: canvas de batalla aislado dentro de la opción -->
+    <div id="cryptBattle" class="crypt-canvas-wrap">
+      <canvas id="cryptCanvas" width="393" height="480"></canvas>
+      <div id="cryptRounds" class="crypt-rounds"></div>
+      <div id="cryptVictory" class="crypt-victory"><div class="cv-banner"><div class="cv-label">VENCEDOR</div><div id="cryptWinName" class="cv-name">KAITO</div><div class="cv-sub">★ VICTORIA ★</div></div></div>
+    </div>
+
     <!-- NUEVO - Ventana de MAZMORRAS (ocupa todo el cuadro superior) -->
     <div id="mazmOv" class="mazm-ov">
       <div class="mazm-card">
@@ -581,7 +603,7 @@
         <div class="chip gem"><span class="emj">💎</span><span id="gem">0</span></div>
         <div class="chip power"><span class="emj">⚡</span><span id="power">120</span></div>
         <div class="world">
-          <div class="world-title">Mundo <span id="world">1</span></div><!-- MODIFICADO: eliminado "Nv 1" -->
+          <div class="world-title"><span id="worldLabel">Mundo</span> <span id="world">1</span></div><!-- MODIFICADO: CRIPTA KUNAI cambia este título a NINJA -->
           <div class="stages" id="stages">
             <div class="stage"></div><div class="stage"></div><div class="stage"></div>
           </div>
@@ -1378,6 +1400,92 @@
     autoTick();
   });
 
+  // NUEVO - CRIPTA KUNAI: motor de combate ninja aislado, adaptado al juego sin importar scripts externos.
+  const appRoot = document.querySelector('.app');
+  const cryptBattleEl = document.getElementById('cryptBattle');
+  const cryptCanvas = document.getElementById('cryptCanvas');
+  const cryptCtx = cryptCanvas ? cryptCanvas.getContext('2d') : null;
+  const cryptVictoryEl = document.getElementById('cryptVictory');
+  const cryptRoundsEl = document.getElementById('cryptRounds');
+  const cryptWinNameEl = document.getElementById('cryptWinName');
+  const worldLabelEl = document.getElementById('worldLabel');
+  const crypt = {active:false, paid:0, round:0, last:0, fighters:[], particles:[], nums:[], shots:[], shake:0, flash:0, mountains:[], trees:[], finishTimer:0};
+  const CW = 393, CH = 480, CGROUND = 410, CSC = .92, CNW = Math.round(30*CSC), CNH = Math.round(50*CSC); // NUEVO
+
+  class CryptParticle{ // NUEVO
+    constructor(x,y,vx,vy,c,l,s,t){this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.c=c;this.l=l;this.m=l;this.s=s;this.t=t;this.r=Math.random()*6.28;this.rs=(Math.random()-.5)*.15}
+    update(dt){this.x+=this.vx*dt;this.y+=this.vy*dt;if(this.t==='spark')this.vy+=.2*dt;if(this.t==='smoke'){this.vx*=.96;this.vy*=.96;this.s+=.25*dt}if(this.t==='leaf'){this.vx=Math.sin(performance.now()*.002+this.x*.05)*.55;this.vy+=.018*dt;this.r+=this.rs*dt}this.l-=dt}
+    draw(g){const a=Math.max(0,this.l/this.m);if(a<=0)return;g.save();g.globalAlpha=a;g.fillStyle=this.c;if(this.t==='leaf'){g.translate(this.x,this.y);g.rotate(this.r);g.fillRect(-this.s,-this.s*.35,this.s*2,this.s*.7)}else{g.beginPath();g.arc(this.x,this.y,this.s,0,6.28);g.fill()}g.restore()}
+    dead(){return this.l<=0||this.s>45}
+  }
+  class CryptNum{ // NUEVO
+    constructor(x,y,v,crit){this.x=x;this.y=y;this.v=Math.round(v);this.crit=crit;this.vy=-4;this.l=55}
+    update(dt){this.y+=this.vy*dt;this.vy+=.16*dt;this.l-=dt}
+    draw(g){g.save();g.globalAlpha=Math.max(0,this.l/55);g.font=`900 ${this.crit?17:12}px Arial Black`;g.textAlign='center';g.strokeStyle='#000';g.lineWidth=4;g.strokeText(this.v,this.x,this.y);g.fillStyle=this.crit?'#ffe040':'#ff6644';g.fillText(this.v,this.x,this.y);g.restore()}
+    dead(){return this.l<=0}
+  }
+  class CryptShot{ // NUEVO
+    constructor(x,y,vx,vy,o){this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.o=o;this.c=o.glow;this.s=9;this.l=150;this.dead=false;this.tr=[]}
+    update(dt){this.tr.unshift({x:this.x,y:this.y});if(this.tr.length>10)this.tr.pop();this.x+=this.vx*dt;this.y+=this.vy*dt;this.l-=dt;if(this.l<=0||this.x<-20||this.x>CW+20)this.dead=true;if(Math.random()<.3)crypt.particles.push(new CryptParticle(this.x,this.y,(Math.random()-.5)*1.6,(Math.random()-.5)*1.6,this.c,12,2,'spark'))}
+    draw(g){this.tr.forEach((p,i)=>{g.save();g.globalAlpha=(1-i/this.tr.length)*.45;g.fillStyle=this.c;g.beginPath();g.arc(p.x,p.y,this.s*(1-i/this.tr.length),0,6.28);g.fill();g.restore()});const gr=g.createRadialGradient(this.x,this.y,0,this.x,this.y,this.s*2.2);gr.addColorStop(0,'#fff');gr.addColorStop(.35,this.c);gr.addColorStop(1,'transparent');g.fillStyle=gr;g.beginPath();g.arc(this.x,this.y,this.s*2.2,0,6.28);g.fill()}
+  }
+  class CryptFighter{ // NUEVO
+    constructor(x,id){this.id=id;this.x=x;this.y=CGROUND-CNH;this.vx=0;this.vy=0;this.on=true;this.face=id===0;this.name=id===0?'KAITO':'NINJA';this.col=id===0?'#e8a030':'#6855cc';this.glow=id===0?'#ff8c00':'#9932cc';this.skin=id===0?'#f5c09a':'#d8c8e8';const es=enemyStatsFor(state.world,0);this.max=id===0?stats.hpMax:Math.max(es.hp*2,80);this.hp=id===0?stats.hp:this.max;this.atk=id===0?stats.atk:es.atk*1.35;this.def=id===0?stats.def:es.def;this.cd=0;this.jcd=30+Math.random()*60;this.stun=0;this.flash=0;this.tX=x;this.tY=this.y;this.dash=0;this.dead=false;this.anim=0;this.trail=[]}
+    get cx(){return this.x+CNW/2} get cy(){return this.y+CNH/2}
+    hit(d,from){if(this.dead)return;if(Math.random()<.12&&this.stun<=0){cryptSmoke(this.cx,this.cy,14);this.x=Math.max(6,Math.min(CW-CNW-6,from.x+(from.face?-45:45)));cryptSmoke(this.cx,this.cy,8);return}const block=Math.random()<.24;const val=Math.max(1,(d-this.def*.35)*(block?.35:1));this.hp=Math.max(0,this.hp-val);crypt.nums.push(new CryptNum(this.cx,this.y-4,val,d>this.max*.12));cryptSparks(this.cx,this.cy,d>this.max*.12?16:9,d>this.max*.12?'#ffd700':'#ff4422');this.vx+=(from.cx<this.cx?1:-1)*10;this.stun=18;this.flash=15;crypt.shake=Math.max(crypt.shake,d>this.max*.12?9:4);if(this.hp<=0)this.dead=true}
+    update(dt,enemy){if(this.dead){cryptSmoke(this.cx,this.cy,1);return}this.flash-=dt;this.stun-=dt;this.cd-=dt;this.jcd-=dt;this.vy+=this.on?0:.38*dt;this.x+=this.vx*dt;this.y+=this.vy*dt;this.vx*=.87;if(this.y>=CGROUND-CNH){this.y=CGROUND-CNH;this.vy=0;this.on=true}else this.on=false;if(this.x<3){this.x=3;this.vx=5;if(this.on){this.vy=-9;this.on=false}}if(this.x>CW-CNW-3){this.x=CW-CNW-3;this.vx=-5;if(this.on){this.vy=-9;this.on=false}}this.face=enemy.cx>this.cx;if(this.stun>0)return;this.dash+=dt;if(this.dash>48){this.dash=0;this.tX=25+Math.random()*(CW-55);this.tY=Math.random()<.4?CGROUND-CNH-55-Math.random()*110:CGROUND-CNH}const dx=this.tX-this.x,dy=this.tY-this.y,len=Math.hypot(dx,dy)||1;if(len>8){this.vx+=(dx/len)*1.4;if(dy<-20&&this.on){this.vy=-10;this.on=false}}this.anim+=dt;if(Math.abs(this.vx)+Math.abs(this.vy)>4&&this.anim>4){this.anim=0;this.trail.unshift({x:this.cx,y:this.cy,a:.45});if(this.trail.length>5)this.trail.pop()}this.trail.forEach(t=>t.a-=.035*dt);this.trail=this.trail.filter(t=>t.a>0);const dist=Math.hypot(this.cx-enemy.cx,this.cy-enemy.cy);if(dist<54&&this.cd<=0){const crit=this.id===0&&Math.random()*100<stats.crit;enemy.hit(this.atk*(crit?2:1)*(0.9+Math.random()*.3),this);this.cd=34}else if(dist>145&&this.jcd<=0){const sx=(enemy.cx-this.cx)/(dist||1)*5, sy=(enemy.cy-this.cy)/(dist||1)*5;crypt.shots.push(new CryptShot(this.cx,this.cy,sx,sy,this));this.jcd=95;cryptSparks(this.cx,this.cy,12,this.glow)}}
+    draw(g){this.trail.forEach(t=>{g.save();g.globalAlpha=t.a;g.fillStyle=this.glow;g.beginPath();g.ellipse(t.x,t.y,CNW*.45,CNH*.45,0,0,6.28);g.fill();g.restore()});g.save();if(!this.face){g.translate(this.x+CNW/2,0);g.scale(-1,1);g.translate(-(this.x+CNW/2),0)}const x=this.x,y=this.y,fl=this.flash>0&&Math.sin(this.flash*1.5)>0,bc=fl?'#ff3333':this.col,sc=fl?'#ff8866':this.skin;g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.ellipse(x+CNW/2,CGROUND,CNW*.7,5,0,0,6.28);g.fill();g.fillStyle='#222';g.fillRect(x+1,y+CNH-5,CNW*.42,5);g.fillRect(x+CNW*.55,y+CNH-5,CNW*.42,5);g.fillStyle=bc;g.fillRect(x+2,y+CNH*.62,CNW*.38,CNH*.36);g.fillRect(x+CNW*.56,y+CNH*.62,CNW*.38,CNH*.36);g.fillStyle='#333';g.fillRect(x+1,y+CNH*.60,CNW-2,3);g.fillStyle=bc;g.fillRect(x+2,y+CNH*.30,CNW-4,CNH*.32);g.fillRect(x-4,y+CNH*.32,5,CNH*.25);g.fillRect(x+CNW-1,y+CNH*.32,5,CNH*.25);g.fillStyle=sc;g.fillRect(x+CNW*.36,y+CNH*.27,CNW*.28,CNH*.06);g.beginPath();g.arc(x+CNW/2,y+CNH*.155,CNW*.4,0,6.28);g.fill();g.fillStyle=this.id===0?'#1b1208':'#111118';g.beginPath();g.arc(x+CNW/2,y+CNH*.10,CNW*.42,3.14,6.28);g.fill();g.fillStyle=this.id===0?'#ff6600':'#2233aa';g.fillRect(x+CNW*.1,y+CNH*.07,CNW*.8,4);g.fillStyle='#c8c8c8';g.fillRect(x+CNW*.28,y+CNH*.07,CNW*.44,4);g.fillStyle='#111';g.beginPath();g.arc(x+CNW*.62,y+CNH*.155,2.2,0,6.28);g.fill();if(this.stun>5){g.fillStyle='#ffd700';g.font='10px Arial';g.fillText('★',x+CNW/2,y-4)}g.restore();this.hpbar(g)}
+    hpbar(g){const w=48,x=this.x+CNW/2-w/2,y=this.y-14,r=Math.max(0,this.hp/this.max);g.fillStyle='rgba(0,0,0,.75)';g.fillRect(x-1,y-1,w+2,6);g.fillStyle=r>.5?'#44ee44':r>.25?'#ffaa00':'#ff2222';g.fillRect(x,y,w*r,4);g.font='900 8px Arial';g.textAlign='center';g.fillStyle=this.id===0?'#ffd700':'#aa88ff';g.fillText(this.name,this.x+CNW/2,y-3)}
+  }
+  function cryptSparks(x,y,n,c){for(let i=0;i<n;i++){const a=Math.random()*6.28,sp=1.5+Math.random()*4;crypt.particles.push(new CryptParticle(x,y,Math.cos(a)*sp,Math.sin(a)*sp,c,18+Math.random()*12,2+Math.random()*2,'spark'))}}
+  function cryptSmoke(x,y,n){for(let i=0;i<n;i++)crypt.particles.push(new CryptParticle(x+(Math.random()-.5)*CNW,y+(Math.random()-.5)*CNH,(Math.random()-.5)*1.3,-1-Math.random(),'#bbb',28+Math.random()*16,4+Math.random()*4,'smoke'))}
+  function cryptGenBg(){crypt.mountains=[];crypt.trees=[];for(let x=0;x<=CW;x+=12){crypt.mountains.push({x,y:90+Math.sin(x*.018)*55+Math.cos(x*.04)*30,l:0});crypt.mountains.push({x,y:130+Math.sin(x*.024+1)*45+Math.cos(x*.03)*22,l:1})}for(let i=0;i<14;i++)crypt.trees.push({x:15+i*30+Math.random()*18,h:80+Math.random()*90,w:22+Math.random()*28})}
+  function cryptDrawTree(t){const g=cryptCtx,base=CGROUND;g.fillStyle='#3a2208';g.fillRect(t.x-3,base-t.h*.45,7,t.h*.45);['#1a3a0a','#2a5a10','#3a7018'].forEach((c,i)=>{g.fillStyle=c;g.beginPath();g.arc(t.x+(i-1)*5,base-t.h*.55-i*12,t.w*(.55-i*.06),0,6.28);g.fill()})}
+  function cryptDrawBg(){const g=cryptCtx,sky=g.createLinearGradient(0,0,0,CGROUND);sky.addColorStop(0,'#3a7fbf');sky.addColorStop(.55,'#82c8e8');sky.addColorStop(1,'#b8dff0');g.fillStyle=sky;g.fillRect(0,0,CW,CH);g.fillStyle='#ffee80';g.shadowColor='#ffe060';g.shadowBlur=18;g.beginPath();g.arc(58,50,15,0,6.28);g.fill();g.shadowBlur=0;[0,1].forEach(l=>{const pts=crypt.mountains.filter(p=>p.l===l);g.fillStyle=l?'#4a7040':'#6b8fa8';g.beginPath();g.moveTo(0,CH);pts.forEach(p=>g.lineTo(p.x,p.y));g.lineTo(CW,CH);g.fill()});crypt.trees.forEach(cryptDrawTree);const gr=g.createLinearGradient(0,CGROUND-8,0,CH);gr.addColorStop(0,'#4a7020');gr.addColorStop(.15,'#5a3a1a');gr.addColorStop(1,'#1e1004');g.fillStyle=gr;g.fillRect(0,CGROUND-8,CW,CH-CGROUND+8)}
+  function startCryptMode(){ // NUEVO
+    const cost = criptaKunaiCost();
+    if (state.gold < cost) return false;
+    state.gold -= cost;
+    const extra = Math.floor(state.gold / cost);
+    state.gold -= extra * cost;
+    crypt.paid = 1 + extra; crypt.round = 0; crypt.active = true; crypt.finishTimer = 0;
+    state.paused = true; state.inBattle = false; enemies.forEach(en=>en.remove()); enemies=[];
+    appRoot.classList.add('crypt-mode');
+    if (worldLabelEl) worldLabelEl.textContent = 'NINJA';
+    if (cryptVictoryEl) cryptVictoryEl.classList.remove('show');
+    updHUD(); cryptGenBg(); cryptNextRound();
+    if (!crypt.last) requestAnimationFrame(cryptLoop);
+    return true;
+  }
+  function endCryptMode(){ // NUEVO
+    crypt.active = false; state.paused = false; appRoot.classList.remove('crypt-mode');
+    if (worldLabelEl) worldLabelEl.textContent = 'Mundo';
+    if (cryptVictoryEl) cryptVictoryEl.classList.remove('show');
+    resetSceneForNewWorld(); updHUD();
+  }
+  function cryptNextRound(){ // NUEVO
+    crypt.round++; crypt.particles=[]; crypt.nums=[]; crypt.shots=[]; crypt.flash=0; crypt.shake=0; crypt.finishTimer=0;
+    crypt.fighters=[new CryptFighter(62,0),new CryptFighter(305,1)];
+    if (cryptRoundsEl) cryptRoundsEl.textContent = 'CRIPTA KUNAI · RONDA ' + crypt.round + ' / ' + crypt.paid;
+    updateWaveStats();
+  }
+  function cryptLoop(ts){ // NUEVO
+    const dt=Math.min(((ts-(crypt.last||ts))/16.667)||1,3); crypt.last=ts;
+    if (crypt.active && cryptCtx){cryptUpdate(dt);cryptRender()}
+    requestAnimationFrame(cryptLoop);
+  }
+  function cryptUpdate(dt){ // NUEVO
+    if (Math.random()<.025) crypt.particles.push(new CryptParticle(Math.random()*CW,-5,0,.5+Math.random()*.5,Math.random()<.5?'#2a4a1a':'#386020',180,2,'leaf'));
+    const [a,b]=crypt.fighters;if(a&&!b.dead)a.update(dt,b);if(b&&!a.dead)b.update(dt,a);
+    crypt.shots.forEach(s=>s.update(dt));
+    crypt.shots.forEach(s=>crypt.fighters.forEach(f=>{if(!s.dead&&f!==s.o&&!f.dead&&Math.hypot(s.x-f.cx,s.y-f.cy)<s.s+CNW/2){f.hit(12+Math.random()*10,s.o);cryptSparks(s.x,s.y,16,s.c);s.dead=true}}));
+    crypt.shots=crypt.shots.filter(s=>!s.dead); crypt.particles.forEach(p=>p.update(dt)); crypt.particles=crypt.particles.filter(p=>!p.dead()); crypt.nums.forEach(n=>n.update(dt)); crypt.nums=crypt.nums.filter(n=>!n.dead());
+    if ((a.dead||b.dead) && !crypt.finishTimer){crypt.finishTimer=1;if(!a.dead){state.gold += Math.round(10*Math.pow(1.10,state.world-1));showGoldReward(Math.round(10*Math.pow(1.10,state.world-1)));if(cryptWinNameEl)cryptWinNameEl.textContent='KAITO';cryptVictoryEl.classList.add('show')}else{if(cryptWinNameEl)cryptWinNameEl.textContent='NINJA';cryptVictoryEl.classList.add('show')}}
+    if (crypt.finishTimer){crypt.finishTimer+=dt;if(crypt.finishTimer>95){if(!a.dead && crypt.round<crypt.paid){cryptVictoryEl.classList.remove('show');updHUD();cryptNextRound()}else{stats.hp=Math.max(1,a.dead?stats.hpMax*.35:stats.hpMax);syncStats();updHUD();endCryptMode()}}}
+  }
+  function cryptRender(){ // NUEVO
+    const g=cryptCtx,s=crypt.shake>0?(Math.random()-.5)*crypt.shake:0;crypt.shake*=.9;g.save();g.translate(s,-s*.4);cryptDrawBg();crypt.shots.forEach(x=>x.draw(g));crypt.fighters.forEach(f=>f.draw(g));crypt.particles.forEach(p=>p.draw(g));crypt.nums.forEach(n=>n.draw(g));if(crypt.finishTimer){g.fillStyle='rgba(255,220,0,.22)';g.font='900 16px Arial Black';g.textAlign='center';g.fillText('K.O.',CW/2,70)}g.restore()}
+
   // NUEVO - Botón MAZMORRAS: pausa/reanuda el juego y muestra/oculta la ventana
   const mazmOv = document.getElementById('mazmOv');
   const mazmBtn = document.querySelector('.btn.mazm');
@@ -1401,7 +1509,8 @@
             }
             return;
           }
-          /* oro suficiente: acceso permitido (placeholder de entrada) */
+          mazmOv.classList.remove('show'); // NUEVO - CRIPTA KUNAI: cerrar selector y entrar
+          startCryptMode(); // NUEVO - CRIPTA KUNAI: inicia rondas pagadas automáticas
         });
       } else {
         el.addEventListener('click', ()=>{ /* sin acción por ahora */ });
