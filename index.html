@@ -252,6 +252,44 @@
   @keyframes ninjaBob{0%,100%{transform:translateY(0) skewX(0)}50%{transform:translateY(-3px) skewX(3deg)}}
   @keyframes ninjaJump{0%{transform:translateY(0)}50%{transform:translateY(-28px) rotate(-6deg)}100%{transform:translateY(0)}}
   .cripta-status{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:26;padding:6px 12px;border-radius:12px;background:rgba(10,8,18,.72);border:1px solid #a08aff;color:#e6d7ff;font-size:10px;font-weight:900;letter-spacing:1px;text-shadow:0 1px 2px #000;box-shadow:0 0 16px rgba(122,92,255,.35);pointer-events:none}
+  /* NUEVO - CRIPTA KUNAI: sprites propios, no reutilizan el combate del bosque */
+  .cripta-arena{position:absolute;inset:0;z-index:16;display:none;pointer-events:none;overflow:hidden}
+  .cripta-arena.show{display:block}
+  .cripta-rune{position:absolute;left:50%;bottom:86px;width:230px;height:34px;transform:translateX(-50%);border-radius:50%;
+    background:radial-gradient(ellipse,rgba(124,233,255,.20),rgba(122,92,255,.10) 48%,transparent 72%);
+    border:1px solid rgba(160,138,255,.28);filter:blur(.2px);animation:runePulse 1.4s infinite ease-in-out}
+  @keyframes runePulse{0%,100%{opacity:.45;transform:translateX(-50%) scale(.96)}50%{opacity:.9;transform:translateX(-50%) scale(1.05)}}
+  .ninja-fighter{position:absolute;left:0;bottom:78px;width:48px;height:68px;transform:translate3d(var(--x,70px),var(--y,0px),0) scaleX(var(--face,1));
+    transition:transform .16s cubic-bezier(.15,.85,.25,1.25);filter:drop-shadow(0 8px 6px rgba(0,0,0,.5));will-change:transform}
+  .ninja-fighter .nf-shadow{position:absolute;left:8px;bottom:-5px;width:34px;height:7px;border-radius:50%;background:rgba(0,0,0,.62);filter:blur(2px);transform:scaleX(calc(1 / var(--face,1)))}
+  .ninja-fighter .nf-body{position:absolute;left:13px;top:22px;width:24px;height:30px;border-radius:12px 12px 7px 7px;background:linear-gradient(135deg,#171925,#05060d 65%,#2c2542);border:1px solid #59607a;box-shadow:inset -5px -6px 7px rgba(0,0,0,.45)}
+  .ninja-fighter.player .nf-body{background:linear-gradient(135deg,#152039,#060914 65%,#15385c);border-color:#7ce9ff}
+  .ninja-fighter.enemy .nf-body{background:linear-gradient(135deg,#2d1017,#080508 65%,#5a1628);border-color:#ff6aa0}
+  .ninja-fighter .nf-head{position:absolute;left:12px;top:3px;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#1b1d29,#05060c 70%);border:1px solid #5f6680}
+  .ninja-fighter .nf-eye{position:absolute;top:13px;left:24px;width:10px;height:3px;border-radius:3px;background:#7ce9ff;box-shadow:0 0 8px #7ce9ff}
+  .ninja-fighter.enemy .nf-eye{background:#ff477a;box-shadow:0 0 8px #ff477a}
+  .ninja-fighter .nf-scarf{position:absolute;left:4px;top:18px;width:22px;height:6px;border-radius:6px;background:#233cff;transform:rotate(-18deg);transform-origin:right center}
+  .ninja-fighter.enemy .nf-scarf{background:#a80d36}
+  .ninja-fighter .nf-arm,.ninja-fighter .nf-leg{position:absolute;background:#0b0d16;border:1px solid #4c536b;border-radius:8px;transform-origin:top center}
+  .ninja-fighter .nf-arm.l{left:8px;top:26px;width:8px;height:24px}.ninja-fighter .nf-arm.r{left:33px;top:25px;width:8px;height:25px}
+  .ninja-fighter .nf-leg.l{left:16px;top:49px;width:8px;height:22px}.ninja-fighter .nf-leg.r{left:28px;top:49px;width:8px;height:22px}
+  .ninja-fighter .nf-blade{position:absolute;left:37px;top:26px;width:29px;height:5px;border-radius:5px;background:linear-gradient(90deg,#fff,#9be9ff 60%,transparent);box-shadow:0 0 9px rgba(124,233,255,.9);transform-origin:left center}
+  .ninja-fighter.enemy .nf-blade{background:linear-gradient(90deg,#fff,#ff9abc 60%,transparent);box-shadow:0 0 9px rgba(255,106,160,.9)}
+  .ninja-fighter .nf-hp{position:absolute;left:4px;top:-10px;width:42px;height:5px;border:1px solid #000;background:#21070b;border-radius:4px;overflow:hidden;transform:scaleX(calc(1 / var(--face,1)))}
+  .ninja-fighter .nf-hp i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#3aff7a,#ffe14a);transition:width .18s}
+  .ninja-fighter.dash .nf-body{animation:nfLean .18s ease-out}.ninja-fighter.dash .nf-scarf{animation:nfScarf .18s ease-out}.ninja-fighter.dash .nf-leg.l{animation:nfRunL .18s linear}.ninja-fighter.dash .nf-leg.r{animation:nfRunR .18s linear}
+  .ninja-fighter.strike .nf-arm.r{animation:nfStrike .20s ease-out}.ninja-fighter.strike .nf-blade{animation:nfBlade .20s ease-out}
+  .ninja-fighter.block .nf-arm.r,.ninja-fighter.block .nf-arm.l{animation:nfBlock .24s ease-out}.ninja-fighter.block{filter:drop-shadow(0 8px 6px rgba(0,0,0,.5)) drop-shadow(0 0 10px rgba(124,233,255,.75))}
+  .ninja-fighter.flip{transition:transform .22s cubic-bezier(.1,1.2,.2,1.1)}
+  .ninja-fighter.hit{animation:nfHit .16s linear}
+  @keyframes nfLean{0%{transform:skewX(0)}50%{transform:skewX(-14deg)}100%{transform:skewX(0)}}
+  @keyframes nfScarf{0%{transform:rotate(-18deg) scaleX(1)}50%{transform:rotate(-28deg) scaleX(1.75)}100%{transform:rotate(-18deg) scaleX(1)}}
+  @keyframes nfRunL{0%{transform:rotate(30deg)}50%{transform:rotate(-45deg)}100%{transform:rotate(30deg)}}
+  @keyframes nfRunR{0%{transform:rotate(-45deg)}50%{transform:rotate(35deg)}100%{transform:rotate(-45deg)}}
+  @keyframes nfStrike{0%{transform:rotate(20deg)}45%{transform:rotate(-92deg) translateY(-3px)}100%{transform:rotate(10deg)}}
+  @keyframes nfBlade{0%{transform:scaleX(.45)}45%{transform:scaleX(1.7) translateX(7px)}100%{transform:scaleX(.7)}}
+  @keyframes nfBlock{0%{transform:rotate(0)}50%{transform:rotate(-120deg) translateY(-5px)}100%{transform:rotate(-70deg)}}
+  @keyframes nfHit{0%,100%{filter:brightness(1)}50%{filter:brightness(2.4) saturate(1.8)}}
 
   /* ============ BOTTOM 337 ============ */
   .bottom{position:relative;width:100%;height:337px;
@@ -565,6 +603,17 @@
     <!-- NUEVO - Botón AVANZAR (oculto por defecto) -->
     <div id="avanzar" class="avanzar-btn hidden">📜 AVANZAR</div>
     <div id="criptaStatus" class="cripta-status" style="display:none"></div><!-- NUEVO - CRIPTA KUNAI -->
+    <div id="criptaArena" class="cripta-arena"><!-- NUEVO - CRIPTA KUNAI: sprites exclusivos -->
+      <div class="cripta-rune"></div>
+      <div id="criptaPlayer" class="ninja-fighter player">
+        <div class="nf-hp"><i></i></div><div class="nf-shadow"></div><div class="nf-scarf"></div><div class="nf-head"></div><div class="nf-eye"></div><div class="nf-body"></div>
+        <div class="nf-arm l"></div><div class="nf-arm r"></div><div class="nf-leg l"></div><div class="nf-leg r"></div><div class="nf-blade"></div>
+      </div>
+      <div id="criptaEnemy" class="ninja-fighter enemy">
+        <div class="nf-hp"><i></i></div><div class="nf-shadow"></div><div class="nf-scarf"></div><div class="nf-head"></div><div class="nf-eye"></div><div class="nf-body"></div>
+        <div class="nf-arm l"></div><div class="nf-arm r"></div><div class="nf-leg l"></div><div class="nf-leg r"></div><div class="nf-blade"></div>
+      </div>
+    </div>
 
     <!-- NUEVO - Ventana de MAZMORRAS (ocupa todo el cuadro superior) -->
     <div id="mazmOv" class="mazm-ov">
@@ -751,6 +800,9 @@
   const worldPanel = $('worldPanel'); // NUEVO - CRIPTA KUNAI
   const worldLabelText = $('worldLabelText'); // NUEVO - CRIPTA KUNAI
   const criptaStatus = $('criptaStatus'); // NUEVO - CRIPTA KUNAI
+  const criptaArena = $('criptaArena'); // NUEVO - CRIPTA KUNAI
+  const criptaPlayer = $('criptaPlayer'); // NUEVO - CRIPTA KUNAI
+  const criptaEnemy = $('criptaEnemy'); // NUEVO - CRIPTA KUNAI
 
   const heroBaseX = 60;
   let heroX = heroBaseX;
@@ -1410,10 +1462,23 @@
     autoTick();
   });
 
-  // NUEVO - CRIPTA KUNAI: enemigo único y rondas automáticas pagadas
+  // NUEVO - CRIPTA KUNAI: enemigo único con motor visual propio, no copia el combate principal
   function criptaEnemyStats(){
     const mult = 1 + (state.world - 1) * 0.18 + ((state.cripta && state.cripta.done) || 0) * 0.08;
     return { hp: Math.round(70 * mult), atk: Math.round(10 * mult * 10) / 10, def: Math.round(5 * mult * 10) / 10 };
+  }
+  function setCriptaFighter(el, x, y, face){
+    el.style.setProperty('--x', x + 'px');
+    el.style.setProperty('--y', y + 'px');
+    el.style.setProperty('--face', face);
+  }
+  function pulseCripta(el, cls){
+    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+    setTimeout(()=>el.classList.remove(cls), 240);
+  }
+  function criptaHp(el, hp, max){
+    const bar = el.querySelector('.nf-hp i');
+    if (bar) bar.style.width = Math.max(0, Math.min(100, hp / max * 100)) + '%';
   }
   function enterCriptaKunai(){
     const cost = criptaKunaiCost();
@@ -1423,13 +1488,15 @@
     state.gold -= total * cost;
     state.paused = false;
     mazmOv.classList.remove('show');
-    state.cripta = { cost, total, round: 0, done: 0, phase: 'spawn', timer: 450, heroPos: 70, enemyPos: 300 };
+    state.cripta = { cost, total, round: 0, done: 0, timer: 340, px: 62, py: 0, ex: 286, ey: 0, ehp: 1, emax: 1, combo: 0 };
     enemies.forEach(en => en.remove()); enemies = [];
     topEl.classList.add('cripta-mode');
+    criptaArena.classList.add('show');
+    hero.style.display = 'none';
+    enemiesLayer.style.display = 'none';
     avanzarBtn.classList.add('hidden');
     stats.hp = stats.hpMax;
     resetSceneForNewWorld();
-    heroX = 70; hero.style.left = heroX + 'px';
     criptaStatus.style.display = 'block';
     updHUD(); syncStats();
     spawnCriptaRound();
@@ -1437,59 +1504,90 @@
   }
   function spawnCriptaRound(){
     const c = state.cripta; if (!c) return;
-    c.round++; c.phase = 'fight'; c.timer = 260; c.heroPos = 70; c.enemyPos = 300;
-    enemies.forEach(en => en.remove()); enemies = [];
-    const e = makeEnemy(-90);
-    e.classList.add('ninja-run');
-    e.style.left = c.enemyPos + 'px';
-    e.style.transform = 'scaleX(-1)';
+    c.round++; c.timer = 360; c.combo = 0;
+    c.px = 58; c.py = 0; c.ex = 292; c.ey = 0;
     const st = criptaEnemyStats();
-    e.dataset.hp = st.hp; e.dataset.max = st.hp; e.dataset.atk = st.atk; e.dataset.def = st.def;
-    enemies = [e];
-    hero.classList.add('ninja-run');
+    c.ehp = st.hp; c.emax = st.hp; c.eatk = st.atk; c.edef = st.def;
+    criptaHp(criptaPlayer, stats.hp, stats.hpMax);
+    criptaHp(criptaEnemy, c.ehp, c.emax);
+    setCriptaFighter(criptaPlayer, c.px, c.py, 1);
+    setCriptaFighter(criptaEnemy, c.ex, c.ey, -1);
     criptaStatus.textContent = `CRIPTA KUNAI · RONDA ${c.round}/${c.total}`;
     updateWaveStats();
   }
   function criptaLoop(dt){
     const c = state.cripta; if (!c) return;
-    state.scrollX -= 0.09 * dt;
+    if (stats.hp > 0 && stats.hp < stats.hpMax){
+      stats.hp = Math.min(stats.hpMax, stats.hp + stats.regen * (dt/1000));
+      criptaHp(criptaPlayer, stats.hp, stats.hpMax);
+    }
+    state.scrollX -= 0.11 * dt;
     parallax.style.transform = `translateX(${state.scrollX % 786}px)`;
-    const e = enemies[0];
-    if (!e){ endCriptaKunai(); return; }
     c.timer -= dt;
     if (c.timer > 0) return;
-    c.timer = 210 + Math.random()*180;
-    const action = Math.random();
-    const ex = parseFloat(e.style.left);
-    const hx = heroX;
-    hero.classList.toggle('ninja-jump', action < .28);
-    e.classList.toggle('ninja-jump', action >= .28 && action < .52);
-    hero.classList.toggle('ninja-block', action >= .52 && action < .66);
-    e.classList.toggle('ninja-block', action >= .66 && action < .80);
-    heroX = Math.max(42, Math.min(155, hx + rand(-18, 24)));
-    const enemyX = Math.max(210, Math.min(320, ex + rand(-28, 18)));
-    hero.style.transition = 'left .14s ease-out, transform .14s ease-out';
-    e.style.transition = 'left .14s ease-out, transform .14s ease-out';
-    hero.style.left = heroX + 'px';
-    e.style.left = enemyX + 'px';
-    if (Math.random() < .72){
-      const critHit = Math.random()*100 < Math.max(2, stats.crit);
-      const dmg = Math.max(1, Math.round((stats.atk - (parseFloat(e.dataset.def)||0)*0.35) * (critHit?2:1) * (0.85+Math.random()*.35)));
-      e.dataset.hp = Math.max(0, parseFloat(e.dataset.hp) - dmg);
-      e.querySelector('.hpbar i').style.width = (e.dataset.hp / e.dataset.max * 100) + '%';
-      impactAt(enemyX+18, 360+rand(-10,12)); damageText(enemyX+8, 340, dmg, critHit);
+    c.timer = 190 + Math.random()*150;
+
+    const gap = c.ex - c.px;
+    const attackerIsHero = Math.random() < (gap > 95 ? .78 : .58);
+    const evadeStep = () => (Math.random() < .5 ? -1 : 1) * rand(12, 30);
+    if (attackerIsHero){
+      const leap = Math.random() < .35;
+      c.px = Math.min(c.ex - 48, c.px + rand(34, 82));
+      c.py = leap ? -rand(18, 38) : rand(-4, 6);
+      c.ex = Math.max(208, Math.min(316, c.ex + evadeStep()));
+      c.ey = Math.random() < .28 ? -rand(10, 30) : rand(-3, 5);
+      setCriptaFighter(criptaPlayer, c.px, c.py, 1);
+      setCriptaFighter(criptaEnemy, c.ex, c.ey, -1);
+      pulseCripta(criptaPlayer, leap ? 'flip' : 'dash');
+      pulseCripta(criptaPlayer, 'strike');
+      const blocked = Math.random() < .24;
+      if (blocked){ pulseCripta(criptaEnemy, 'block'); evadidoText(c.ex+8, 338); }
+      else {
+        const critHit = Math.random()*100 < Math.max(3, stats.crit);
+        const dmg = Math.max(1, Math.round((stats.atk - c.edef*.35) * (critHit?2.15:1) * (0.88+Math.random()*.32)));
+        c.ehp = Math.max(0, c.ehp - dmg);
+        criptaHp(criptaEnemy, c.ehp, c.emax);
+        pulseCripta(criptaEnemy, 'hit');
+        impactAt(c.ex+22, 352+rand(-10,10)); damageText(c.ex+8, 326, dmg, critHit);
+      }
+    } else {
+      const shadowStep = Math.random() < .45;
+      c.ex = Math.max(c.px + 52, c.ex - rand(36, 78));
+      c.ey = shadowStep ? -rand(16, 36) : rand(-4, 5);
+      c.px = Math.max(44, Math.min(150, c.px + evadeStep()));
+      c.py = Math.random() < .22 ? -rand(10, 26) : rand(-3, 5);
+      setCriptaFighter(criptaEnemy, c.ex, c.ey, -1);
+      setCriptaFighter(criptaPlayer, c.px, c.py, 1);
+      pulseCripta(criptaEnemy, shadowStep ? 'flip' : 'dash');
+      pulseCripta(criptaEnemy, 'strike');
+      const dodged = Math.random()*100 < Math.max(4, stats.eva);
+      const blocked = !dodged && Math.random() < .22;
+      if (dodged || blocked){ pulseCripta(criptaPlayer, blocked ? 'block' : 'dash'); evadidoText(c.px+6, 338); }
+      else {
+        const edmg = Math.max(1, Math.round(c.eatk * (0.9+Math.random()*.24) - stats.def*.45));
+        stats.hp = Math.max(0, stats.hp - edmg);
+        criptaHp(criptaPlayer, stats.hp, stats.hpMax);
+        pulseCripta(criptaPlayer, 'hit');
+        damageText(c.px+8, 326, edmg, false);
+      }
     }
-    if (Math.random() < .58){
-      if (Math.random()*100 < Math.max(3, stats.eva) || hero.classList.contains('ninja-block')) evadidoText(heroX+2, 340);
-      else { const edmg = Math.max(1, Math.round((parseFloat(e.dataset.atk)||1) - stats.def*.45)); stats.hp = Math.max(0, stats.hp - edmg); damageText(heroX+4, 340, edmg, false); syncStats(); }
-    }
-    setTimeout(()=>{ hero.classList.remove('ninja-jump','ninja-block'); e.classList.remove('ninja-jump','ninja-block'); }, 180);
-    if (parseFloat(e.dataset.hp) <= 0){
-      e.remove(); enemies = []; c.done++;
-      state.gold += Math.round(12 * Math.pow(1.12, state.world - 1));
-      showGoldReward(Math.round(12 * Math.pow(1.12, state.world - 1)));
+
+    setTimeout(()=>{
+      if (!state.cripta) return;
+      c.py = 0; c.ey = 0;
+      c.px = Math.max(52, Math.min(138, c.px + rand(-16, 10)));
+      c.ex = Math.max(232, Math.min(316, c.ex + rand(-10, 18)));
+      setCriptaFighter(criptaPlayer, c.px, c.py, 1);
+      setCriptaFighter(criptaEnemy, c.ex, c.ey, -1);
+    }, 170);
+
+    if (c.ehp <= 0){
+      c.done++;
+      const reward = Math.round(12 * Math.pow(1.12, state.world - 1));
+      state.gold += reward;
+      showGoldReward(reward);
       updHUD();
-      if (c.round < c.total) setTimeout(spawnCriptaRound, 520); else endCriptaKunai();
+      if (c.round < c.total) setTimeout(spawnCriptaRound, 560); else endCriptaKunai();
     } else if (stats.hp <= 0){
       endCriptaKunai();
     }
@@ -1499,8 +1597,10 @@
     state.cripta = null;
     topEl.classList.remove('cripta-mode');
     worldPanel.classList.remove('cripta-ninja');
+    criptaArena.classList.remove('show');
     criptaStatus.style.display = 'none';
-    hero.classList.remove('ninja-run','ninja-jump','ninja-block');
+    hero.style.display = '';
+    enemiesLayer.style.display = '';
     enemies.forEach(en => en.remove()); enemies = [];
     stats.hp = stats.hpMax;
     resetSceneForNewWorld();
