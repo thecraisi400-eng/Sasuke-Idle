@@ -488,25 +488,33 @@
   .mazm-ov.show .mazm-card{transform:scale(1)}
   .mazm-title{text-align:center;color:#4a3a7a;font-weight:800;letter-spacing:2px;font-size:16px;margin-bottom:16px;
     text-shadow:0 1px 0 rgba(255,255,255,.7)}
-  .mazm-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .mazm-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;overflow:visible}
   .mazm-currency{display:flex;justify-content:center;gap:14px;margin-top:16px}
   .mazm-cur{display:flex;align-items:center;gap:6px;font-weight:800;font-size:15px;color:#4a3a7a;
     background:linear-gradient(180deg,#fff5db,#ffe6a8);border:2px solid #e0b567;border-radius:12px;padding:6px 14px;
     box-shadow:0 3px 8px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.7)}
   .mazm-cur .emj{font-size:17px}
-  .mazm-scroll{position:relative;height:110px;border-radius:14px;cursor:pointer;user-select:none;
-    background:linear-gradient(180deg,#fff2c9 0%,#ffe29a 55%,#f3c874 100%);
-    border:2px solid #e0b567;box-shadow:0 4px 10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.7);
-    display:flex;align-items:center;justify-content:center;transition:transform .12s ease,box-shadow .12s ease}
+  .mazm-scroll{position:relative;height:110px;border-radius:16px;cursor:pointer;user-select:none;overflow:hidden;
+    background:linear-gradient(145deg,#fff8df 0%,#ffe8aa 48%,#d89b45 100%);
+    border:2px solid #f4cf7b;box-shadow:0 6px 14px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.8),inset 0 -8px 18px rgba(122,74,26,.16);
+    display:flex;align-items:center;justify-content:center;transition:transform .12s ease,box-shadow .12s ease,filter .12s ease}
+  .mazm-scroll:hover{filter:brightness(1.06);box-shadow:0 8px 18px rgba(0,0,0,.42),0 0 16px rgba(255,215,107,.22),inset 0 1px 0 rgba(255,255,255,.85)}
   .mazm-scroll:active{transform:translateY(2px) scale(.98);box-shadow:0 2px 6px rgba(0,0,0,.35)}
-  .mazm-scroll::before,.mazm-scroll::after{content:"";position:absolute;left:0;right:0;height:14px;
-    background:linear-gradient(180deg,#d9a55a,#b0813a);border-radius:6px;box-shadow:0 1px 0 rgba(255,255,255,.4) inset}
+  .mazm-scroll::before,.mazm-scroll::after{content:"";position:absolute;left:-5px;right:-5px;height:14px;
+    background:linear-gradient(180deg,#f0c06d,#a86f28);border-radius:8px;box-shadow:0 1px 0 rgba(255,255,255,.45) inset,0 2px 4px rgba(0,0,0,.2);z-index:2}
+  .mazm-scroll .seal{position:absolute;right:9px;top:10px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;
+    background:radial-gradient(circle,#c62828,#7a1010);border:2px solid #ffd76b;color:#ffe8b0;font-size:11px;font-weight:900;box-shadow:0 2px 6px rgba(0,0,0,.35);z-index:3}
+  .mazm-scroll .mazm-info{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:18px 9px 14px}
+  .mazm-scroll .mazm-title-sm{font-size:10px;font-weight:900;letter-spacing:1.2px;color:#8a551d;text-transform:uppercase}
+  .mazm-scroll .mazm-name{font-family:Georgia,serif;font-size:17px;line-height:1;font-weight:900;color:#5a320c;text-shadow:0 1px 0 rgba(255,255,255,.65)}
+  .mazm-scroll .mazm-desc{font-size:8.5px;line-height:1.15;color:#6a4218;font-weight:800;max-width:130px}
+  .mazm-scroll.locked{filter:saturate(.75)}
   .mazm-scroll::before{top:-4px}
   .mazm-scroll::after{bottom:-4px}
   .mazm-num{font-size:44px;font-weight:900;color:#7a4a1a;text-shadow:0 2px 0 rgba(255,255,255,.6),0 3px 6px rgba(0,0,0,.25);
     font-family:Georgia,serif}
   /* NUEVO - CRIPTA KUNAI: nombre y costo dentro del scroll */
-  .mazm-dgn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:0 6px}
+  .mazm-dgn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:14px 6px;position:relative;z-index:1}
   .mazm-dgn-name{font-family:Georgia,serif;font-weight:900;color:#7a4a1a;font-size:18px;letter-spacing:1px;
     text-shadow:0 2px 0 rgba(255,255,255,.6),0 3px 6px rgba(0,0,0,.25);line-height:1.1}
   .mazm-dgn-cost{display:flex;align-items:center;gap:5px;font-weight:900;font-size:17px;font-family:Georgia,serif}
@@ -577,11 +585,11 @@
               <span class="mazm-dgn-cost"><span class="emj">💰</span><span id="criptaKunaiCost">30</span></span><!-- NUEVO -->
             </div>
           </div>
-          <div class="mazm-scroll" data-mazm="2"><span class="mazm-num">2</span></div>
-          <div class="mazm-scroll" data-mazm="3"><span class="mazm-num">3</span></div>
-          <div class="mazm-scroll" data-mazm="4"><span class="mazm-num">4</span></div>
-          <div class="mazm-scroll" data-mazm="5"><span class="mazm-num">5</span></div>
-          <div class="mazm-scroll" data-mazm="6"><span class="mazm-num">6</span></div>
+          <div class="mazm-scroll locked" data-mazm="2"><span class="seal">II</span><div class="mazm-info"><span class="mazm-title-sm">Próximamente</span><span class="mazm-name">Bosque Sombra</span><span class="mazm-desc">Control y evasión entre raíces antiguas.</span></div></div>
+          <div class="mazm-scroll locked" data-mazm="3"><span class="seal">III</span><div class="mazm-info"><span class="mazm-title-sm">Próximamente</span><span class="mazm-name">Dojo Carmesí</span><span class="mazm-desc">Duelos rápidos con críticos precisos.</span></div></div>
+          <div class="mazm-scroll locked" data-mazm="4"><span class="seal">IV</span><div class="mazm-info"><span class="mazm-title-sm">Próximamente</span><span class="mazm-name">Torre Lunar</span><span class="mazm-desc">Defensa, aguante y oleadas élite.</span></div></div>
+          <div class="mazm-scroll locked" data-mazm="5"><span class="seal">V</span><div class="mazm-info"><span class="mazm-title-sm">Próximamente</span><span class="mazm-name">Puente Oni</span><span class="mazm-desc">Ataques pesados y recompensas raras.</span></div></div>
+          <div class="mazm-scroll locked" data-mazm="6"><span class="seal">VI</span><div class="mazm-info"><span class="mazm-title-sm">Próximamente</span><span class="mazm-name">Santuario Final</span><span class="mazm-desc">Reto maestro para ninjas avanzados.</span></div></div>
 
         </div>
         <div class="mazm-currency">
@@ -1430,7 +1438,7 @@
     draw(g){this.tr.forEach((p,i)=>{g.save();g.globalAlpha=(1-i/this.tr.length)*.45;g.fillStyle=this.c;g.beginPath();g.arc(p.x,p.y,this.s*(1-i/this.tr.length),0,6.28);g.fill();g.restore()});const gr=g.createRadialGradient(this.x,this.y,0,this.x,this.y,this.s*2.2);gr.addColorStop(0,'#fff');gr.addColorStop(.35,this.c);gr.addColorStop(1,'transparent');g.fillStyle=gr;g.beginPath();g.arc(this.x,this.y,this.s*2.2,0,6.28);g.fill()}
   }
   class CryptFighter{ // NUEVO
-    constructor(x,id){this.id=id;this.x=x;this.y=CGROUND-CNH;this.vx=0;this.vy=0;this.on=true;this.face=id===0;this.name=id===0?'KAITO':'NINJA';this.col=id===0?'#e8a030':'#6855cc';this.glow=id===0?'#ff8c00':'#9932cc';this.skin=id===0?'#f5c09a':'#d8c8e8';const es=enemyStatsFor(state.world,0);this.max=id===0?stats.hpMax:Math.max(es.hp*2,80);this.hp=id===0?stats.hp:this.max;this.atk=id===0?stats.atk:es.atk*1.35;this.def=id===0?stats.def:es.def;this.cd=0;this.jcd=30+Math.random()*60;this.stun=0;this.flash=0;this.tX=x;this.tY=this.y;this.dash=0;this.dead=false;this.anim=0;this.trail=[]}
+    constructor(x,id){this.id=id;this.x=x;this.y=CGROUND-CNH;this.vx=0;this.vy=0;this.on=true;this.face=id===0;this.name=id===0?'KAITO':'NINJA';this.col=id===0?'#e8a030':'#6855cc';this.glow=id===0?'#ff8c00':'#9932cc';this.skin=id===0?'#f5c09a':'#d8c8e8';const es={hp:50,atk:5,def:3};this.max=id===0?stats.hpMax:es.hp;this.hp=id===0?stats.hp:this.max;this.atk=id===0?stats.atk:es.atk;this.def=id===0?stats.def:es.def;this.cd=0;this.jcd=30+Math.random()*60;this.stun=0;this.flash=0;this.tX=x;this.tY=this.y;this.dash=0;this.dead=false;this.anim=0;this.trail=[]}
     get cx(){return this.x+CNW/2} get cy(){return this.y+CNH/2}
     hit(d,from){if(this.dead)return;if(Math.random()<.12&&this.stun<=0){cryptSmoke(this.cx,this.cy,14);this.x=Math.max(6,Math.min(CW-CNW-6,from.x+(from.face?-45:45)));cryptSmoke(this.cx,this.cy,8);return}const block=Math.random()<.24;const val=Math.max(1,(d-this.def*.35)*(block?.35:1));this.hp=Math.max(0,this.hp-val);crypt.nums.push(new CryptNum(this.cx,this.y-4,val,d>this.max*.12));cryptSparks(this.cx,this.cy,d>this.max*.12?16:9,d>this.max*.12?'#ffd700':'#ff4422');this.vx+=(from.cx<this.cx?1:-1)*10;this.stun=18;this.flash=15;crypt.shake=Math.max(crypt.shake,d>this.max*.12?9:4);if(this.hp<=0)this.dead=true}
     update(dt,enemy){if(this.dead){cryptSmoke(this.cx,this.cy,1);return}this.flash-=dt;this.stun-=dt;this.cd-=dt;this.jcd-=dt;this.vy+=this.on?0:.38*dt;this.x+=this.vx*dt;this.y+=this.vy*dt;this.vx*=.87;if(this.y>=CGROUND-CNH){this.y=CGROUND-CNH;this.vy=0;this.on=true}else this.on=false;if(this.x<3){this.x=3;this.vx=5;if(this.on){this.vy=-9;this.on=false}}if(this.x>CW-CNW-3){this.x=CW-CNW-3;this.vx=-5;if(this.on){this.vy=-9;this.on=false}}this.face=enemy.cx>this.cx;if(this.stun>0)return;this.dash+=dt;if(this.dash>48){this.dash=0;this.tX=25+Math.random()*(CW-55);this.tY=Math.random()<.4?CGROUND-CNH-55-Math.random()*110:CGROUND-CNH}const dx=this.tX-this.x,dy=this.tY-this.y,len=Math.hypot(dx,dy)||1;if(len>8){this.vx+=(dx/len)*1.4;if(dy<-20&&this.on){this.vy=-10;this.on=false}}this.anim+=dt;if(Math.abs(this.vx)+Math.abs(this.vy)>4&&this.anim>4){this.anim=0;this.trail.unshift({x:this.cx,y:this.cy,a:.45});if(this.trail.length>5)this.trail.pop()}this.trail.forEach(t=>t.a-=.035*dt);this.trail=this.trail.filter(t=>t.a>0);const dist=Math.hypot(this.cx-enemy.cx,this.cy-enemy.cy);if(dist<54&&this.cd<=0){const crit=this.id===0&&Math.random()*100<stats.crit;enemy.hit(this.atk*(crit?2:1)*(0.9+Math.random()*.3),this);this.cd=34}else if(dist>145&&this.jcd<=0){const sx=(enemy.cx-this.cx)/(dist||1)*5, sy=(enemy.cy-this.cy)/(dist||1)*5;crypt.shots.push(new CryptShot(this.cx,this.cy,sx,sy,this));this.jcd=95;cryptSparks(this.cx,this.cy,12,this.glow)}}
@@ -1439,9 +1447,9 @@
   }
   function cryptSparks(x,y,n,c){for(let i=0;i<n;i++){const a=Math.random()*6.28,sp=1.5+Math.random()*4;crypt.particles.push(new CryptParticle(x,y,Math.cos(a)*sp,Math.sin(a)*sp,c,18+Math.random()*12,2+Math.random()*2,'spark'))}}
   function cryptSmoke(x,y,n){for(let i=0;i<n;i++)crypt.particles.push(new CryptParticle(x+(Math.random()-.5)*CNW,y+(Math.random()-.5)*CNH,(Math.random()-.5)*1.3,-1-Math.random(),'#bbb',28+Math.random()*16,4+Math.random()*4,'smoke'))}
-  function cryptGenBg(){crypt.mountains=[];crypt.trees=[];for(let x=0;x<=CW;x+=12){crypt.mountains.push({x,y:90+Math.sin(x*.018)*55+Math.cos(x*.04)*30,l:0});crypt.mountains.push({x,y:130+Math.sin(x*.024+1)*45+Math.cos(x*.03)*22,l:1})}for(let i=0;i<14;i++)crypt.trees.push({x:15+i*30+Math.random()*18,h:80+Math.random()*90,w:22+Math.random()*28})}
+  function cryptGenBg(){crypt.mountains=[];crypt.trees=[];for(let x=-36;x<=CW+36;x+=12){crypt.mountains.push({x,y:90+Math.sin(x*.018)*55+Math.cos(x*.04)*30,l:0});crypt.mountains.push({x,y:130+Math.sin(x*.024+1)*45+Math.cos(x*.03)*22,l:1})}for(let i=0;i<16;i++)crypt.trees.push({x:-18+i*30+Math.random()*18,h:80+Math.random()*90,w:22+Math.random()*28})}
   function cryptDrawTree(t){const g=cryptCtx,base=CGROUND;g.fillStyle='#3a2208';g.fillRect(t.x-3,base-t.h*.45,7,t.h*.45);['#1a3a0a','#2a5a10','#3a7018'].forEach((c,i)=>{g.fillStyle=c;g.beginPath();g.arc(t.x+(i-1)*5,base-t.h*.55-i*12,t.w*(.55-i*.06),0,6.28);g.fill()})}
-  function cryptDrawBg(){const g=cryptCtx,sky=g.createLinearGradient(0,0,0,CGROUND);sky.addColorStop(0,'#3a7fbf');sky.addColorStop(.55,'#82c8e8');sky.addColorStop(1,'#b8dff0');g.fillStyle=sky;g.fillRect(0,0,CW,CH);g.fillStyle='#ffee80';g.shadowColor='#ffe060';g.shadowBlur=18;g.beginPath();g.arc(58,50,15,0,6.28);g.fill();g.shadowBlur=0;[0,1].forEach(l=>{const pts=crypt.mountains.filter(p=>p.l===l);g.fillStyle=l?'#4a7040':'#6b8fa8';g.beginPath();g.moveTo(0,CH);pts.forEach(p=>g.lineTo(p.x,p.y));g.lineTo(CW,CH);g.fill()});crypt.trees.forEach(cryptDrawTree);const gr=g.createLinearGradient(0,CGROUND-8,0,CH);gr.addColorStop(0,'#4a7020');gr.addColorStop(.15,'#5a3a1a');gr.addColorStop(1,'#1e1004');g.fillStyle=gr;g.fillRect(0,CGROUND-8,CW,CH-CGROUND+8)}
+  function cryptDrawBg(){const g=cryptCtx,sky=g.createLinearGradient(0,0,0,CGROUND);sky.addColorStop(0,'#3a7fbf');sky.addColorStop(.55,'#82c8e8');sky.addColorStop(1,'#b8dff0');g.fillStyle=sky;g.fillRect(0,0,CW,CH);g.fillStyle='#ffee80';g.shadowColor='#ffe060';g.shadowBlur=18;g.beginPath();g.arc(58,50,15,0,6.28);g.fill();g.shadowBlur=0;[0,1].forEach(l=>{const pts=crypt.mountains.filter(p=>p.l===l);g.fillStyle=l?'#4a7040':'#6b8fa8';g.beginPath();g.moveTo(-40,CH);pts.forEach(p=>g.lineTo(p.x,p.y));g.lineTo(CW+40,CH);g.fill()});crypt.trees.forEach(cryptDrawTree);const gr=g.createLinearGradient(0,CGROUND-8,0,CH);gr.addColorStop(0,'#4a7020');gr.addColorStop(.15,'#5a3a1a');gr.addColorStop(1,'#1e1004');g.fillStyle=gr;g.fillRect(0,CGROUND-8,CW,CH-CGROUND+8)}
   function startCryptMode(){ // NUEVO
     const cost = criptaKunaiCost();
     if (state.gold < cost) return false;
@@ -1480,7 +1488,7 @@
     crypt.shots.forEach(s=>s.update(dt));
     crypt.shots.forEach(s=>crypt.fighters.forEach(f=>{if(!s.dead&&f!==s.o&&!f.dead&&Math.hypot(s.x-f.cx,s.y-f.cy)<s.s+CNW/2){f.hit(12+Math.random()*10,s.o);cryptSparks(s.x,s.y,16,s.c);s.dead=true}}));
     crypt.shots=crypt.shots.filter(s=>!s.dead); crypt.particles.forEach(p=>p.update(dt)); crypt.particles=crypt.particles.filter(p=>!p.dead()); crypt.nums.forEach(n=>n.update(dt)); crypt.nums=crypt.nums.filter(n=>!n.dead());
-    if ((a.dead||b.dead) && !crypt.finishTimer){crypt.finishTimer=1;if(!a.dead){state.gold += Math.round(10*Math.pow(1.10,state.world-1));showGoldReward(Math.round(10*Math.pow(1.10,state.world-1)));if(cryptWinNameEl)cryptWinNameEl.textContent='KAITO';cryptVictoryEl.classList.add('show')}else{if(cryptWinNameEl)cryptWinNameEl.textContent='NINJA';cryptVictoryEl.classList.add('show')}}
+    if ((a.dead||b.dead) && !crypt.finishTimer){crypt.finishTimer=1;if(!a.dead){state.gold += Math.round(10*Math.pow(1.10,state.world-1));rankState.kunai += 2;if(kunaiCountEl)kunaiCountEl.textContent = fmt(rankState.kunai);if(kunaiMainEl){kunaiMainEl.classList.remove('flash');void kunaiMainEl.offsetWidth;kunaiMainEl.classList.add('flash')}showGoldReward(Math.round(10*Math.pow(1.10,state.world-1)));if(cryptWinNameEl)cryptWinNameEl.textContent='KAITO';cryptVictoryEl.classList.add('show')}else{if(cryptWinNameEl)cryptWinNameEl.textContent='NINJA';cryptVictoryEl.classList.add('show')}}
     if (crypt.finishTimer){crypt.finishTimer+=dt;if(crypt.finishTimer>95){if(!a.dead && crypt.round<crypt.paid){cryptVictoryEl.classList.remove('show');updHUD();cryptNextRound()}else{stats.hp=Math.max(1,a.dead?stats.hpMax*.35:stats.hpMax);syncStats();updHUD();endCryptMode()}}}
   }
   function cryptRender(){ // NUEVO
