@@ -227,8 +227,9 @@
   .spark{position:absolute;width:6px;height:6px;background:#fff;border-radius:50%;
     box-shadow:0 0 8px #ffcf5c;pointer-events:none}
 
-  .dmg{position:absolute;font-weight:900;font-size:14px;color:#fff;text-shadow:0 0 4px #000,0 2px 0 #a00;
+  .dmg{position:absolute;font-weight:900;font-size:14px;color:#fff;text-shadow:0 0 4px #000,0 2px 0 #a00; /* MODIFICADO */
     pointer-events:none;z-index:20;animation:dmg .8s forwards}
+  .dmg.received{color:#ff3a3a;text-shadow:0 0 4px #000,0 2px 0 #5a0000} /* NUEVO */
   .dmg.crit{font-size:18px;color:#ffe14a;text-shadow:0 0 4px #000,0 2px 0 #d97a00}
   @keyframes dmg{0%{opacity:0;transform:translateY(0) scale(.5)}20%{opacity:1;transform:translateY(-10px) scale(1.2)}100%{opacity:0;transform:translateY(-40px) scale(1)}}
 
@@ -617,8 +618,7 @@
           </div>
           <div class="mazm-scroll t2" data-mazm="2">
             <span class="mazm-badge">II</span>
-            <span class="mazm-lock">🔒</span>
-            <span class="mazm-icon">🌲</span>
+            <span class="mazm-icon">🌲</span><!-- MODIFICADO -->
             <span class="mazm-name">BOSQUE SOMBRÍO</span>
           </div>
           <div class="mazm-scroll t3" data-mazm="3">
@@ -895,7 +895,7 @@
     if (wsAtkEl) wsAtkEl.textContent = fmt(st.atk); // MODIFICADO - Punto 2
     if (wsDefEl) wsDefEl.textContent = fmt(st.def); // MODIFICADO - Punto 2
   }
-  syncStats();
+  updateHeroHpBar(); // MODIFICADO - evita llamar updateHeroView antes de inicializar la vista HÉROE
 
   // MODIFICADO - Costo dinámico de CRIPTA KUNAI: base 40, +25% por cada mundo a partir del mundo 2
   function criptaKunaiCost(){
@@ -903,7 +903,7 @@
   }
   // NUEVO - Refresca el número y el color del costo según el oro disponible
   function updCriptaKunai(){
-    const el = document.getElementById('criptaKunaiCost');
+    const el = document.getElementById('criptaKunaiCost'); // MODIFICADO
     if (!el) return;
     const cost = criptaKunaiCost();
     el.textContent = fmt(cost);
@@ -972,7 +972,7 @@
     return true;
   }
   renderHeroEquipView();
-  updateHeroView();
+  syncStats(); // MODIFICADO - sincroniza cuando la vista HÉROE ya existe
 
 
   function spark(x,y,color='#ffe14a'){
@@ -1000,9 +1000,9 @@
     setTimeout(()=>im.remove(),400);
     spark(x,y);
   }
-  function damageText(x,y,val,crit){
+  function damageText(x,y,val,crit,received=false){ // MODIFICADO
     const d = document.createElement('div');
-    d.className='dmg'+(crit?' crit':'');
+    d.className='dmg'+(received?' received':'')+(crit?' crit':''); // MODIFICADO
     d.textContent = (crit?'¡':'')+fmt(val)+(crit?'!':''); // MODIFICADO - Punto 2
     d.style.left=x+'px';d.style.top=y+'px';
     fxLayer.appendChild(d);
@@ -1152,7 +1152,7 @@
     const bar = e.querySelector('.hpbar i');
     bar.style.width = (e.dataset.hp / e.dataset.max * 100) + '%';
     impactAt(ex+18, 480-110);
-    damageText(ex+10, 480-130, dmg, critHit);
+    damageText(ex+10, 480-130, dmg, critHit, false); // MODIFICADO
 
     // MODIFICADO - Punto 7: ataque enemigo, DEFENSA reduce levemente, EVASIÓN puede anular.
     const evaHit = stats.eva > 95 ? (Math.random()*100 < stats.eva) : (Math.random()*100 < Math.max(0, stats.eva - 95));
@@ -1161,7 +1161,7 @@
     } else {
       const edmg = Math.max(1, Math.round(parseFloat(e.dataset.atk) * (0.9+Math.random()*0.2) - effectiveStat('def') * 0.4)); // MODIFICADO - HÉROE
       stats.hp = Math.max(0, stats.hp - edmg);
-      damageText(heroX+4, 480-130, edmg, false);
+      damageText(heroX+4, 480-130, edmg, false, true); // MODIFICADO
       syncStats();
     }
 
@@ -1548,7 +1548,7 @@
   const cryptWinNameEl = document.getElementById('cryptWinName');
   const cryptStopEl = document.getElementById('cryptStop'); // NUEVO
   const worldLabelEl = document.getElementById('worldLabel');
-  const crypt = {active:false, paid:0, round:0, last:0, fighters:[], particles:[], nums:[], shots:[], shake:0, flash:0, mountains:[], trees:[], finishTimer:0};
+  const crypt = {active:false, paid:0, round:0, last:0, fighters:[], particles:[], nums:[], shots:[], shake:0, flash:0, mountains:[], trees:[], finishTimer:0, dungeon:'crypt'}; // MODIFICADO
   // NUEVO - CRIPTA KUNAI: única fuente de verdad para las stats del NINJA (scroll NINJA del HUD).
   // El enemigo en batalla y el HUD leen ambos de aquí, quedando siempre sincronizados.
   const NINJA_STATS = {hp:50, atk:5, def:3};
@@ -1561,9 +1561,9 @@
     dead(){return this.l<=0||this.s>45}
   }
   class CryptNum{ // NUEVO
-    constructor(x,y,v,crit){this.x=x;this.y=y;this.v=Math.round(v);this.crit=crit;this.vy=-4;this.l=55}
+    constructor(x,y,v,crit,received=false){this.x=x;this.y=y;this.v=Math.round(v);this.crit=crit;this.received=received;this.vy=-4;this.l=55} // MODIFICADO
     update(dt){this.y+=this.vy*dt;this.vy+=.16*dt;this.l-=dt}
-    draw(g){g.save();g.globalAlpha=Math.max(0,this.l/55);g.font=`900 ${this.crit?17:12}px Arial Black`;g.textAlign='center';g.strokeStyle='#000';g.lineWidth=4;g.strokeText(this.v,this.x,this.y);g.fillStyle=this.crit?'#ffe040':'#ff6644';g.fillText(this.v,this.x,this.y);g.restore()}
+    draw(g){g.save();g.globalAlpha=Math.max(0,this.l/55);g.font=`900 ${this.crit?17:12}px Arial Black`;g.textAlign='center';g.strokeStyle='#000';g.lineWidth=4;g.strokeText(this.v,this.x,this.y);g.fillStyle=this.crit?'#ffe040':(this.received?'#ff3a3a':'#fff');g.fillText(this.v,this.x,this.y);g.restore()} // MODIFICADO
     dead(){return this.l<=0}
   }
   class CryptShot{ // NUEVO
@@ -1575,7 +1575,8 @@
     constructor(x,id){this.id=id;this.x=x;this.y=CGROUND-CNH;this.vx=0;this.vy=0;this.on=true;this.face=id===0;this.name=id===0?'KAITO':'NINJA';this.col=id===0?'#e8a030':'#6855cc';this.glow=id===0?'#ff8c00':'#9932cc';this.skin=id===0?'#f5c09a':'#d8c8e8';this.max=id===0?effectiveStat('hpMax'):NINJA_STATS.hp;this.hp=id===0?stats.hp:this.max;this.atk=id===0?effectiveStat('atk'):NINJA_STATS.atk;this.def=id===0?effectiveStat('def'):NINJA_STATS.def;this.cd=0; // MODIFICADO - HÉROE
       this.jcd=30+Math.random()*60;this.stun=0;this.flash=0;this.tX=x;this.tY=this.y;this.dash=0;this.dead=false;this.anim=0;this.trail=[]}
     get cx(){return this.x+CNW/2} get cy(){return this.y+CNH/2}
-    hit(d,from){if(this.dead)return;if(Math.random()<.12&&this.stun<=0){cryptSmoke(this.cx,this.cy,14);this.x=Math.max(6,Math.min(CW-CNW-6,from.x+(from.face?-45:45)));cryptSmoke(this.cx,this.cy,8);return}const block=Math.random()<.24;const val=Math.max(1,(d-this.def*.35)*(block ? .35 : 1));this.hp=Math.max(0,this.hp-val);crypt.nums.push(new CryptNum(this.cx,this.y-4,val,d>this.max*.12));cryptSparks(this.cx,this.cy,d>this.max*.12?16:9,d>this.max*.12?'#ffd700':'#ff4422');this.vx+=(from.cx<this.cx?1:-1)*10;this.stun=18;this.flash=15;crypt.shake=Math.max(crypt.shake,d>this.max*.12?9:4);if(this.hp<=0)this.dead=true}
+    hit(d,from){if(this.dead)return;if(Math.random()<.12&&this.stun<=0){cryptSmoke(this.cx,this.cy,14);this.x=Math.max(6,Math.min(CW-CNW-6,from.x+(from.face?-45:45)));cryptSmoke(this.cx,this.cy,8);return}const block=Math.random()<.24;const val=Math.max(1,(d-this.def*.35)*(block ? .35 : 1));this.hp=Math.max(0,this.hp-val);crypt.nums.push(new CryptNum(this.cx,this.y-4,val,d>this.max*.12,this.id===0)); // MODIFICADO
+      cryptSparks(this.cx,this.cy,d>this.max*.12?16:9,d>this.max*.12?'#ffd700':'#ff4422');this.vx+=(from.cx<this.cx?1:-1)*10;this.stun=18;this.flash=15;crypt.shake=Math.max(crypt.shake,d>this.max*.12?9:4);if(this.hp<=0)this.dead=true}
     update(dt,enemy){if(this.dead){cryptSmoke(this.cx,this.cy,1);return}this.flash-=dt;this.stun-=dt;this.cd-=dt;this.jcd-=dt;this.vy+=this.on?0:.38*dt;this.x+=this.vx*dt;this.y+=this.vy*dt;this.vx*=.87;if(this.y>=CGROUND-CNH){this.y=CGROUND-CNH;this.vy=0;this.on=true}else this.on=false;if(this.x<3){this.x=3;this.vx=5;if(this.on){this.vy=-9;this.on=false}}if(this.x>CW-CNW-3){this.x=CW-CNW-3;this.vx=-5;if(this.on){this.vy=-9;this.on=false}}this.face=enemy.cx>this.cx;if(this.stun>0)return;this.dash+=dt;if(this.dash>48){this.dash=0;this.tX=25+Math.random()*(CW-55);this.tY=Math.random()<.4?CGROUND-CNH-55-Math.random()*110:CGROUND-CNH}const dx=this.tX-this.x,dy=this.tY-this.y,len=Math.hypot(dx,dy)||1;if(len>8){this.vx+=(dx/len)*1.4;if(dy<-20&&this.on){this.vy=-10;this.on=false}}this.anim+=dt;if(Math.abs(this.vx)+Math.abs(this.vy)>4&&this.anim>4){this.anim=0;this.trail.unshift({x:this.cx,y:this.cy,a:.45});if(this.trail.length>5)this.trail.pop()}this.trail.forEach(t=>t.a-=.035*dt);this.trail=this.trail.filter(t=>t.a>0);const dist=Math.hypot(this.cx-enemy.cx,this.cy-enemy.cy);if(dist<54&&this.cd<=0){const crit=this.id===0&&Math.random()*100<stats.crit;enemy.hit(this.atk*(crit?2:1)*(0.9+Math.random()*.3),this);this.cd=34}else if(dist>145&&this.jcd<=0){const sx=(enemy.cx-this.cx)/(dist||1)*5, sy=(enemy.cy-this.cy)/(dist||1)*5;crypt.shots.push(new CryptShot(this.cx,this.cy,sx,sy,this));this.jcd=95;cryptSparks(this.cx,this.cy,12,this.glow)}}
     draw(g){this.trail.forEach(t=>{g.save();g.globalAlpha=t.a;g.fillStyle=this.glow;g.beginPath();g.ellipse(t.x,t.y,CNW*.45,CNH*.45,0,0,6.28);g.fill();g.restore()});g.save();if(!this.face){g.translate(this.x+CNW/2,0);g.scale(-1,1);g.translate(-(this.x+CNW/2),0)}const x=this.x,y=this.y,fl=this.flash>0&&Math.sin(this.flash*1.5)>0,bc=fl?'#ff3333':this.col,sc=fl?'#ff8866':this.skin;g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.ellipse(x+CNW/2,CGROUND,CNW*.7,5,0,0,6.28);g.fill();g.fillStyle='#222';g.fillRect(x+1,y+CNH-5,CNW*.42,5);g.fillRect(x+CNW*.55,y+CNH-5,CNW*.42,5);g.fillStyle=bc;g.fillRect(x+2,y+CNH*.62,CNW*.38,CNH*.36);g.fillRect(x+CNW*.56,y+CNH*.62,CNW*.38,CNH*.36);g.fillStyle='#333';g.fillRect(x+1,y+CNH*.60,CNW-2,3);g.fillStyle=bc;g.fillRect(x+2,y+CNH*.30,CNW-4,CNH*.32);g.fillRect(x-4,y+CNH*.32,5,CNH*.25);g.fillRect(x+CNW-1,y+CNH*.32,5,CNH*.25);g.fillStyle=sc;g.fillRect(x+CNW*.36,y+CNH*.27,CNW*.28,CNH*.06);g.beginPath();g.arc(x+CNW/2,y+CNH*.155,CNW*.4,0,6.28);g.fill();g.fillStyle=this.id===0?'#1b1208':'#111118';g.beginPath();g.arc(x+CNW/2,y+CNH*.10,CNW*.42,3.14,6.28);g.fill();g.fillStyle=this.id===0?'#ff6600':'#2233aa';g.fillRect(x+CNW*.1,y+CNH*.07,CNW*.8,4);g.fillStyle='#c8c8c8';g.fillRect(x+CNW*.28,y+CNH*.07,CNW*.44,4);g.fillStyle='#111';g.beginPath();g.arc(x+CNW*.62,y+CNH*.155,2.2,0,6.28);g.fill();if(this.stun>5){g.fillStyle='#ffd700';g.font='10px Arial';g.fillText('★',x+CNW/2,y-4)}g.restore();this.hpbar(g)}
     hpbar(g){const w=48,x=this.x+CNW/2-w/2,y=this.y-14,r=Math.max(0,this.hp/this.max);g.fillStyle='rgba(0,0,0,.75)';g.fillRect(x-1,y-1,w+2,6);g.fillStyle=r>.5?'#44ee44':r>.25?'#ffaa00':'#ff2222';g.fillRect(x,y,w*r,4);g.font='900 8px Arial';g.textAlign='center';g.fillStyle=this.id===0?'#ffd700':'#aa88ff';g.fillText(this.name,this.x+CNW/2,y-3)}
@@ -1584,7 +1585,7 @@
   function cryptSmoke(x,y,n){for(let i=0;i<n;i++)crypt.particles.push(new CryptParticle(x+(Math.random()-.5)*CNW,y+(Math.random()-.5)*CNH,(Math.random()-.5)*1.3,-1-Math.random(),'#bbb',28+Math.random()*16,4+Math.random()*4,'smoke'))}
   function cryptGenBg(){crypt.mountains=[];crypt.trees=[];for(let x=0;x<=CW;x+=12){crypt.mountains.push({x,y:90+Math.sin(x*.018)*55+Math.cos(x*.04)*30,l:0});crypt.mountains.push({x,y:130+Math.sin(x*.024+1)*45+Math.cos(x*.03)*22,l:1})}crypt.mountains.push({x:CW,y:90+Math.sin(CW*.018)*55+Math.cos(CW*.04)*30,l:0});crypt.mountains.push({x:CW,y:130+Math.sin(CW*.024+1)*45+Math.cos(CW*.03)*22,l:1});for(let i=0;i<14;i++)crypt.trees.push({x:15+i*28+Math.random()*10,h:80+Math.random()*90,w:22+Math.random()*28})}
   function cryptDrawTree(t){const g=cryptCtx,base=CGROUND;g.fillStyle='#3a2208';g.fillRect(t.x-3,base-t.h*.45,7,t.h*.45);['#1a3a0a','#2a5a10','#3a7018'].forEach((c,i)=>{g.fillStyle=c;g.beginPath();g.arc(t.x+(i-1)*5,base-t.h*.55-i*12,t.w*(.55-i*.06),0,6.28);g.fill()})}
-  function cryptDrawBg(){const g=cryptCtx,sky=g.createLinearGradient(0,0,0,CGROUND);sky.addColorStop(0,'#3a7fbf');sky.addColorStop(.55,'#82c8e8');sky.addColorStop(1,'#b8dff0');g.fillStyle=sky;g.fillRect(0,0,CW,CH);g.fillStyle='#ffee80';g.shadowColor='#ffe060';g.shadowBlur=18;g.beginPath();g.arc(58,50,15,0,6.28);g.fill();g.shadowBlur=0;[0,1].forEach(l=>{const pts=crypt.mountains.filter(p=>p.l===l);g.fillStyle=l?'#4a7040':'#6b8fa8';g.beginPath();g.moveTo(0,CH);pts.forEach(p=>g.lineTo(p.x,p.y));g.lineTo(CW,CH);g.fill()});crypt.trees.forEach(cryptDrawTree);const gr=g.createLinearGradient(0,CGROUND-8,0,CH);gr.addColorStop(0,'#4a7020');gr.addColorStop(.15,'#5a3a1a');gr.addColorStop(1,'#1e1004');g.fillStyle=gr;g.fillRect(0,CGROUND-8,CW,CH-CGROUND+8)}
+  function cryptDrawBg(){const g=cryptCtx;if(crypt.dungeon==='forest'){const sky=g.createLinearGradient(0,0,0,CGROUND);sky.addColorStop(0,'#07100c');sky.addColorStop(.55,'#142018');sky.addColorStop(1,'#24301f');g.fillStyle=sky;g.fillRect(0,0,CW,CH);g.fillStyle='rgba(190,210,190,.10)';for(let y=95;y<255;y+=34)g.fillRect(0,y,CW,18);crypt.trees.forEach(t=>{g.fillStyle='#21150f';g.fillRect(t.x-5,CGROUND-t.h*.65,10,t.h*.65);g.strokeStyle='#2b1c14';g.lineWidth=4;g.beginPath();g.moveTo(t.x,CGROUND-t.h*.45);g.lineTo(t.x-18,CGROUND-t.h*.72);g.moveTo(t.x+1,CGROUND-t.h*.52);g.lineTo(t.x+20,CGROUND-t.h*.82);g.stroke();g.fillStyle='rgba(25,45,25,.7)';g.beginPath();g.arc(t.x,CGROUND-t.h*.85,t.w*.5,0,6.28);g.fill()});const gr=g.createLinearGradient(0,CGROUND-8,0,CH);gr.addColorStop(0,'#27301f');gr.addColorStop(.2,'#1b160f');gr.addColorStop(1,'#090604');g.fillStyle=gr;g.fillRect(0,CGROUND-8,CW,CH-CGROUND+8);return}const wall=g.createRadialGradient(CW*.50,CH*.54,18,CW*.50,CH*.47,340);wall.addColorStop(0,'#71695d');wall.addColorStop(.18,'#4a453e');wall.addColorStop(.52,'#22201e');wall.addColorStop(1,'#060504');g.fillStyle=wall;g.fillRect(0,0,CW,CH);const mouth=g.createRadialGradient(CW*.52,CGROUND-86,20,CW*.52,CGROUND-78,225);mouth.addColorStop(0,'rgba(118,108,92,.72)');mouth.addColorStop(.44,'rgba(45,42,38,.72)');mouth.addColorStop(1,'rgba(0,0,0,.08)');g.fillStyle=mouth;g.beginPath();g.ellipse(CW*.52,CGROUND-84,176,235,0,0,6.28);g.fill();for(let i=0;i<13;i++){g.fillStyle=`rgba(${52+i*5},${49+i*4},${44+i*3},.20)`;g.beginPath();g.ellipse(18+i*31,92+Math.sin(i*.9)*32,62,20,Math.sin(i)*.55,0,6.28);g.fill()}g.fillStyle='rgba(10,8,7,.62)';for(let i=0;i<9;i++){const x=8+i*48;g.beginPath();g.moveTo(x,0);g.lineTo(x+18,72+Math.sin(i)*24);g.lineTo(x+38,0);g.fill()}g.fillStyle='rgba(255,178,82,.20)';g.beginPath();g.arc(80,92,48,0,6.28);g.fill();g.fillStyle='rgba(255,218,150,.14)';g.beginPath();g.ellipse(CW*.52,CGROUND-70,150,42,0,0,6.28);g.fill();const floor=g.createLinearGradient(0,CGROUND-16,0,CH);floor.addColorStop(0,'#3d362d');floor.addColorStop(.38,'#211b16');floor.addColorStop(1,'#090605');g.fillStyle=floor;g.fillRect(0,CGROUND-18,CW,CH-CGROUND+18);g.fillStyle='rgba(0,0,0,.28)';for(let i=0;i<11;i++){g.beginPath();g.ellipse(22+i*38,CGROUND+18+Math.sin(i)*11,32,9,Math.sin(i)*.4,0,6.28);g.fill()}} // MODIFICADO
   function payCryptRound(){ // NUEVO
     const cost = criptaKunaiCost();
     if (state.gold < cost) return false;
@@ -1593,8 +1594,8 @@
     updHUD();
     return true;
   }
-  function startCryptMode(){ // NUEVO
-    crypt.paid = 0; crypt.round = 0; crypt.active = true; crypt.finishTimer = 0; // MODIFICADO
+  function startCryptMode(dungeon='crypt'){ // MODIFICADO
+    crypt.paid = 0; crypt.round = 0; crypt.active = true; crypt.finishTimer = 0; crypt.dungeon = dungeon; // MODIFICADO
     if (!payCryptRound()){ crypt.active = false; return false; } // MODIFICADO
     state.paused = true; state.inBattle = false; enemies.forEach(en=>en.remove()); enemies=[];
     appRoot.classList.add('crypt-mode');
@@ -1613,7 +1614,7 @@
   function cryptNextRound(){ // NUEVO
     crypt.round++; crypt.particles=[]; crypt.nums=[]; crypt.shots=[]; crypt.flash=0; crypt.shake=0; crypt.finishTimer=0;
     crypt.fighters=[new CryptFighter(62,0),new CryptFighter(305,1)];
-    if (cryptRoundsEl) cryptRoundsEl.textContent = 'CRIPTA KUNAI · RONDA ' + crypt.round + ' · ORO ' + fmt(state.gold); // MODIFICADO
+    if (cryptRoundsEl) cryptRoundsEl.textContent = (crypt.dungeon==='forest'?'BOSQUE SOMBRÍO':'CRIPTA KUNAI') + ' · RONDA ' + crypt.round + ' · ORO ' + fmt(state.gold); // MODIFICADO
     // MODIFICADO - CRIPTA KUNAI: el HUD (scroll NINJA) y el enemigo en batalla leen ambos de NINJA_STATS.
     if (wsHpEl) wsHpEl.textContent = fmt(NINJA_STATS.hp);
     if (wsAtkEl) wsAtkEl.textContent = fmt(NINJA_STATS.atk);
@@ -1649,7 +1650,7 @@
     // Los scrolls numerados por ahora no realizan ninguna acción (placeholder)
     mazmOv.querySelectorAll('.mazm-scroll').forEach(el=>{
       // MODIFICADO - CRIPTA KUNAI (scroll 1): valida el oro requerido
-      if (el.getAttribute('data-mazm') === '1'){
+      if (el.getAttribute('data-mazm') === '1' || el.getAttribute('data-mazm') === '2'){ // MODIFICADO
         el.addEventListener('click', ()=>{
           if (state.gold < criptaKunaiCost()){ // NUEVO - oro insuficiente
             const w = document.getElementById('mazmWarn');
@@ -1661,7 +1662,7 @@
             return;
           }
           mazmOv.classList.remove('show'); // NUEVO - CRIPTA KUNAI: cerrar selector y entrar
-          startCryptMode(); // NUEVO - CRIPTA KUNAI: inicia rondas pagadas automáticas
+          startCryptMode(el.getAttribute('data-mazm') === '2' ? 'forest' : 'crypt'); // MODIFICADO
         });
       } else {
         el.addEventListener('click', ()=>{ /* sin acción por ahora */ });
