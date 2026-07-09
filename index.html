@@ -618,9 +618,8 @@
           </div>
           <div class="mazm-scroll t2" data-mazm="2">
             <span class="mazm-badge">II</span>
-            <span class="mazm-icon">🌲</span><!-- MODIFICADO -->
-            <span class="mazm-name">BOSQUE SOMBRÍO</span>
-            <span class="mazm-cost-pill"><span class="emj">💰</span><span class="criptaKunaiCostMirror">40</span></span><!-- NUEVO -->
+            <span class="mazm-icon">🌲</span><!-- NUEVO -->
+            <span class="mazm-name">BOSQUE SOMBRÍO</span><!-- NUEVO -->
           </div>
           <div class="mazm-scroll t3" data-mazm="3">
             <span class="mazm-badge">III</span>
@@ -904,7 +903,7 @@
   }
   // NUEVO - Refresca el número y el color del costo según el oro disponible
   function updCriptaKunai(){
-    const els = [document.getElementById('criptaKunaiCost'), ...document.querySelectorAll('.criptaKunaiCostMirror')].filter(Boolean); // MODIFICADO
+    const els = [document.getElementById('criptaKunaiCost')].filter(Boolean); // MODIFICADO
     if (!els.length) return;
     const cost = criptaKunaiCost();
     els.forEach(el=>{el.textContent = fmt(cost); const wrap = el.closest('.mazm-cost-pill') || el.closest('.mazm-dgn-cost'); if (wrap){wrap.classList.toggle('ok', state.gold >= cost); wrap.classList.toggle('no', state.gold < cost);}}); // MODIFICADO
@@ -1571,9 +1570,9 @@
     constructor(x,id){this.id=id;this.x=x;this.y=CGROUND-CNH;this.vx=0;this.vy=0;this.on=true;this.face=id===0;this.name=id===0?'KAITO':'NINJA';this.col=id===0?'#e8a030':'#6855cc';this.glow=id===0?'#ff8c00':'#9932cc';this.skin=id===0?'#f5c09a':'#d8c8e8';this.max=id===0?effectiveStat('hpMax'):NINJA_STATS.hp;this.hp=id===0?stats.hp:this.max;this.atk=id===0?effectiveStat('atk'):NINJA_STATS.atk;this.def=id===0?effectiveStat('def'):NINJA_STATS.def;this.cd=0; // MODIFICADO - HÉROE
       this.jcd=30+Math.random()*60;this.stun=0;this.flash=0;this.tX=x;this.tY=this.y;this.dash=0;this.dead=false;this.anim=0;this.trail=[]}
     get cx(){return this.x+CNW/2} get cy(){return this.y+CNH/2}
-    hit(d,from){if(this.dead)return;if(Math.random()<.12&&this.stun<=0){cryptSmoke(this.cx,this.cy,14);this.x=Math.max(6,Math.min(CW-CNW-6,from.x+(from.face?-45:45)));cryptSmoke(this.cx,this.cy,8);return}const block=Math.random()<.24;const val=Math.max(1,(d-this.def*.35)*(block ? .35 : 1));this.hp=Math.max(0,this.hp-val);crypt.nums.push(new CryptNum(this.cx,this.y-4,val,d>this.max*.12,this.id===0)); // MODIFICADO
+    hit(d,from,crit=false){if(this.dead)return;if(Math.random()<.12&&this.stun<=0){cryptSmoke(this.cx,this.cy,14);this.x=Math.max(6,Math.min(CW-CNW-6,from.x+(from.face?-45:45)));cryptSmoke(this.cx,this.cy,8);return}const block=Math.random()<.24;const val=Math.max(1,(d-this.def*.35)*(block ? .35 : 1));this.hp=Math.max(0,this.hp-val);crypt.nums.push(new CryptNum(this.cx,this.y-4,val,crit,this.id===0)); // MODIFICADO
       cryptSparks(this.cx,this.cy,d>this.max*.12?16:9,d>this.max*.12?'#ffd700':'#ff4422');this.vx+=(from.cx<this.cx?1:-1)*10;this.stun=18;this.flash=15;crypt.shake=Math.max(crypt.shake,d>this.max*.12?9:4);if(this.hp<=0)this.dead=true}
-    update(dt,enemy){if(this.dead){cryptSmoke(this.cx,this.cy,1);return}this.flash-=dt;this.stun-=dt;this.cd-=dt;this.jcd-=dt;this.vy+=this.on?0:.38*dt;this.x+=this.vx*dt;this.y+=this.vy*dt;this.vx*=.87;if(this.y>=CGROUND-CNH){this.y=CGROUND-CNH;this.vy=0;this.on=true}else this.on=false;if(this.x<3){this.x=3;this.vx=5;if(this.on){this.vy=-9;this.on=false}}if(this.x>CW-CNW-3){this.x=CW-CNW-3;this.vx=-5;if(this.on){this.vy=-9;this.on=false}}this.face=enemy.cx>this.cx;if(this.stun>0)return;this.dash+=dt;if(this.dash>48){this.dash=0;this.tX=25+Math.random()*(CW-55);this.tY=Math.random()<.4?CGROUND-CNH-55-Math.random()*110:CGROUND-CNH}const dx=this.tX-this.x,dy=this.tY-this.y,len=Math.hypot(dx,dy)||1;if(len>8){this.vx+=(dx/len)*1.4;if(dy<-20&&this.on){this.vy=-10;this.on=false}}this.anim+=dt;if(Math.abs(this.vx)+Math.abs(this.vy)>4&&this.anim>4){this.anim=0;this.trail.unshift({x:this.cx,y:this.cy,a:.45});if(this.trail.length>5)this.trail.pop()}this.trail.forEach(t=>t.a-=.035*dt);this.trail=this.trail.filter(t=>t.a>0);const dist=Math.hypot(this.cx-enemy.cx,this.cy-enemy.cy);if(dist<54&&this.cd<=0){const crit=this.id===0&&Math.random()*100<stats.crit;enemy.hit(this.atk*(crit?2:1)*(0.9+Math.random()*.3),this);this.cd=34}else if(dist>145&&this.jcd<=0){const sx=(enemy.cx-this.cx)/(dist||1)*5, sy=(enemy.cy-this.cy)/(dist||1)*5;crypt.shots.push(new CryptShot(this.cx,this.cy,sx,sy,this));this.jcd=95;cryptSparks(this.cx,this.cy,12,this.glow)}}
+    update(dt,enemy){if(this.dead){cryptSmoke(this.cx,this.cy,1);return}this.flash-=dt;this.stun-=dt;this.cd-=dt;this.jcd-=dt;this.vy+=this.on?0:.38*dt;this.x+=this.vx*dt;this.y+=this.vy*dt;this.vx*=.87;if(this.y>=CGROUND-CNH){this.y=CGROUND-CNH;this.vy=0;this.on=true}else this.on=false;if(this.x<3){this.x=3;this.vx=5;if(this.on){this.vy=-9;this.on=false}}if(this.x>CW-CNW-3){this.x=CW-CNW-3;this.vx=-5;if(this.on){this.vy=-9;this.on=false}}this.face=enemy.cx>this.cx;if(this.stun>0)return;this.dash+=dt;if(this.dash>48){this.dash=0;this.tX=25+Math.random()*(CW-55);this.tY=Math.random()<.4?CGROUND-CNH-55-Math.random()*110:CGROUND-CNH}const dx=this.tX-this.x,dy=this.tY-this.y,len=Math.hypot(dx,dy)||1;if(len>8){this.vx+=(dx/len)*1.4;if(dy<-20&&this.on){this.vy=-10;this.on=false}}this.anim+=dt;if(Math.abs(this.vx)+Math.abs(this.vy)>4&&this.anim>4){this.anim=0;this.trail.unshift({x:this.cx,y:this.cy,a:.45});if(this.trail.length>5)this.trail.pop()}this.trail.forEach(t=>t.a-=.035*dt);this.trail=this.trail.filter(t=>t.a>0);const dist=Math.hypot(this.cx-enemy.cx,this.cy-enemy.cy);if(dist<54&&this.cd<=0){const crit=this.id===0&&Math.random()*100<stats.crit;enemy.hit(this.atk*(crit?2:1)*(0.9+Math.random()*.3),this,crit);this.cd=34}else if(dist>145&&this.jcd<=0){const sx=(enemy.cx-this.cx)/(dist||1)*5, sy=(enemy.cy-this.cy)/(dist||1)*5;crypt.shots.push(new CryptShot(this.cx,this.cy,sx,sy,this));this.jcd=95;cryptSparks(this.cx,this.cy,12,this.glow)}}
     draw(g){this.trail.forEach(t=>{g.save();g.globalAlpha=t.a;g.fillStyle=this.glow;g.beginPath();g.ellipse(t.x,t.y,CNW*.45,CNH*.45,0,0,6.28);g.fill();g.restore()});g.save();if(!this.face){g.translate(this.x+CNW/2,0);g.scale(-1,1);g.translate(-(this.x+CNW/2),0)}const x=this.x,y=this.y,fl=this.flash>0&&Math.sin(this.flash*1.5)>0,bc=fl?'#ff3333':this.col,sc=fl?'#ff8866':this.skin;g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.ellipse(x+CNW/2,CGROUND,CNW*.7,5,0,0,6.28);g.fill();g.fillStyle='#222';g.fillRect(x+1,y+CNH-5,CNW*.42,5);g.fillRect(x+CNW*.55,y+CNH-5,CNW*.42,5);g.fillStyle=bc;g.fillRect(x+2,y+CNH*.62,CNW*.38,CNH*.36);g.fillRect(x+CNW*.56,y+CNH*.62,CNW*.38,CNH*.36);g.fillStyle='#333';g.fillRect(x+1,y+CNH*.60,CNW-2,3);g.fillStyle=bc;g.fillRect(x+2,y+CNH*.30,CNW-4,CNH*.32);g.fillRect(x-4,y+CNH*.32,5,CNH*.25);g.fillRect(x+CNW-1,y+CNH*.32,5,CNH*.25);g.fillStyle=sc;g.fillRect(x+CNW*.36,y+CNH*.27,CNW*.28,CNH*.06);g.beginPath();g.arc(x+CNW/2,y+CNH*.155,CNW*.4,0,6.28);g.fill();g.fillStyle=this.id===0?'#1b1208':'#111118';g.beginPath();g.arc(x+CNW/2,y+CNH*.10,CNW*.42,3.14,6.28);g.fill();g.fillStyle=this.id===0?'#ff6600':'#2233aa';g.fillRect(x+CNW*.1,y+CNH*.07,CNW*.8,4);g.fillStyle='#c8c8c8';g.fillRect(x+CNW*.28,y+CNH*.07,CNW*.44,4);g.fillStyle='#111';g.beginPath();g.arc(x+CNW*.62,y+CNH*.155,2.2,0,6.28);g.fill();if(this.stun>5){g.fillStyle='#ffd700';g.font='10px Arial';g.fillText('★',x+CNW/2,y-4)}g.restore();this.hpbar(g)}
     hpbar(g){const w=48,x=this.x+CNW/2-w/2,y=this.y-14,r=Math.max(0,this.hp/this.max);g.fillStyle='rgba(0,0,0,.75)';g.fillRect(x-1,y-1,w+2,6);g.fillStyle=r>.5?'#44ee44':r>.25?'#ffaa00':'#ff2222';g.fillRect(x,y,w*r,4);g.font='900 8px Arial';g.textAlign='center';g.fillStyle=this.id===0?'#ffd700':'#aa88ff';g.fillText(this.name,this.x+CNW/2,y-3)}
   }
@@ -1592,7 +1591,7 @@
   }
   function startCryptMode(dungeon='crypt'){ // MODIFICADO
     crypt.paid = 0; crypt.round = 0; crypt.active = true; crypt.finishTimer = 0; crypt.dungeon = dungeon; // MODIFICADO
-    if (!payCryptRound()){ crypt.active = false; return false; } // MODIFICADO
+    if (dungeon === 'crypt' && !payCryptRound()){ crypt.active = false; return false; } // MODIFICADO
     state.paused = true; state.inBattle = false; enemies.forEach(en=>en.remove()); enemies=[];
     appRoot.classList.add('crypt-mode');
     if (worldLabelEl) worldLabelEl.textContent = 'NINJA';
@@ -1627,8 +1626,8 @@
     crypt.shots.forEach(s=>s.update(dt));
     crypt.shots.forEach(s=>crypt.fighters.forEach(f=>{if(!s.dead&&f!==s.o&&!f.dead&&Math.hypot(s.x-f.cx,s.y-f.cy)<s.s+CNW/2){f.hit(12+Math.random()*10,s.o);cryptSparks(s.x,s.y,16,s.c);s.dead=true}}));
     crypt.shots=crypt.shots.filter(s=>!s.dead); crypt.particles.forEach(p=>p.update(dt)); crypt.particles=crypt.particles.filter(p=>!p.dead()); crypt.nums.forEach(n=>n.update(dt)); crypt.nums=crypt.nums.filter(n=>!n.dead());
-    if ((a.dead||b.dead) && !crypt.finishTimer){crypt.finishTimer=1;if(!a.dead){state.gold += Math.round(10*Math.pow(1.10,state.world-1));showGoldReward(Math.round(10*Math.pow(1.10,state.world-1)));rankState.kunai += 2;if(kunaiCountEl)kunaiCountEl.textContent=fmt(rankState.kunai);if(cryptWinNameEl)cryptWinNameEl.textContent='KAITO';cryptVictoryEl.classList.add('show')}else{if(cryptWinNameEl)cryptWinNameEl.textContent='NINJA';cryptVictoryEl.classList.add('show')}}
-    if (crypt.finishTimer){crypt.finishTimer+=dt;if(crypt.finishTimer>95){if(payCryptRound()){cryptVictoryEl.classList.remove('show');cryptNextRound()}else{stats.hp=Math.max(1,a.dead?effectiveStat('hpMax')*.35:effectiveStat('hpMax'));syncStats();updHUD();endCryptMode()} }} // MODIFICADO - HÉROE
+    if ((a.dead||b.dead) && !crypt.finishTimer){crypt.finishTimer=1;if(!a.dead){if(crypt.dungeon==='crypt'){state.gold += Math.round(10*Math.pow(1.10,state.world-1));showGoldReward(Math.round(10*Math.pow(1.10,state.world-1)));rankState.kunai += 2;if(kunaiCountEl)kunaiCountEl.textContent=fmt(rankState.kunai)}if(cryptWinNameEl)cryptWinNameEl.textContent='KAITO';cryptVictoryEl.classList.add('show')}else{if(cryptWinNameEl)cryptWinNameEl.textContent='NINJA';cryptVictoryEl.classList.add('show')}} // MODIFICADO
+    if (crypt.finishTimer){crypt.finishTimer+=dt;if(crypt.finishTimer>95){if(crypt.dungeon==='crypt'&&payCryptRound()){cryptVictoryEl.classList.remove('show');cryptNextRound()}else{stats.hp=Math.max(1,a.dead?effectiveStat('hpMax')*.35:effectiveStat('hpMax'));syncStats();updHUD();endCryptMode()} }} // MODIFICADO
   }
   if (cryptStopEl) cryptStopEl.addEventListener('click', endCryptMode); // NUEVO
   function cryptRender(){ // NUEVO
@@ -1648,7 +1647,8 @@
       // MODIFICADO - CRIPTA KUNAI (scroll 1): valida el oro requerido
       if (el.getAttribute('data-mazm') === '1' || el.getAttribute('data-mazm') === '2'){ // MODIFICADO
         el.addEventListener('click', ()=>{
-          if (state.gold < criptaKunaiCost()){ // NUEVO - oro insuficiente
+          const dungeon = el.getAttribute('data-mazm') === '2' ? 'forest' : 'crypt'; // NUEVO
+          if (dungeon === 'crypt' && state.gold < criptaKunaiCost()){ // MODIFICADO
             const w = document.getElementById('mazmWarn');
             if (w){
               w.classList.add('show');
@@ -1657,8 +1657,8 @@
             }
             return;
           }
-          mazmOv.classList.remove('show'); // NUEVO - CRIPTA KUNAI: cerrar selector y entrar
-          startCryptMode(el.getAttribute('data-mazm') === '2' ? 'forest' : 'crypt'); // MODIFICADO
+          mazmOv.classList.remove('show'); // NUEVO - CRIPTA KUNAI/BOSQUE SOMBRÍO: cerrar selector y entrar
+          startCryptMode(dungeon); // MODIFICADO
         });
       } else {
         el.addEventListener('click', ()=>{ /* sin acción por ahora */ });
