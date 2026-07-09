@@ -845,10 +845,9 @@
   }
   syncStats();
 
-  // NUEVO - Costo dinámico de CRIPTA KUNAI: base 30, +25% por cada mundo a partir del mundo 2
+  // MODIFICADO - Costo dinámico de CRIPTA KUNAI: base 40, +25% por cada mundo a partir del mundo 2
   function criptaKunaiCost(){
-    if (state.world === 1) return 40; // NUEVO
-    return Math.ceil(30 * Math.pow(1.25, Math.max(0, state.world - 1)));
+    return Math.ceil(40 * Math.pow(1.25, Math.max(0, state.world - 1))); // MODIFICADO
   }
   // NUEVO - Refresca el número y el color del costo según el oro disponible
   function updCriptaKunai(){
