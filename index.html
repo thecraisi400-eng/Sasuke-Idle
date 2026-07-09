@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Idle Forest RPG</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;user-select:none}
+  html,body{background:#0b0d17;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:'Segoe UI',system-ui,sans-serif;color:#fff;overflow:hidden}
+  .app{width:393px;height:817px;position:relative;overflow:hidden;background:#0b0d17;box-shadow:0 20px 60px rgba(0,0,0,.6);border-radius:6px}
+
+  /* ============ TOP 480 ============ */
+  .top{position:relative;width:100%;height:480px;overflow:hidden;
+    background:
+      radial-gradient(ellipse at 50% 0%, #2a3560 0%, #141833 40%, #0b0d17 100%);
+  }
+  /* stars */
+  .stars{position:absolute;inset:0;background-image:
+    radial-gradient(1px 1px at 20px 30px,#fff,transparent),
+    radial-gradient(1px 1px at 70px 80px,#cfd8ff,transparent),
+    radial-gradient(1px 1px at 130px 20px,#fff,transparent),
+    radial-gradient(1px 1px at 200px 60px,#fff,transparent),
+    radial-gradient(1px 1px at 260px 40px,#b7c2ff,transparent),
+    radial-gradient(1px 1px at 330px 90px,#fff,transparent),
+    radial-gradient(1px 1px at 360px 15px,#fff,transparent);
+    opacity:.7}
+  .moon{position:absolute;top:26px;right:36px;width:46px;height:46px;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,#fdf6d8,#e2d29a 60%,#a89660);
+    box-shadow:0 0 30px rgba(253,246,216,.4),inset -6px -4px 0 rgba(0,0,0,.15)}
+
+  /* HUD */
+  .hud{position:absolute;top:8px;left:8px;right:8px;display:flex;flex-direction:column;gap:6px;z-index:20;font-size:11px}
+  .hud-row{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{background:linear-gradient(180deg,#1a1f38,#0f1226);border:1px solid #3a4680;
+    border-radius:10px;padding:4px 8px;display:flex;align-items:center;gap:4px;
+    box-shadow:0 2px 4px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08);font-weight:600;letter-spacing:.3px}
+  .chip .emj{font-size:13px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.6))}
+  .chip.gold{color:#ffd76b}
+  .chip.gem{color:#7ce9ff}
+  .chip.power{color:#ffb0f0}
+  .hero-name{background:linear-gradient(180deg,#2a1f4a,#150c2e);border:1px solid #7a5cff;color:#e6d7ff;
+    padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-shadow:0 1px 2px #000;
+    box-shadow:0 0 10px rgba(122,92,255,.4)}
+
+  /* World progress window */
+  .world{margin-left:auto;background:linear-gradient(180deg,#22284a,#0e112a);
+    border:1px solid #4c5aa0;border-radius:8px;padding:5px 8px;min-width:130px;
+    box-shadow:0 3px 6px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)}
+  .world-title{font-size:10px;color:#c9d3ff;font-weight:700;display:flex;justify-content:space-between}
+  .world-title span{color:#ffd76b}
+  .stages{display:flex;gap:4px;margin-top:4px}
+  .stage{flex:1;height:8px;border-radius:3px;background:#0a0d1c;border:1px solid #2a3266;overflow:hidden;position:relative}
+  .stage.done{background:linear-gradient(180deg,#ffcf5c,#c58a1c);border-color:#ffe08a;box-shadow:0 0 6px #ffb84a}
+  .stage.active::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#7ce9ff,transparent);animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+  /* NUEVO - Punto 4: panel de stats de la oleada actual (bajo scroll MUNDO) */
+  .wave-stats{margin-top:5px;display:flex;gap:3px;background:linear-gradient(180deg,#1a1f38,#0a0d1c);
+    border:1px solid #4c5aa0;border-radius:7px;padding:4px 5px;
+    box-shadow:0 2px 5px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08)}
+  .wave-stats .ws-title{position:absolute;font-size:8px;color:#c9d3ff;font-weight:700;letter-spacing:.5px;
+    transform:translateY(-13px);text-shadow:0 1px 2px #000;opacity:.85}
+  .wave-stats .ws{flex:1;display:flex;align-items:center;justify-content:center;gap:3px;
+    padding:2px 3px;border-radius:5px;background:linear-gradient(180deg,#22284a,#0e112a);
+    border:1px solid #3a4680;font-size:10px;font-weight:800;line-height:1;
+    text-shadow:0 1px 1px #000}
+  .wave-stats .ws .we{font-size:11px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.7))}
+  .wave-stats .ws.hp  {color:#ff9a9a;border-color:#7a2828}
+  .wave-stats .ws.atk {color:#ffd76b;border-color:#7a5a1a}
+  .wave-stats .ws.def {color:#7ce9ff;border-color:#1a5a7a}
+
+  /* Scene */
+  .scene{position:absolute;inset:0;top:0;overflow:hidden}
+  .parallax{position:absolute;inset:0;will-change:transform}
+
+  /* Distant mountains */
+  .mountains{position:absolute;bottom:180px;left:0;width:300%;height:120px;
+    background-image:
+      radial-gradient(ellipse at 10% 100%, #1e2547 0 60px, transparent 61px),
+      radial-gradient(ellipse at 25% 100%, #232b52 0 80px, transparent 81px),
+      radial-gradient(ellipse at 45% 100%, #1a2044 0 70px, transparent 71px),
+      radial-gradient(ellipse at 65% 100%, #262e5a 0 85px, transparent 86px),
+      radial-gradient(ellipse at 85% 100%, #1c2349 0 65px, transparent 66px);
+    background-size:786px 120px;background-repeat:repeat-x;
+    filter:blur(.3px);opacity:.85}
+
+  /* Ground with grass + dirt path */
+  .ground{position:absolute;left:0;bottom:0;width:300%;height:210px;
+    background:
+      linear-gradient(180deg,#1e5c2a 0,#164a20 40%,#0f3418 100%);
+  }
+  .ground::before{ /* grass tufts */
+    content:"";position:absolute;inset:0;
+    background-image:
+      radial-gradient(circle at 20px 30px,#2a7a3a 2px,transparent 3px),
+      radial-gradient(circle at 60px 70px,#3a9048 2px,transparent 3px),
+      radial-gradient(circle at 120px 40px,#2a7a3a 2px,transparent 3px),
+      radial-gradient(circle at 180px 90px,#3a9048 2px,transparent 3px),
+      radial-gradient(circle at 240px 50px,#2a7a3a 2px,transparent 3px),
+      radial-gradient(circle at 320px 80px,#3a9048 2px,transparent 3px),
+      radial-gradient(circle at 420px 30px,#2a7a3a 2px,transparent 3px),
+      radial-gradient(circle at 500px 70px,#3a9048 2px,transparent 3px),
+      radial-gradient(circle at 580px 50px,#2a7a3a 2px,transparent 3px),
+      radial-gradient(circle at 660px 90px,#3a9048 2px,transparent 3px),
+      radial-gradient(circle at 740px 40px,#2a7a3a 2px,transparent 3px);
+    background-size:786px 210px;background-repeat:repeat-x;opacity:.9}
+  .path{position:absolute;left:0;bottom:60px;width:300%;height:70px;
+    background:
+      linear-gradient(180deg,#8a6a3d 0%,#6b4f28 45%,#4d3717 100%);
+    border-top:2px solid #a68450;border-bottom:2px solid #2a1c08;
+    box-shadow:inset 0 6px 12px rgba(0,0,0,.3),inset 0 -6px 12px rgba(0,0,0,.4)}
+  .path::before{content:"";position:absolute;inset:0;
+    background-image:
+      radial-gradient(circle at 30px 20px,#5a3f1a 3px,transparent 4px),
+      radial-gradient(circle at 90px 45px,#3d2a10 2px,transparent 3px),
+      radial-gradient(circle at 160px 15px,#a37a44 2px,transparent 3px),
+      radial-gradient(circle at 220px 50px,#5a3f1a 3px,transparent 4px),
+      radial-gradient(circle at 300px 25px,#3d2a10 2px,transparent 3px),
+      radial-gradient(circle at 380px 40px,#a37a44 2px,transparent 3px),
+      radial-gradient(circle at 460px 20px,#5a3f1a 3px,transparent 4px),
+      radial-gradient(circle at 540px 50px,#3d2a10 2px,transparent 3px),
+      radial-gradient(circle at 620px 30px,#a37a44 2px,transparent 3px),
+      radial-gradient(circle at 700px 15px,#5a3f1a 3px,transparent 4px);
+    background-size:786px 70px;background-repeat:repeat-x;opacity:.9}
+
+  /* Trees */
+  .trees{position:absolute;left:0;bottom:130px;width:300%;height:220px;pointer-events:none}
+  .tree{position:absolute;bottom:0;transform-origin:bottom center}
+  .tree .trunk{width:10px;height:32px;background:linear-gradient(90deg,#3a2410,#5a3820,#3a2410);
+    border-radius:2px;margin:0 auto;box-shadow:inset -2px 0 3px rgba(0,0,0,.5)}
+  .tree .foliage{width:60px;height:70px;border-radius:50% 50% 45% 45%;
+    background:radial-gradient(circle at 30% 30%,#3aa050,#1e6a2d 60%,#0f3a18);
+    box-shadow:inset -6px -8px 10px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.4);
+    position:relative;margin-bottom:-8px}
+  .tree.small .foliage{width:38px;height:44px}
+  .tree.small .trunk{width:7px;height:22px}
+  .tree.big .foliage{width:80px;height:96px}
+  .tree.big .trunk{width:13px;height:44px}
+  .tree.pine .foliage{border-radius:50% 50% 20% 20%;
+    background:radial-gradient(circle at 30% 20%,#2f8a48,#144e22 70%,#0a2d13)}
+
+  /* Rocks & bushes */
+  .rock{position:absolute;bottom:8px;width:22px;height:14px;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%,#8a8f9a,#4a4f5a 70%,#2a2e38);
+    box-shadow:0 2px 3px rgba(0,0,0,.5)}
+  .bush{position:absolute;bottom:6px;width:28px;height:18px;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%,#3a9048,#1e6a2d);
+    box-shadow:0 2px 4px rgba(0,0,0,.5)}
+
+  /* Characters */
+  .char{position:absolute;bottom:80px;width:36px;height:52px;z-index:10;transition:transform .15s}
+  .char .shadow{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
+    width:28px;height:6px;border-radius:50%;background:rgba(0,0,0,.5);filter:blur(2px)}
+  .char .body{position:absolute;inset:0}
+
+  /* Hero sprite */
+  .hero{left:60px}
+  .hero .head{position:absolute;top:0;left:8px;width:20px;height:20px;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%,#ffdfb0,#d9a56e);border:1px solid #6b4321}
+  .hero .hair{position:absolute;top:-2px;left:6px;width:24px;height:12px;border-radius:12px 12px 4px 4px;
+    background:linear-gradient(180deg,#3a2410,#1a0f06)}
+  .hero .eye{position:absolute;top:8px;width:3px;height:3px;background:#0a0a0a;border-radius:50%}
+  .hero .eye.l{left:12px}.hero .eye.r{left:20px}
+  .hero .torso{position:absolute;top:18px;left:6px;width:24px;height:22px;border-radius:6px 6px 4px 4px;
+    background:linear-gradient(180deg,#3d6bd6,#1e3f9a);border:1px solid #0e2266;
+    box-shadow:inset -2px -2px 4px rgba(0,0,0,.3)}
+  .hero .belt{position:absolute;top:36px;left:6px;width:24px;height:4px;background:#3a2410;border-top:1px solid #6b4321}
+  .hero .arm{position:absolute;top:20px;width:6px;height:16px;background:#d9a56e;border:1px solid #6b4321;border-radius:3px;transform-origin:top center}
+  .hero .arm.l{left:2px}.hero .arm.r{left:28px}
+  .hero .leg{position:absolute;top:38px;width:7px;height:14px;background:#2a1a08;border:1px solid #0a0500;border-radius:2px;transform-origin:top center}
+  .hero .leg.l{left:8px}.hero .leg.r{left:21px}
+  .hero .sword{position:absolute;top:14px;left:30px;width:3px;height:22px;
+    background:linear-gradient(180deg,#e8ecf5,#8a94a8);border:1px solid #2a2e38;transform:rotate(20deg);transform-origin:top}
+  .hero .sword::before{content:"";position:absolute;top:-4px;left:-3px;width:9px;height:3px;background:#a37a44;border-radius:2px}
+
+  /* Enemy sprites - variants */
+  .enemy{right:auto}
+  .enemy .head{position:absolute;top:0;left:8px;width:20px;height:20px;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%,#7fb84a,#3a6a1e);border:1px solid #1a3808}
+  .enemy .eye{position:absolute;top:8px;width:4px;height:4px;background:#ff2020;border-radius:50%;box-shadow:0 0 4px #ff2020}
+  .enemy .eye.l{left:11px}.enemy .eye.r{left:20px}
+  .enemy .fang{position:absolute;top:14px;left:14px;width:3px;height:4px;background:#fff;clip-path:polygon(50% 100%,0 0,100% 0)}
+  .enemy .torso{position:absolute;top:18px;left:5px;width:26px;height:22px;border-radius:6px;
+    background:linear-gradient(180deg,#8a3a2a,#4a1a10);border:1px solid #200800;
+    box-shadow:inset -2px -2px 4px rgba(0,0,0,.4)}
+  .enemy .arm{position:absolute;top:20px;width:6px;height:16px;background:#7fb84a;border:1px solid #1a3808;border-radius:3px;transform-origin:top center}
+  .enemy .arm.l{left:1px}.enemy .arm.r{left:29px}
+  .enemy .leg{position:absolute;top:38px;width:7px;height:14px;background:#2a1a08;border:1px solid #000;border-radius:2px;transform-origin:top center}
+  .enemy .leg.l{left:8px}.enemy .leg.r{left:21px}
+  .enemy .club{position:absolute;top:16px;left:-4px;width:6px;height:20px;background:linear-gradient(180deg,#6a4520,#3a2510);border:1px solid #1a0a02;border-radius:3px}
+  .enemy.v2 .head{background:radial-gradient(circle at 30% 30%,#b06ad0,#5a2d70)}
+  .enemy.v2 .torso{background:linear-gradient(180deg,#5a3a8a,#2a1858)}
+  .enemy.v3 .head{background:radial-gradient(circle at 30% 30%,#d9a038,#7a5a18)}
+  .enemy.v3 .torso{background:linear-gradient(180deg,#a06820,#5a3808)}
+  .enemy .hpbar{position:absolute;top:-10px;left:2px;width:32px;height:4px;background:#2a0a0a;border:1px solid #000;border-radius:2px;overflow:hidden}
+  .enemy .hpbar i{display:block;height:100%;background:linear-gradient(90deg,#ff3a3a,#ff8a3a);width:100%;transition:width .2s}
+
+  /* NUEVO - Punto 3: barra de HP sobre el héroe (profesional y compacta) */
+  .hero .hpbar{position:absolute;top:-12px;left:-2px;width:40px;height:5px;
+    background:linear-gradient(180deg,#0a0d1c,#1a1030);
+    border:1px solid #000;border-radius:3px;overflow:hidden;
+    box-shadow:0 0 4px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.15);z-index:5}
+  .hero .hpbar i{display:block;height:100%;width:100%;border-radius:2px;
+    background:linear-gradient(90deg,#3aff7a 0%,#7cffb0 50%,#3aff7a 100%);
+    box-shadow:0 0 6px rgba(58,255,122,.6), inset 0 1px 0 rgba(255,255,255,.35);
+    transition:width .25s ease-out}
+  .hero .hpbar i.mid{background:linear-gradient(90deg,#ffd76b,#ffb03a);box-shadow:0 0 6px rgba(255,180,60,.6),inset 0 1px 0 rgba(255,255,255,.35)}
+  .hero .hpbar i.low{background:linear-gradient(90deg,#ff3a3a,#ff6a3a);box-shadow:0 0 6px rgba(255,60,60,.7),inset 0 1px 0 rgba(255,255,255,.35)}
+
+  /* Walk animation for legs */
+  @keyframes walkL{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(20deg)}}
+  @keyframes walkR{0%,100%{transform:rotate(20deg)}50%{transform:rotate(-20deg)}}
+  .walking .leg.l,.walking .arm.r{animation:walkL .35s infinite ease-in-out}
+  .walking .leg.r,.walking .arm.l{animation:walkR .35s infinite ease-in-out}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1px)}}
+  .walking .body{animation:bob .35s infinite}
+
+  /* Attack impact */
+  .impact{position:absolute;width:40px;height:40px;pointer-events:none;z-index:15;
+    background:radial-gradient(circle,#fff4a0 0%,#ffb43a 30%,transparent 70%);
+    border-radius:50%;opacity:0;transform:scale(.3)}
+  .impact.show{animation:impact .35s forwards}
+  @keyframes impact{
+    0%{opacity:0;transform:scale(.2) rotate(0)}
+    30%{opacity:1;transform:scale(1.1) rotate(30deg)}
+    100%{opacity:0;transform:scale(1.6) rotate(60deg)}
+  }
+  .spark{position:absolute;width:6px;height:6px;background:#fff;border-radius:50%;
+    box-shadow:0 0 8px #ffcf5c;pointer-events:none}
+
+  .dmg{position:absolute;font-weight:900;font-size:14px;color:#fff;text-shadow:0 0 4px #000,0 2px 0 #a00; /* MODIFICADO */
+    pointer-events:none;z-index:20;animation:dmg .8s forwards}
+  .dmg.received{color:#ff3a3a;text-shadow:0 0 4px #000,0 2px 0 #5a0000} /* NUEVO */
+  .dmg.crit{font-size:18px;color:#ffe14a;text-shadow:0 0 4px #000,0 2px 0 #d97a00}
+  @keyframes dmg{0%{opacity:0;transform:translateY(0) scale(.5)}20%{opacity:1;transform:translateY(-10px) scale(1.2)}100%{opacity:0;transform:translateY(-40px) scale(1)}}
+
+  /* ============ BOTTOM 337 ============ */
+  .bottom{position:relative;width:100%;height:337px;
+    background:linear-gradient(180deg,#141833 0%,#0b0d17 100%);
+    border-top:2px solid #2a3266;padding:6px;display:flex;flex-direction:column;gap:6px;overflow:hidden}
+
+  .equip{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+  .slot{position:relative;height:62px;background:linear-gradient(180deg,#1e2447,#0f1328);
+    border:1px solid #3a4680;border-radius:8px;display:flex;flex-direction:column;
+    align-items:center;justify-content:space-between;padding:3px 2px; /* MODIFICADO - Punto 2 */
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 2px 3px rgba(0,0,0,.5)}
+  .slot .em{font-size:15px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))} /* MODIFICADO - Punto 2 */
+  .slot .val{font-size:15px;font-weight:900;color:#fff;line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.7)} /* NUEVO - Punto 2 */
+  .slot .nm{font-size:8px;font-weight:700;color:#c9d3ff;letter-spacing:.3px}
+  .slot .lv{position:absolute;top:2px;right:3px;font-size:8px;font-weight:800;color:#ffd76b;
+    background:#0a0d1c;border:1px solid #4c5aa0;border-radius:6px;padding:0 3px}
+
+
+  .kunai-row{display:flex;gap:5px;align-items:stretch;height:50px}
+  .k-main{flex:1.6;background:linear-gradient(180deg,#20264a,#0f1328);
+    border:1px solid #4c5aa0;border-radius:10px;display:flex;align-items:center;gap:6px;padding:4px 8px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 2px 4px rgba(0,0,0,.5)}
+  .kunai{width:32px;height:32px;position:relative;flex-shrink:0}
+  .kunai .blade{position:absolute;top:2px;left:12px;width:8px;height:20px;
+    background:linear-gradient(180deg,#e8ecf5,#8a94a8 60%,#4a4f5a);
+    clip-path:polygon(50% 0,100% 30%,100% 100%,0 100%,0 30%);
+    border:1px solid #2a2e38;box-shadow:0 0 4px rgba(126,233,255,.4)}
+  .kunai .handle{position:absolute;top:20px;left:10px;width:12px;height:9px;
+    background:linear-gradient(180deg,#3a2410,#1a0f06);border:1px solid #000;border-radius:2px}
+  .kunai .ring{position:absolute;top:27px;left:13px;width:6px;height:6px;border:2px solid #a37a44;border-radius:50%;background:transparent}
+  .k-info{display:flex;flex-direction:column;font-size:10px;color:#c9d3ff;font-weight:700;line-height:1.2}
+  .k-info b{color:#ffd76b;font-size:11px}
+
+  .k-side{flex:1;background:linear-gradient(180deg,#20264a,#0f1328);
+    border:1px solid #4c5aa0;border-radius:10px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;font-size:10px;color:#c9d3ff;font-weight:700;line-height:1.1;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 2px 4px rgba(0,0,0,.5)}
+  .k-side .em{font-size:15px;margin-bottom:1px}
+  .k-side b{color:#7ce9ff}
+
+  .actions{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;gap:5px;flex:1;min-height:0}
+  .btn{position:relative;border-radius:9px;font-weight:800;font-size:10.5px;
+    letter-spacing:.5px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.7);
+    background:linear-gradient(180deg,#3d55a8,#1e2f6a);
+    border:1px solid #6a7fd6;padding:4px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.25),inset 0 -3px 6px rgba(0,0,0,.35),0 3px 5px rgba(0,0,0,.5);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;min-height:0}
+  .btn .bi{font-size:18px;line-height:1}
+  .btn.evento{background:linear-gradient(180deg,#c43a6a,#7a1a3a);border-color:#ff6aa0}
+  .btn.mazm{background:linear-gradient(180deg,#5a3aa8,#2a1a5a);border-color:#a08aff}
+  .btn.batalla{background:linear-gradient(180deg,#c46a20,#7a3a08);border-color:#ffb060}
+  .btn.heroe{background:linear-gradient(180deg,#20a870,#0a5a3a);border-color:#6affc0}
+  .btn.clanes{background:linear-gradient(180deg,#2088c4,#0a4a7a);border-color:#6acfff}
+  .btn.tienda{background:linear-gradient(180deg,#c4a020,#7a5a08);border-color:#ffe06a}
+  .btn:active{transform:translateY(1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.15),inset 0 -2px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.5)}
+
+  /* NUEVO - Overlays de transición (PRÓXIMO MUNDO / FRACASO / EVADIDO) */
+  .big-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    z-index:60;pointer-events:none;opacity:0;transition:opacity .25s}
+  .big-overlay.show{opacity:1}
+  .big-overlay .card{padding:14px 26px;border-radius:14px;font-weight:900;letter-spacing:2px;
+    font-size:22px;text-align:center;text-shadow:0 2px 4px #000, 0 0 12px rgba(0,0,0,.8);
+    transform:scale(.7);transition:transform .35s cubic-bezier(.2,1.4,.4,1)}
+  .big-overlay.show .card{transform:scale(1)}
+  .next-world .card{color:#fff;
+    background:linear-gradient(135deg,#3d6bd6,#7a5cff 50%,#c43aa0);
+    border:2px solid #7ce9ff;
+    box-shadow:0 0 30px rgba(124,233,255,.7), inset 0 0 20px rgba(255,255,255,.2)}
+  .fracaso .card{color:#fff;
+    background:linear-gradient(135deg,#8a1010,#c43a3a 60%,#5a0808);
+    border:2px solid #ff6060;
+    box-shadow:0 0 30px rgba(255,60,60,.7), inset 0 0 20px rgba(0,0,0,.3)}
+  .evadido{position:absolute;font-weight:900;font-size:16px;color:#ffe14a;
+    text-shadow:0 0 6px rgba(0,0,0,.9),0 0 10px rgba(255,225,74,.6);
+    pointer-events:none;z-index:22;opacity:.85;animation:dmg .9s forwards;letter-spacing:1px}
+
+  /* NUEVO - Botón AVANZAR (bottom-right del escenario) */
+  .avanzar-btn{position:absolute;right:8px;bottom:8px;z-index:25;cursor:pointer;
+    padding:6px 12px;border-radius:10px;font-weight:900;font-size:11px;letter-spacing:1px;color:#fff;
+    background:linear-gradient(180deg,#ffcf5c,#c58a1c);
+    border:1px solid #ffe08a;
+    box-shadow:0 0 12px rgba(255,207,92,.7), inset 0 1px 0 rgba(255,255,255,.4), 0 3px 6px rgba(0,0,0,.5);
+    text-shadow:0 1px 2px rgba(0,0,0,.6);
+    animation:avPulse 1.2s infinite}
+  .avanzar-btn.hidden{display:none}
+  .avanzar-btn:active{transform:translateY(1px)}
+  @keyframes avPulse{0%,100%{box-shadow:0 0 12px rgba(255,207,92,.7), inset 0 1px 0 rgba(255,255,255,.4)}
+    50%{box-shadow:0 0 22px rgba(255,207,92,1), inset 0 1px 0 rgba(255,255,255,.4)}}
+
+  /* NUEVO - Rangos: hace clickable el chip "⭐ Nv" y el bloque KUNAI */
+  .k-side.clickable, .k-main.clickable{cursor:pointer;transition:filter .15s, transform .1s}
+  .k-side.clickable:hover, .k-main.clickable:hover{filter:brightness(1.15)}
+  .k-side.clickable:active, .k-main.clickable:active{transform:translateY(1px)}
+  .k-count{display:block;font-size:9px;color:#7ce9ff;font-weight:800;margin-top:1px}
+  /* [NUEVO] Estado ON del botón AUTO */
+  #autoKunai[data-on="1"]{background:linear-gradient(180deg,#20a870,#0a5a3a);border-color:#6affc0;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 0 12px rgba(106,255,192,.6)}
+  #autoKunai[data-on="1"] #autoState{color:#eafff0;text-shadow:0 0 6px rgba(106,255,192,.9)}
+
+
+  /* NUEVO - Overlay de RANGOS */
+  .rank-ov{position:fixed;inset:0;background:rgba(6,8,20,.55);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;z-index:200;padding:16px}
+  .rank-ov.show{display:flex}
+  .rank-panel{width:min(340px,92vw);background:linear-gradient(160deg,rgba(30,36,71,.94),rgba(15,19,40,.94));
+    border:2px solid #6a7fd6;border-radius:16px;padding:14px;
+    box-shadow:0 10px 40px rgba(0,0,0,.6),0 0 24px rgba(124,140,255,.4),inset 0 1px 0 rgba(255,255,255,.1);
+    color:#e8ecff}
+  .rank-panel h3{margin:0 0 10px;font-size:14px;letter-spacing:2px;text-align:center;color:#ffd76b;
+    text-shadow:0 2px 6px rgba(0,0,0,.7)}
+  .rank-close{position:absolute;top:10px;right:14px;font-size:20px;cursor:pointer;color:#fff;
+    background:rgba(0,0,0,.4);border-radius:50%;width:28px;height:28px;display:flex;
+    align-items:center;justify-content:center;line-height:1}
+  .rank-panel{position:relative}
+  .rank-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .rank-item{display:flex;align-items:center;justify-content:space-between;
+    padding:8px 12px;border-radius:10px;font-weight:900;font-size:12px;letter-spacing:1px;
+    border:1px solid rgba(0,0,0,.15);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 2px 4px rgba(0,0,0,.35)}
+  .rank-item .rn{text-shadow:0 1px 0 rgba(255,255,255,.4)}
+  .rank-item .rp{font-size:13px;font-weight:900}
+  .rank-item.locked{opacity:.85}
+  .rank-item.locked .rn::before{content:"🔒 "}
+  .rank-unlock{margin-top:6px;padding:10px;border-radius:10px;
+    background:linear-gradient(135deg,rgba(255,207,92,.15),rgba(196,138,28,.1));
+    border:1px dashed #ffcf5c;color:#ffe8b0;font-size:11px;line-height:1.4;text-align:center}
+  .rank-unlock b{color:#ffd76b}
+  .rank-unlock .pay-btn{margin-top:8px;display:inline-block;padding:6px 14px;border-radius:8px;
+    background:linear-gradient(180deg,#ffcf5c,#c58a1c);color:#2a1808;font-weight:900;font-size:11px;
+    letter-spacing:1px;border:1px solid #ffe08a;cursor:pointer;
+    box-shadow:0 2px 6px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.4)}
+  .rank-unlock .pay-btn[disabled]{opacity:.5;cursor:not-allowed;filter:grayscale(.5)}
+  .rank-unlock .pay-btn:not([disabled]):active{transform:translateY(1px)}
+
+  /* NUEVO - Fondo pastel por rango aplicado dinámicamente a los 8 slots del equipo */
+  .equip.rank-bg .slot{background:var(--rank-bg,linear-gradient(180deg,#1e2447,#0f1328));
+    border-color:var(--rank-bd,#3a4680)}
+  .equip.rank-bg .slot .em,.equip.rank-bg .slot .val,.equip.rank-bg .slot .nm{color:var(--rank-tx,#fff)}
+  .equip.rank-bg .slot .lv{color:var(--rank-tx,#ffd76b);background:rgba(0,0,0,.35);border-color:rgba(0,0,0,.25)}
+
+  /* [NUEVO] Recompensa de oro flotante al completar oleada */
+  .gold-reward{position:absolute;top:220px;left:50%;transform:translate(-50%,0) scale(.6);
+    z-index:60;pointer-events:none;opacity:0;font-weight:800;font-size:28px;color:#ffd76b;
+    text-shadow:0 2px 6px #000,0 0 12px rgba(255,215,107,.8);
+    transition:opacity .3s ease-out, transform .5s cubic-bezier(.2,1.4,.4,1)}
+  .gold-reward.show{opacity:1;transform:translate(-50%,-24px) scale(1)}
+
+  /* [NUEVO] Efecto de forja dentro del scroll KUNAI */
+  .forge-fx{position:absolute;inset:0;z-index:55;pointer-events:none;opacity:0;transition:opacity .2s}
+  .forge-fx.show{opacity:1}
+  .forge-fx .forge-glow{position:absolute;top:50%;left:50%;width:260px;height:260px;
+    transform:translate(-50%,-50%) scale(.3);border-radius:50%;
+    background:radial-gradient(circle,rgba(255,180,60,.9),rgba(255,90,20,.55) 40%,transparent 70%);
+    filter:blur(2px);animation:forgePulse .9s ease-out forwards}
+  .forge-fx .forge-sparks{position:absolute;top:50%;left:50%;width:6px;height:6px;
+    box-shadow:
+      0 0 0 2px #fff,
+      40px -20px 0 1px #ffd76b, -40px 20px 0 1px #ffd76b,
+      60px 30px 0 1px #ff8a3a, -60px -30px 0 1px #ff8a3a,
+      20px 60px 0 1px #ffe14a, -20px -60px 0 1px #ffe14a,
+      80px 0 0 1px #fff, -80px 0 0 1px #fff;
+    animation:forgeSparks .9s ease-out forwards}
+  @keyframes forgePulse{
+    0%{transform:translate(-50%,-50%) scale(.3);opacity:.2}
+    50%{transform:translate(-50%,-50%) scale(1.1);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(1.8);opacity:0}
+  }
+  /* [NUEVO] Shake del HUD y destello del botón KUNAI */
+  @keyframes hudShake{
+    0%,100%{transform:translate(0,0)}
+    15%{transform:translate(-3px,2px) rotate(-.4deg)}
+    30%{transform:translate(3px,-2px) rotate(.4deg)}
+    45%{transform:translate(-2px,-2px)}
+    60%{transform:translate(2px,2px)}
+    75%{transform:translate(-1px,1px)}
+    90%{transform:translate(1px,-1px)}
+  }
+  .app.shake{animation:hudShake .5s cubic-bezier(.36,.07,.19,.97) both}
+  @keyframes kunaiFlash{
+    0%{box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 2px 4px rgba(0,0,0,.5),0 0 0 0 rgba(255,215,107,0);filter:brightness(1)}
+    30%{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 22px 6px rgba(255,215,107,.95),0 0 40px 12px rgba(124,233,255,.55);filter:brightness(1.9) saturate(1.4)}
+    100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 2px 4px rgba(0,0,0,.5),0 0 0 0 rgba(255,215,107,0);filter:brightness(1)}
+  }
+  .k-main.flash{animation:kunaiFlash .55s ease-out both}
+  /* [NUEVO] Barra de progreso de forja - dentro del scroll KUNAI */
+  .k-main{position:relative}
+  .forge-progress{position:absolute;left:6px;right:6px;bottom:4px;
+    height:8px;background:rgba(10,13,28,.9);border:1px solid #4c5aa0;
+    border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08);
+    display:none;z-index:5}
+  .forge-progress.show{display:block}
+  .forge-progress .fp-fill{position:absolute;left:0;top:0;bottom:0;width:0%;
+    background:linear-gradient(90deg,#ffd76b,#ff8a3a 50%,#ff3a6a);
+    box-shadow:0 0 8px rgba(255,180,80,.9)}
+  .forge-progress .fp-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:7px;font-weight:800;letter-spacing:1.5px;color:#fff;text-shadow:0 1px 2px #000;z-index:2}
+  .forge-progress.show .fp-fill{animation:forgeFill .85s ease-out forwards}
+  @keyframes forgeFill{0%{width:0%}100%{width:100%}}
+
+  @keyframes forgeSparks{
+    0%{transform:translate(-50%,-50%) scale(.4) rotate(0);opacity:0}
+    30%{opacity:1}
+    100%{transform:translate(-50%,-50%) scale(1.8) rotate(180deg);opacity:0}
+  }
+
+  /* [NUEVO] Ventana de resultado de la forja */
+  /* MODIFICADO - Punto 3: la ventana de forja se centra dentro del panel superior (480px), no en toda la pantalla */
+  .forge-result{position:absolute;left:0;right:0;top:0;height:480px;z-index:70;display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,0);backdrop-filter:blur(0px);opacity:0;pointer-events:none;
+    transition:opacity .35s ease, background .35s ease, backdrop-filter .35s ease}
+  .forge-result.show{opacity:1;pointer-events:auto;background:rgba(0,0,0,.55);backdrop-filter:blur(3px)}
+  .forge-result .fr-card{width:260px;padding:16px;border-radius:14px;text-align:center;
+    background:linear-gradient(180deg,rgba(30,36,71,.85),rgba(15,19,40,.85));
+    border:1px solid #ffd76b;box-shadow:0 10px 30px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.1);
+    opacity:0;transform:scale(.7) translateY(14px);
+    transition:transform .45s cubic-bezier(.2,1.5,.35,1), opacity .35s ease}
+  .forge-result.show .fr-card{opacity:1;transform:scale(1) translateY(0)}
+  .forge-result .fr-title{color:#ffd76b;font-weight:800;letter-spacing:1px;font-size:14px;margin-bottom:10px;
+    text-shadow:0 0 8px rgba(255,215,107,.6)}
+  .forge-result .fr-item{display:flex;align-items:center;justify-content:center;gap:8px;margin:6px 0}
+  .forge-result .fr-em{font-size:26px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+  .forge-result .fr-nm{color:#fff;font-weight:700;font-size:15px}
+  .forge-result .fr-slot{color:#c9d3ff;font-size:11px;margin:4px 0 10px}
+  .forge-result .fr-lv{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;font-size:18px;margin-bottom:12px}
+  .forge-result .fr-old{color:#9aa5cf;text-decoration:line-through}
+  .forge-result .fr-arrow{color:#ffd76b}
+  .forge-result .fr-new{color:#7cff9a;text-shadow:0 0 8px rgba(124,255,154,.6)}
+  .forge-result .fr-close{background:linear-gradient(180deg,#ffd76b,#c99a2e);color:#3a2a08;border:none;
+    padding:6px 20px;border-radius:8px;font-weight:800;cursor:pointer;letter-spacing:1px;
+    box-shadow:0 2px 6px rgba(0,0,0,.5)}
+  .forge-result .fr-close:active{transform:translateY(1px)}
+
+  /* NUEVO - CRIPTA KUNAI: pantalla de combate ninja aislada */
+  .crypt-canvas-wrap{position:absolute;inset:0;z-index:12;display:none;overflow:hidden;background:#050308;box-shadow:inset 0 0 0 1px rgba(255,120,0,.25),inset 0 0 30px rgba(255,80,0,.3)}
+  .app.crypt-mode .crypt-canvas-wrap{display:block}
+  .app.crypt-mode .scene,.app.crypt-mode #hero,.app.crypt-mode #enemies,.app.crypt-mode #fx,.app.crypt-mode #avanzar,.app.crypt-mode .stars,.app.crypt-mode .moon{display:none}
+  .app.crypt-mode .world{min-width:130px}
+  .app.crypt-mode .world-title{font-size:11px;color:#ffd76b;justify-content:center;letter-spacing:1px}
+  .app.crypt-mode #world,.app.crypt-mode .stages{display:none}
+  .crypt-victory{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:13;background:radial-gradient(ellipse at center,rgba(0,0,0,.72),rgba(0,0,0,.9));pointer-events:none}
+  .crypt-victory.show{display:flex}
+  .crypt-victory .cv-banner{border-top:1px solid rgba(255,200,0,.45);border-bottom:1px solid rgba(255,200,0,.45);padding:12px 34px;text-align:center;animation:winPulse .8s ease-in-out infinite alternate}
+  .crypt-victory .cv-label{font-size:10px;letter-spacing:5px;color:#aa8800;font-weight:900}
+  .crypt-victory .cv-name{font-size:34px;font-weight:900;letter-spacing:4px;color:#ffd700;-webkit-text-stroke:1px rgba(255,200,0,.45)}
+  .crypt-victory .cv-sub{font-size:10px;letter-spacing:3px;color:#aaa;font-weight:900}
+  .crypt-rounds{position:absolute;left:10px;bottom:10px;z-index:14;color:#ffd76b;font-weight:900;font-size:11px;text-shadow:0 2px 4px #000;letter-spacing:1px}
+  .crypt-stop{position:absolute;right:10px;bottom:10px;z-index:15;background:rgba(20,8,8,.82);color:#ffd76b;border:1px solid rgba(255,215,107,.65);border-radius:9px;padding:6px 10px;font-size:10px;font-weight:900;letter-spacing:1px;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.55)} /* NUEVO */
+  .crypt-stop:active{transform:translateY(1px)} /* NUEVO */
+
+  /* NUEVO - Ventana de MAZMORRAS (pastel, combina con la paleta del juego) */
+  .mazm-ov{position:absolute;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;
+    opacity:0;pointer-events:none;transition:opacity .25s ease;background:rgba(20,15,40,.55);backdrop-filter:blur(4px)}
+  .mazm-ov.show{opacity:1;pointer-events:auto}
+  .mazm-card{width:100%;height:100%;display:flex;flex-direction:column;padding:20px 18px 18px;border-radius:0;
+    background:linear-gradient(180deg,#141833 0%,#1a1f38 55%,#0b0d17 100%);
+    border:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
+    transform:scale(.9);transition:transform .25s ease}
+  .mazm-ov.show .mazm-card{transform:scale(1)}
+  .mazm-title{text-align:center;color:#4a3a7a;font-weight:800;letter-spacing:2px;font-size:16px;margin-bottom:16px;
+    text-shadow:0 1px 0 rgba(255,255,255,.7)}
+  .mazm-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .mazm-currency{display:flex;justify-content:center;gap:14px;margin-top:16px}
+  .mazm-cur{display:flex;align-items:center;gap:6px;font-weight:800;font-size:15px;color:#4a3a7a;
+    background:linear-gradient(180deg,#fff5db,#ffe6a8);border:2px solid #e0b567;border-radius:12px;padding:6px 14px;
+    box-shadow:0 3px 8px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.7)}
+  .mazm-cur .emj{font-size:17px}
+  /* MODIFICADO - Mazmorras: tarjetas de dungeon temáticas y profesionales */
+  .mazm-scroll{position:relative;height:108px;border-radius:13px;cursor:pointer;user-select:none;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:9px 5px 7px;
+    border:1.5px solid rgba(255,255,255,.14);
+    box-shadow:0 6px 14px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.18),inset 0 -22px 30px rgba(0,0,0,.4);
+    transition:transform .18s ease,filter .18s ease,box-shadow .18s ease}
+  .mazm-scroll:hover{transform:translateY(-2px);filter:brightness(1.1);box-shadow:0 10px 18px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.25),inset 0 -22px 30px rgba(0,0,0,.4)}
+  .mazm-scroll:active{transform:translateY(1px) scale(.98)}
+  .mazm-scroll::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 18%,rgba(255,255,255,.28),transparent 60%);pointer-events:none;z-index:0}
+  .mazm-scroll::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent 0 9px,rgba(255,255,255,.035) 9px 10px);pointer-events:none;z-index:0}
+  .mazm-scroll > *{position:relative;z-index:1}
+  .mazm-icon{font-size:32px;line-height:1;filter:drop-shadow(0 3px 5px rgba(0,0,0,.7))}
+  .mazm-name{font-family:Georgia,serif;font-weight:900;font-size:11px;letter-spacing:1.1px;color:#fff;text-align:center;
+    text-shadow:0 2px 3px rgba(0,0,0,.8);line-height:1.1;padding:0 2px}
+  .mazm-badge{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.28);
+    border-radius:7px;padding:2px 5px;font-size:8px;font-weight:900;color:#fff;letter-spacing:1.4px;z-index:2;font-family:Georgia,serif}
+  .mazm-lock{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);border:1px solid rgba(255,215,107,.35);
+    border-radius:18px;padding:2px 6px;font-size:8px;font-weight:800;color:#ffd76b;letter-spacing:.5px;z-index:2}
+  .mazm-cost-pill{display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,.55);border:1px solid rgba(255,215,107,.55);
+    border-radius:14px;padding:2px 9px;font-weight:900;font-size:11px;color:#ffd76b;font-family:Georgia,serif}
+  .mazm-cost-pill.ok{color:#7effb0;border-color:rgba(126,255,176,.6)}
+  .mazm-cost-pill.no{color:#ff8a8a;border-color:rgba(255,138,138,.6)}
+  .mazm-cost-pill .emj{font-size:12px}
+  /* Fondos temáticos por mazmorra */
+  .mazm-scroll.t1{background:linear-gradient(160deg,#2a0f2e 0%,#5a1a7a 55%,#0a0518 100%)}
+  .mazm-scroll.t2{background:linear-gradient(160deg,#0a2818 0%,#1e6a3a 55%,#04180d 100%)}
+  .mazm-scroll.t3{background:linear-gradient(160deg,#3a0f0f 0%,#a02828 55%,#180404 100%)}
+  .mazm-scroll.t4{background:linear-gradient(160deg,#0f2440 0%,#2a78c0 55%,#04101c 100%)}
+  .mazm-scroll.t5{background:linear-gradient(160deg,#2a2000 0%,#a58020 55%,#1a1200 100%)}
+  .mazm-scroll.t6{background:linear-gradient(160deg,#1a0a04 0%,#a03a08 55%,#180a04 100%)}
+
+
+  /* NUEVO - Vista HÉROE limitada al cuadro superior */
+  .hero-view{position:absolute;inset:0;z-index:65;display:none;overflow:hidden;
+    background:linear-gradient(180deg,#141833 0%,#1a1f38 52%,#0b0d17 100%);
+    border:1px solid rgba(106,255,192,.22);padding:10px;pointer-events:auto}
+  .hero-view.show{display:flex;flex-direction:column}
+  .hero-view-title{text-align:center;color:#ffd76b;font-weight:900;font-size:15px;letter-spacing:2px;margin-bottom:8px;text-shadow:0 2px 5px #000} /* NUEVO - HÉROE */
+  .hero-view-top{flex:0 0 44%;display:grid;grid-template-columns:1fr 1fr;gap:8px;min-height:0} /* MODIFICADO - HÉROE */
+  .hero-preview{position:relative;border:1px solid #3a4680;border-radius:12px;background:radial-gradient(ellipse at center,#2a3560,#0b0d17 72%);overflow:hidden}
+  .hero-preview .char{position:absolute;left:50%;bottom:54px;transform:translateX(-50%) scale(2.2);transform-origin:bottom center}
+  .hero-preview .char .hpbar{display:none}
+  .hero-live-stats{display:grid;grid-template-rows:repeat(4,1fr);gap:6px}
+  .hero-stat{display:flex;align-items:center;justify-content:space-between;border:1px solid #3a4680;border-radius:10px;
+    background:linear-gradient(180deg,#20264a,#0f1328);padding:6px 8px;font-size:12px;font-weight:900;color:#c9d3ff}
+  .hero-stat b{color:#fff;font-size:13px;text-shadow:0 1px 2px #000}
+  .hero-view-bottom{flex:1;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:7px;padding-top:10px;min-height:0} /* MODIFICADO - HÉROE */
+  .hero-eq-slot{position:relative;border:1px solid #3a4680;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.45);overflow:hidden} /* MODIFICADO - HÉROE */
+  .hero-eq-slot{background:#141833}
+  .hero-eq-slot .he-em{font-size:25px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.7))} /* MODIFICADO - HÉROE */
+  .hero-eq-slot .he-plus{font-size:17px;line-height:1;font-weight:900;color:#ffd76b;text-shadow:0 1px 2px #000} /* MODIFICADO - HÉROE */
+  .hero-eq-slot .he-name{position:absolute;left:0;right:0;top:5px;text-align:center;font-size:8px;font-weight:800;color:#c9d3ff;letter-spacing:.5px} /* MODIFICADO - HÉROE */
+
+  /* NUEVO - Aviso de oro insuficiente con fondo transparente */
+  .mazm-warn{position:absolute;inset:0;z-index:90;display:none;align-items:center;justify-content:center;
+    background:transparent}
+  .mazm-warn.show{display:flex}
+  .mazm-warn-box{background:rgba(20,24,51,.72);color:#fff;border:2px solid #a08aff;border-radius:14px;
+    padding:16px 20px;font-weight:800;font-size:14px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.5);
+    backdrop-filter:blur(2px);max-width:80%}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ TOP ============ -->
+  <div class="top" id="top">
+    <div class="stars"></div>
+    <div class="moon"></div>
+
+    <div class="scene">
+      <div class="parallax" id="parallax">
+        <div class="mountains"></div>
+        <div class="ground"></div>
+        <div class="path"></div>
+        <div class="trees" id="trees"></div>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="char hero walking" id="hero">
+      <div class="hpbar"><i id="heroHpFill"></i></div><!-- NUEVO - Punto 3 -->
+      <div class="shadow"></div>
+      <div class="body">
+        <div class="hair"></div>
+        <div class="head"></div>
+        <div class="eye l"></div><div class="eye r"></div>
+        <div class="torso"></div>
+        <div class="belt"></div>
+        <div class="arm l"></div><div class="arm r"></div>
+        <div class="leg l"></div><div class="leg r"></div>
+        <div class="sword"></div>
+      </div>
+    </div>
+
+    <div id="enemies"></div>
+    <div id="fx"></div>
+    <!-- NUEVO - Botón AVANZAR (oculto por defecto) -->
+    <div id="avanzar" class="avanzar-btn hidden">📜 AVANZAR</div>
+
+    <!-- NUEVO - CRIPTA KUNAI: canvas de batalla aislado dentro de la opción -->
+    <div id="cryptBattle" class="crypt-canvas-wrap">
+      <canvas id="cryptCanvas" width="393" height="480"></canvas>
+      <div id="cryptRounds" class="crypt-rounds"></div>
+      <button id="cryptStop" class="crypt-stop">DETENER</button><!-- NUEVO -->
+      <div id="cryptVictory" class="crypt-victory"><div class="cv-banner"><div class="cv-label">VENCEDOR</div><div id="cryptWinName" class="cv-name">KAITO</div><div class="cv-sub">★ VICTORIA ★</div></div></div>
+    </div>
+
+    <!-- NUEVO - Ventana de MAZMORRAS (ocupa todo el cuadro superior) -->
+    <div id="mazmOv" class="mazm-ov">
+      <div class="mazm-card">
+        <div class="mazm-title">✦ MAZMORRAS ✦</div>
+        <div class="mazm-grid">
+          <div class="mazm-scroll t1" data-mazm="1">
+            <span class="mazm-badge">I</span>
+            <span class="mazm-icon">🗡️</span>
+            <span class="mazm-name">CRIPTA KUNAI</span>
+            <span class="mazm-cost-pill"><span class="emj">💰</span><span id="criptaKunaiCost">40</span><!-- MODIFICADO --></span>
+          </div>
+          <div class="mazm-scroll t2" data-mazm="2">
+            <span class="mazm-badge">II</span>
+            <span class="mazm-icon">🌲</span><!-- MODIFICADO -->
+            <span class="mazm-name">BOSQUE SOMBRÍO</span>
+            <span class="mazm-cost-pill"><span class="emj">💰</span><span class="criptaKunaiCostMirror">40</span></span><!-- NUEVO -->
+          </div>
+          <div class="mazm-scroll t3" data-mazm="3">
+            <span class="mazm-badge">III</span>
+            <span class="mazm-lock">🔒</span>
+            <span class="mazm-icon">🐉</span>
+            <span class="mazm-name">TEMPLO DRAGÓN</span>
+          </div>
+          <div class="mazm-scroll t4" data-mazm="4">
+            <span class="mazm-badge">IV</span>
+            <span class="mazm-lock">🔒</span>
+            <span class="mazm-icon">❄️</span>
+            <span class="mazm-name">RUINAS DE HIELO</span>
+          </div>
+          <div class="mazm-scroll t5" data-mazm="5">
+            <span class="mazm-badge">V</span>
+            <span class="mazm-lock">🔒</span>
+            <span class="mazm-icon">🔮</span>
+            <span class="mazm-name">TORRE ARCANA</span>
+          </div>
+          <div class="mazm-scroll t6" data-mazm="6">
+            <span class="mazm-badge">VI</span>
+            <span class="mazm-lock">🔒</span>
+            <span class="mazm-icon">🔥</span>
+            <span class="mazm-name">ABISMO INFERNAL</span>
+          </div>
+
+        </div>
+        <div class="mazm-currency">
+          <div class="mazm-cur"><span class="emj">💰</span><span id="mazmGold">0</span></div>
+          <div class="mazm-cur"><span class="emj">💎</span><span id="mazmGem">0</span></div>
+        </div>
+        <!-- NUEVO - Aviso de oro insuficiente (fondo transparente) -->
+        <div id="mazmWarn" class="mazm-warn"><div class="mazm-warn-box">No tienes el oro suficiente para entrar a CRIPTA KUNAI</div></div>
+      </div>
+    </div>
+
+
+    <!-- NUEVO - Vista HÉROE (solo ocupa el cuadro superior) -->
+    <div id="heroView" class="hero-view">
+      <div class="hero-view-title">HÉROE</div><!-- NUEVO - HÉROE -->
+      <div class="hero-view-top">
+        <div class="hero-preview"><div id="heroViewSprite" class="char hero walking"></div></div>
+        <div class="hero-live-stats">
+          <div class="hero-stat"><span>❤️ HP</span><b id="hvHp">0</b></div>
+          <div class="hero-stat"><span>⚔️ ATAQUE</span><b id="hvAtk">0</b></div>
+          <div class="hero-stat"><span>🛡️ DEFENSA</span><b id="hvDef">0</b></div>
+          <div class="hero-stat"><span>🔄 REGEN</span><b id="hvRegen">0</b></div>
+        </div>
+      </div>
+      <div class="hero-view-bottom" id="heroEquipView"></div>
+    </div>
+
+    <!-- NUEVO - Overlays PRÓXIMO MUNDO / FRACASO -->
+    <div id="nextWorldOv" class="big-overlay next-world"><div class="card">PRÓXIMO MUNDO</div></div>
+    <div id="fracasoOv" class="big-overlay fracaso"><div class="card">FRACASO</div></div>
+
+    <!-- HUD -->
+    <div class="hud">
+      <div class="hud-row">
+        <div class="chip gold"><span class="emj">💰</span><span id="gold">0</span></div>
+        <div class="chip gem"><span class="emj">💎</span><span id="gem">0</span></div>
+        <div class="chip power"><span class="emj">⚡</span><span id="power">120</span></div>
+        <div class="world">
+          <div class="world-title"><span id="worldLabel">Mundo</span> <span id="world">1</span></div><!-- MODIFICADO: CRIPTA KUNAI cambia este título a NINJA -->
+          <div class="stages" id="stages">
+            <div class="stage"></div><div class="stage"></div><div class="stage"></div>
+          </div>
+          <!-- NUEVO - Punto 4: stats de la oleada actual, integrado bajo el scroll MUNDO -->
+          <div class="wave-stats" id="waveStats">
+            <div class="ws hp"><span class="we">❤️</span><span id="wsHp">0</span></div>
+            <div class="ws atk"><span class="we">⚔️</span><span id="wsAtk">0</span></div>
+            <div class="ws def"><span class="we">🛡️</span><span id="wsDef">0</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="hud-row">
+        <div class="hero-name">🥷 <span id="hname">Kaito el Errante</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ BOTTOM ============ -->
+  <div class="bottom">
+    <div class="equip rank-bg" id="equipGrid"><!-- MODIFICADO: id + clase rank-bg para color por rango -->
+      <!-- MODIFICADO - Puntos 1, 2 y 3: valores iniciales, orden emoji/valor/nombre y lv=1 -->
+      <div class="slot"><span class="lv">1</span><span class="em">❤️</span><span class="val">100</span><span class="nm">HP</span></div>
+      <div class="slot"><span class="lv">1</span><span class="em">⚔️</span><span class="val">15</span><span class="nm">ATAQUE</span></div>
+      <div class="slot"><span class="lv">1</span><span class="em">🛡️</span><span class="val">5</span><span class="nm">DEFENSA</span></div>
+      <div class="slot"><span class="lv">1</span><span class="em">💨</span><span class="val">4</span><span class="nm">AGILIDAD</span></div>
+      <div class="slot"><span class="lv">1</span><span class="em">💥</span><span class="val">0.15%</span><span class="nm">CRÍTICO</span></div>
+      <div class="slot"><span class="lv">1</span><span class="em">👟</span><span class="val">7</span><span class="nm">VELOCIDAD</span></div>
+      <div class="slot"><span class="lv">1</span><span class="em">🌀</span><span class="val">0.09%</span><span class="nm">EVASIÓN</span></div>
+      <div class="slot"><span class="lv">1</span><span class="em">🔄</span><span class="val">0.01</span><span class="nm">REGEN</span></div>
+    </div>
+
+    <div class="kunai-row">
+      <div class="k-main clickable" id="kunaiMain"><!-- MODIFICADO: clickable -->
+        <div class="kunai"><div class="blade"></div><div class="handle"></div><div class="ring"></div></div>
+        <div class="k-info" style="flex:1;align-items:center;justify-content:center;text-align:center">
+          <span><b style="color:#ffd76b;font-size:11px">KUNAI</b></span><!-- MODIFICADO: renombrado -->
+          <span class="k-count">x<b id="kunaiCount">10</b></span><!-- MODIFICADO: contador inicial -->
+        </div>
+        <div id="forgeProgress" class="forge-progress"><div class="fp-fill"></div><div class="fp-label">FORJANDO...</div></div>
+      </div>
+      <div class="k-side clickable" id="rankChip"><span class="em">⭐</span><b id="rankChipName">Común</b></div><!-- MODIFICADO: abre overlay Rangos -->
+      <div class="k-side clickable" id="autoKunai" data-on="0"><span class="em">⚙️</span><b>Auto: <span id="autoState">OFF</span></b></div>
+    </div>
+
+
+    <div class="actions">
+      <div class="btn evento"><span class="bi">🎉</span>EVENTO</div>
+      <div class="btn mazm"><span class="bi">🏰</span>MAZMORRAS</div>
+      <div class="btn batalla"><span class="bi">⚔️</span>BATALLA</div>
+      <div class="btn heroe"><span class="bi">🥷</span>HÉROE</div>
+      <div class="btn clanes"><span class="bi">🛡️</span>CLANES</div>
+      <div class="btn tienda"><span class="bi">🛒</span>TIENDA</div>
+    </div>
+  </div>
+
+  <!-- [NUEVO] Recompensa de oro flotante (dentro de .app) -->
+  <div id="goldReward" class="gold-reward"></div>
+  <!-- [NUEVO] Efecto visual de forja -->
+  <div id="forgeFx" class="forge-fx"><div class="forge-glow"></div><div class="forge-sparks"></div></div>
+  <!-- [NUEVO] Ventana de resultado de la forja -->
+  <div id="forgeResult" class="forge-result">
+    <div class="fr-card">
+      <div class="fr-title">✦ FORJA COMPLETA ✦</div>
+      <div class="fr-item"><span id="frEm" class="fr-em"></span><span id="frNm" class="fr-nm"></span></div>
+      <div class="fr-slot">Slot: <span id="frSlot"></span></div>
+      <div class="fr-lv"><span class="fr-old" id="frOld"></span><span class="fr-arrow">➜</span><span class="fr-new" id="frNew"></span></div>
+      <button id="frClose" class="fr-close">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- NUEVO - Overlay de Rangos (⭐ Nv) -->
+<div class="rank-ov" id="rankOv">
+  <div class="rank-panel">
+    <div class="rank-close" id="rankClose">×</div>
+    <h3>⭐ RANGOS</h3>
+    <div class="rank-list" id="rankList"></div>
+    <div class="rank-unlock" id="rankUnlock">
+      Para desbloquear el siguiente rango necesitas <b>10.000 💰</b> y tener los <b>8 equipos</b> del rango actual al <b>nivel 100</b>.
+      <br><button class="pay-btn" id="rankPay" disabled>Pagar 10.000 💰</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // Populate trees & decorations across a single tile, then duplicate for seamless scroll
+  const treesEl = document.getElementById('trees');
+  const rand = (a,b) => a + Math.random()*(b-a);
+  const TILE = 786;
+  function buildTile(offset){
+    for (let i=0;i<26;i++){
+      const type = Math.random();
+      const t = document.createElement('div');
+      t.className = 'tree' + (type<.3?' small':type>.75?' big':'') + (Math.random()<.4?' pine':'');
+      t.style.left = (offset + i*30 + rand(-6,6)) + 'px';
+      t.style.bottom = rand(0, 40) + 'px';
+      t.style.zIndex = Math.floor(rand(1,5));
+      t.innerHTML = '<div class="foliage"></div><div class="trunk"></div>';
+      treesEl.appendChild(t);
+    }
+    for (let i=0;i<14;i++){
+      const r = document.createElement('div');
+      r.className = Math.random()<.5?'rock':'bush';
+      r.style.left = (offset + i*56 + rand(-10,10)) + 'px';
+      treesEl.appendChild(r);
+    }
+  }
+  buildTile(0);
+  buildTile(TILE);
+  buildTile(TILE*2);
+
+  // State
+  const state = {
+    gold: 0, gem: 0, power: 120, world: 1, lv: 1, stage: 0,
+    scrollX: 0, scrolling: true,
+    inBattle: false,
+    waveTimer: 3000,
+    transitioning: false,
+    heroViewOpen: false, // NUEVO - HÉROE: pausa aislada del cuadro superior
+    // NUEVO - Puntos 4/5: modo retroceso y control de progreso
+    retreat: false,        // true = fue devuelto al mundo anterior
+    retreatFrom: 0,        // mundo original antes de perder
+    avanzarUnlocked: false // scroll AVANZAR habilitado tras oleada 3 en retroceso
+  };
+  // NUEVO - Puntos 6/7: stats sincronizados con los 8 slots del personaje
+  const stats = {
+    hp: 100, hpMax: 100,
+    atk: 15, def: 5, agi: 4,
+    crit: 0.15,   // % base, rango 0.15 - 100
+    vel: 7,
+    eva: 0.09,    // % base, rango 0.09 - 100
+    regen: 0.01   // HP por segundo
+  };
+  const $ = id => document.getElementById(id);
+  // NUEVO - HÉROE: mejoras propias de los 6 slots (50% del valor inicial del panel principal)
+  const heroEquipState = {
+    levels: [0,0,0,0,0,0],
+    maxLevel: 200,
+    stats: {hpMax:50, atk:7.5, def:2.5, agi:2, vel:3.5, regen:0.005}
+  };
+  // NUEVO - HÉROE: lectura efectiva = panel principal + bonus de la vista HÉROE
+  function heroBonus(key){ return heroEquipState.stats[key] || 0; }
+  function effectiveStat(key){ return (stats[key] || 0) + heroBonus(key); }
+  const parallax = $('parallax');
+  const hero = $('hero');
+  const enemiesLayer = $('enemies');
+  const fxLayer = $('fx');
+  const stagesEl = $('stages');
+  const avanzarBtn = $('avanzar'); // NUEVO
+  const nextWorldOv = $('nextWorldOv'); // NUEVO
+  const fracasoOv = $('fracasoOv');     // NUEVO
+
+  const heroBaseX = 60;
+  let heroX = heroBaseX;
+  const heroCenterX = 393/2 - 18;
+
+  // NUEVO - Punto 6: refs a los 8 slots (.val) para sincronización visual
+  const slotVals = document.querySelectorAll('.equip .slot .val');
+  // NUEVO - Punto 3: refs a la barra de HP del héroe
+  const heroHpFill = $('heroHpFill');
+  // NUEVO - Punto 4: refs al panel de stats de oleada
+  const wsHpEl = $('wsHp'), wsAtkEl = $('wsAtk'), wsDefEl = $('wsDef');
+
+  // NUEVO - Punto 2: formateo compacto K/M/B... aplicable a todo número mostrado en el juego.
+  // Reglas: <1000 sin unidad; k conserva ceros (1.00k, 1.75k, 37.4k, 137k); M+ recorta ceros (1M, 1.39M, 631M).
+  function fmt(n){
+    if (typeof n !== 'number' || !isFinite(n)) return String(n);
+    const neg = n < 0; let v = Math.abs(n);
+    if (v < 1000) return (neg?'-':'') + (Math.round(v*100)/100);
+    const units = ['k','M','B','T','Q'];
+    let u = -1;
+    while (v >= 1000 && u < units.length - 1){ v /= 1000; u++; }
+    const dec = v < 10 ? 2 : v < 100 ? 1 : 0;
+    let s = v.toFixed(dec);
+    if (u > 0 && s.indexOf('.') >= 0) s = s.replace(/\.?0+$/,''); // recorta ceros desde M
+    return (neg?'-':'') + s + units[u];
+  }
+  // NUEVO - Punto 1: poder total real = sumatoria de los 8 atributos provenientes de los slots
+  function computePower(){
+    return Math.round(effectiveStat('hpMax') + effectiveStat('atk') + effectiveStat('def') + effectiveStat('agi') + stats.crit + effectiveStat('vel') + stats.eva + effectiveStat('regen')); // MODIFICADO - HÉROE
+  }
+  // MODIFICADO - Punto 2: aplico fmt() a los valores numéricos de los slots
+  function syncStats(){
+    slotVals[0].textContent = fmt(stats.hpMax); // MODIFICADO
+    slotVals[1].textContent = fmt(stats.atk);   // MODIFICADO
+    slotVals[2].textContent = fmt(stats.def);   // MODIFICADO
+    slotVals[3].textContent = fmt(stats.agi);   // MODIFICADO
+    slotVals[4].textContent = stats.crit.toFixed(2) + '%';
+    slotVals[5].textContent = fmt(stats.vel);   // MODIFICADO
+    slotVals[6].textContent = stats.eva.toFixed(2) + '%';
+    slotVals[7].textContent = stats.regen.toFixed(2);
+    updateHeroHpBar(); // NUEVO - Punto 3
+    updateHeroView(); // NUEVO - HÉROE: mantiene la vista sincronizada en tiempo real
+  }
+  // NUEVO - Punto 3: actualiza la barra de HP sobre el héroe (color según %)
+  function updateHeroHpBar(){
+    if (!heroHpFill) return;
+    const pct = Math.max(0, Math.min(100, (stats.hp / effectiveStat('hpMax')) * 100)); // MODIFICADO - HÉROE
+    heroHpFill.style.width = pct + '%';
+    heroHpFill.classList.remove('mid','low');
+    if (pct <= 30) heroHpFill.classList.add('low');
+    else if (pct <= 60) heroHpFill.classList.add('mid');
+  }
+  // NUEVO - Punto 4: actualiza el panel de stats de la oleada actual
+  function updateWaveStats(){
+    const st = enemyStatsFor(state.world, state.stage);
+    if (wsHpEl)  wsHpEl.textContent  = fmt(st.hp);  // MODIFICADO - Punto 2
+    if (wsAtkEl) wsAtkEl.textContent = fmt(st.atk); // MODIFICADO - Punto 2
+    if (wsDefEl) wsDefEl.textContent = fmt(st.def); // MODIFICADO - Punto 2
+  }
+  syncStats();
+
+  // MODIFICADO - Costo dinámico de CRIPTA KUNAI: base 40, +25% por cada mundo a partir del mundo 2
+  function criptaKunaiCost(){
+    return Math.ceil(40 * Math.pow(1.25, Math.max(0, state.world - 1))); // MODIFICADO
+  }
+  // NUEVO - Refresca el número y el color del costo según el oro disponible
+  function updCriptaKunai(){
+    const els = [document.getElementById('criptaKunaiCost'), ...document.querySelectorAll('.criptaKunaiCostMirror')].filter(Boolean); // MODIFICADO
+    if (!els.length) return;
+    const cost = criptaKunaiCost();
+    els.forEach(el=>{el.textContent = fmt(cost); const wrap = el.closest('.mazm-cost-pill') || el.closest('.mazm-dgn-cost'); if (wrap){wrap.classList.toggle('ok', state.gold >= cost); wrap.classList.toggle('no', state.gold < cost);}}); // MODIFICADO
+  }
+
+  function updHUD(){
+    $('gold').textContent = fmt(state.gold);          // MODIFICADO - Punto 2
+    $('gem').textContent  = fmt(state.gem);           // MODIFICADO - Punto 2
+    const mg = document.getElementById('mazmGold'); if (mg) mg.textContent = fmt(state.gold); // NUEVO - oro en MAZMORRAS
+    const mgm = document.getElementById('mazmGem'); if (mgm) mgm.textContent = fmt(state.gem); // NUEVO - gemas en MAZMORRAS
+    updCriptaKunai(); // NUEVO - actualiza costo/color de CRIPTA KUNAI
+    $('power').textContent = fmt(computePower());     // MODIFICADO - Puntos 1 y 2: poder total real
+    $('world').textContent = state.world;
+    [...stagesEl.children].forEach((el,i)=>{
+      el.className = 'stage' + (i<state.stage?' done':i===state.stage?' active':'');
+    });
+    updateWaveStats(); // NUEVO - Punto 4: refresca stats de oleada al cambiar mundo/etapa
+  }
+  updHUD();
+
+  // NUEVO - HÉROE: render y control de la vista superior aislada
+  const heroViewEl = $('heroView');
+  const heroEquipViewEl = $('heroEquipView');
+  const heroViewSpriteEl = $('heroViewSprite');
+  const heroPanelStats = [
+    {key:'hpMax', label:'HP', em:'❤️'},
+    {key:'atk', label:'ATAQUE', em:'⚔️'},
+    {key:'def', label:'DEFENSA', em:'🛡️'},
+    {key:'agi', label:'AGILIDAD', em:'💨'},
+    {key:'vel', label:'VELOCIDAD', em:'👟'},
+    {key:'regen', label:'REGEN', em:'🔄'}
+  ];
+  if (heroViewSpriteEl){
+    heroViewSpriteEl.innerHTML = hero.innerHTML; // NUEVO - HÉROE: reutiliza el sprite existente sin tocar el original
+  }
+  function renderHeroEquipView(){
+    if (!heroEquipViewEl) return;
+    heroEquipViewEl.innerHTML = '';
+    heroPanelStats.forEach((meta, i)=>{
+      const slot = document.createElement('div');
+      slot.className = 'hero-eq-slot';
+      slot.innerHTML = `<span class="he-name">${meta.label}</span><span class="he-em">${meta.em}</span><span class="he-plus" id="hePlus${i}">+${heroEquipState.levels[i]}</span>`;
+      heroEquipViewEl.appendChild(slot);
+    });
+  }
+  function updateHeroView(){
+    if ($('hvHp')) $('hvHp').textContent = fmt(effectiveStat('hpMax'));
+    if ($('hvAtk')) $('hvAtk').textContent = fmt(effectiveStat('atk'));
+    if ($('hvDef')) $('hvDef').textContent = fmt(effectiveStat('def'));
+    if ($('hvRegen')) $('hvRegen').textContent = effectiveStat('regen').toFixed(3);
+    heroEquipState.levels.forEach((lv,i)=>{ const el = $('hePlus'+i); if (el) el.textContent = '+' + lv; });
+  }
+  function improveHeroSlot(slotIdx){
+    if (slotIdx < 0 || slotIdx >= heroPanelStats.length || heroEquipState.levels[slotIdx] >= heroEquipState.maxLevel) return false;
+    const key = heroPanelStats[slotIdx].key;
+    heroEquipState.stats[key] = Math.round((heroEquipState.stats[key] * 1.03) * 100000) / 100000;
+    heroEquipState.levels[slotIdx]++;
+    stats.hp = Math.min(effectiveStat('hpMax'), stats.hp);
+    updateHeroView();
+    updHUD();
+    return true;
+  }
+  renderHeroEquipView();
+  updateHeroView();
+
+
+  function spark(x,y,color='#ffe14a'){
+    for(let i=0;i<8;i++){
+      const s = document.createElement('div');
+      s.className='spark';
+      s.style.left=x+'px';s.style.top=y+'px';
+      s.style.background=color;
+      s.style.boxShadow='0 0 8px '+color;
+      const ang = Math.random()*Math.PI*2, dist = 15+Math.random()*20;
+      s.style.transition='transform .4s ease-out, opacity .4s';
+      fxLayer.appendChild(s);
+      requestAnimationFrame(()=>{
+        s.style.transform=`translate(${Math.cos(ang)*dist}px,${Math.sin(ang)*dist}px)`;
+        s.style.opacity='0';
+      });
+      setTimeout(()=>s.remove(),450);
+    }
+  }
+  function impactAt(x,y){
+    const im = document.createElement('div');
+    im.className='impact show';
+    im.style.left=(x-20)+'px';im.style.top=(y-20)+'px';
+    fxLayer.appendChild(im);
+    setTimeout(()=>im.remove(),400);
+    spark(x,y);
+  }
+  function damageText(x,y,val,crit,received=false){ // MODIFICADO
+    const d = document.createElement('div');
+    d.className='dmg'+(received?' received':'')+(crit?' crit':''); // MODIFICADO
+    d.textContent = (crit?'¡':'')+fmt(val)+(crit?'!':''); // MODIFICADO - Punto 2
+    d.style.left=x+'px';d.style.top=y+'px';
+    fxLayer.appendChild(d);
+    setTimeout(()=>d.remove(),800);
+  }
+
+  // MODIFICADO - Punto 4: enemy factory con stats base (HP 40, ATK 7, DEF 3)
+  // y escalado +10% acumulativo por oleada global superada.
+  // Determinístico por (mundo, oleada) -> al retroceder (Punto 5) los enemigos
+  // conservan exactamente las mismas estadísticas originales de ese mundo.
+  function enemyStatsFor(world, stage){
+    const wavesCleared = (world - 1) * 3 + stage; // oleadas superadas antes de esta
+    const mult = Math.pow(1.10, wavesCleared);
+    return {
+      hp:  Math.round(40 * mult),
+      atk: Math.round(7  * mult * 10) / 10,
+      def: Math.round(3  * mult * 10) / 10
+    };
+  }
+
+  function makeEnemy(offset){
+    const e = document.createElement('div');
+    const variant = ['','v2','v3'][Math.floor(Math.random()*3)];
+    e.className = 'char enemy walking ' + variant;
+    e.style.left = (393 + offset) + 'px';
+    e.style.transform = 'scaleX(-1)';
+    const st = enemyStatsFor(state.world, state.stage); // MODIFICADO - Punto 4/5
+    e.dataset.hp = st.hp; e.dataset.max = st.hp;
+    e.dataset.atk = st.atk;
+    e.dataset.def = st.def;
+    e.innerHTML = `
+      <div class="hpbar"><i></i></div>
+      <div class="shadow"></div>
+      <div class="body">
+        <div class="head"></div>
+        <div class="eye l"></div><div class="eye r"></div>
+        <div class="fang"></div>
+        <div class="torso"></div>
+        <div class="arm l"></div><div class="arm r"></div>
+        <div class="leg l"></div><div class="leg r"></div>
+        <div class="club"></div>
+      </div>`;
+    enemiesLayer.appendChild(e);
+    return e;
+  }
+
+  let enemies = [];
+  function spawnWave(){
+    // [MODIFICADO] cantidad de enemigos por oleada según mundo/retroceso
+    let n;
+    if (state.retreat) n = 1;                                       // [NUEVO] mundos ya superados
+    else if (state.world === 1) n = 1;                              // [NUEVO] Mundo 1: siempre 1
+    else if (state.world === 2) n = (state.stage === 2 ? 2 : 1);    // [NUEVO] Mundo 2: última oleada = 2
+    else if (state.world === 3) n = 1 + Math.floor(Math.random()*3);// [NUEVO] Mundo 3: 1..3 aleatorio
+    else n = 1 + Math.floor(Math.random()*3);                       // fallback (comportamiento original)
+    for(let i=0;i<n;i++) enemies.push(makeEnemy(i*44));
+    state.scrolling = true;
+  }
+
+  // NUEVO - Punto 7: mensaje flotante "EVADIDO"
+  function evadidoText(x,y){
+    const d = document.createElement('div');
+    d.className = 'evadido';
+    d.textContent = 'EVADIDO';
+    d.style.left = x + 'px'; d.style.top = y + 'px';
+    fxLayer.appendChild(d);
+    setTimeout(()=>d.remove(), 900);
+  }
+
+  // Main loop
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(40, now-last); last = now;
+    // NUEVO - Pausa total cuando la ventana de MAZMORRAS está abierta
+    if (state.paused || state.heroViewOpen){ requestAnimationFrame(loop); return; } // MODIFICADO - HÉROE: pausa solo procesos del cuadro superior
+
+    // NUEVO - Punto 7: REGEN por segundo (siempre activa, no altera otras mecánicas)
+    if (stats.hp > 0 && stats.hp < effectiveStat('hpMax')){ // MODIFICADO - HÉROE
+      stats.hp = Math.min(effectiveStat('hpMax'), stats.hp + effectiveStat('regen') * (dt/1000)); // MODIFICADO - HÉROE
+      syncStats();
+    }
+
+    // Hero walks right until center, then screen scrolls
+    if (!state.inBattle){
+      if (heroX < heroCenterX){
+        heroX += 0.06*dt;
+        hero.style.left = heroX + 'px';
+      } else {
+        if (state.scrolling || enemies.length===0){
+          state.scrollX -= 0.05*dt;
+          const shift = state.scrollX % 786;
+          parallax.style.transform = `translateX(${shift}px)`;
+        }
+        if (enemies.length===0 && !state.transitioning){
+          state.waveTimer -= dt;
+          if (state.waveTimer <= 0){
+            state.waveTimer = 3000;
+            spawnWave();
+          }
+        }
+      }
+    }
+
+    // Move enemies toward hero
+    enemies.forEach(e=>{
+      const ex = parseFloat(e.style.left);
+      const targetX = heroX + 40;
+      if (ex > targetX + 4){
+        e.style.left = (ex - 0.07*dt) + 'px';
+        state.scrolling = false;
+      } else {
+        e.dataset.state = 'fighting';
+        state.inBattle = true;
+        battleTick(e, dt);
+      }
+    });
+
+    requestAnimationFrame(loop);
+  }
+
+  // Battle mechanics
+  const battleCd = new WeakMap();
+  function battleTick(e, dt){
+    // MODIFICADO - Punto 7: cadencia base 420ms, AGILIDAD/VELOCIDAD la reducen levemente
+    const atkCd = Math.max(220, 420 - (effectiveStat('agi') + effectiveStat('vel')) * 3); // MODIFICADO - HÉROE
+    const cd = (battleCd.get(e)||0) - dt;
+    if (cd > 0){ battleCd.set(e, cd); return; }
+    battleCd.set(e, atkCd);
+
+    const ex = parseFloat(e.style.left);
+    hero.style.transition='left .12s'; e.style.transition='left .12s';
+    hero.style.left = (heroX - 6) + 'px';
+    e.style.left = (ex + 8) + 'px';
+    setTimeout(()=>{
+      hero.style.left = heroX + 'px';
+      e.style.left = ex + 'px';
+    }, 130);
+
+    // MODIFICADO - Punto 7: daño = ATAQUE del slot con leve varianza.
+    // CRÍTICO: probabilidad = stats.crit%, si el roll (0-100) > 95 -> daño x2 en amarillo.
+    // Regla: probabilidad efectiva = stats.crit%. Crítico si el roll > 95 (según spec).
+    const critHit = stats.crit > 95 ? (Math.random()*100 < stats.crit) : (Math.random()*100 < Math.max(0, stats.crit - 95));
+    const enemyDef = parseFloat(e.dataset.def) || 0;
+    const rawDmg = Math.max(1, effectiveStat('atk') - enemyDef * 0.5); // MODIFICADO - HÉROE
+    const dmg = Math.round(rawDmg * (critHit ? 2 : 1) * (0.9 + Math.random()*0.2));
+    e.dataset.hp = Math.max(0, e.dataset.hp - dmg);
+    const bar = e.querySelector('.hpbar i');
+    bar.style.width = (e.dataset.hp / e.dataset.max * 100) + '%';
+    impactAt(ex+18, 480-110);
+    damageText(ex+10, 480-130, dmg, critHit, false); // MODIFICADO
+
+    // MODIFICADO - Punto 7: ataque enemigo, DEFENSA reduce levemente, EVASIÓN puede anular.
+    const evaHit = stats.eva > 95 ? (Math.random()*100 < stats.eva) : (Math.random()*100 < Math.max(0, stats.eva - 95));
+    if (evaHit){
+      evadidoText(heroX+2, 480-135);
+    } else {
+      const edmg = Math.max(1, Math.round(parseFloat(e.dataset.atk) * (0.9+Math.random()*0.2) - effectiveStat('def') * 0.4)); // MODIFICADO - HÉROE
+      stats.hp = Math.max(0, stats.hp - edmg);
+      damageText(heroX+4, 480-130, edmg, false, true); // MODIFICADO
+      syncStats();
+    }
+
+    if (e.dataset.hp <= 0){
+      e.remove();
+      enemies = enemies.filter(x=>x!==e);
+      // [MODIFICADO] El oro se otorga al completar la oleada, no por enemigo.
+      const gm = Math.random()<0.35 ? 1 : 0;
+      state.gem += gm;
+      state.power += 2;
+      updHUD();
+      if (enemies.length === 0){
+        state.inBattle = false;
+        // [NUEVO] Recompensa de oro por oleada: 10 en M1, +10% acumulativo por mundo.
+        const waveReward = Math.round(10 * Math.pow(1.10, state.world - 1));
+        state.gold += waveReward;
+        showGoldReward(waveReward);
+        updHUD();
+        state.stage++;
+        if (state.stage >= 3){
+          // MODIFICADO - Puntos 1 y 3:
+          if (state.retreat){
+            // En modo retroceso: la oleada 3 se repite en bucle y se desbloquea AVANZAR
+            state.avanzarUnlocked = true;
+            avanzarBtn.classList.remove('hidden');
+            state.stage = 2;      // permanece en oleada 3 (índice 2 activo)
+            state.waveTimer = 3000;
+            state.scrolling = true;
+          } else {
+            // Punto 1: ventana PRÓXIMO MUNDO durante 1s, luego flashback y siguiente mundo
+            nextWorldTransition();
+          }
+        } else {
+          state.waveTimer = 3000;
+          state.scrolling = true;
+        }
+        updHUD();
+      }
+    }
+
+    // MODIFICADO - Punto 2: derrota -> ventana FRACASO y retroceso al mundo anterior
+    if (stats.hp <= 0 && !state.transitioning){
+      fracasoTransition();
+    }
+  }
+
+  // NUEVO - Punto 1: transición "PRÓXIMO MUNDO" (1s) + flashback + avance
+  function nextWorldTransition(){
+    state.transitioning = true;
+    nextWorldOv.classList.add('show');
+    setTimeout(()=>{
+      nextWorldOv.classList.remove('show');
+      flashback(() => {
+        state.stage = 0;
+        state.world++;
+        // [NUEVO] Recuperación total de HP al avanzar de mundo.
+        stats.hp = effectiveStat('hpMax'); // MODIFICADO - HÉROE
+        syncStats();
+        // Si al avanzar alcanzamos/superamos el mundo del que fuimos devueltos, salir del retroceso
+        if (state.retreat && state.world >= state.retreatFrom){
+          state.retreat = false;
+          state.retreatFrom = 0;
+          state.avanzarUnlocked = false;
+          avanzarBtn.classList.add('hidden');
+        }
+        resetSceneForNewWorld();
+        updHUD();
+      });
+    }, 1000);
+  }
+
+  // MODIFICADO - Punto 1: transición "FRACASO" (1s) + retroceso al mundo previamente
+  // superado, garantizando que el héroe recupere movimiento y combate normal.
+  // Si la derrota ocurre en el mundo 1, se realiza un reinicio COMPLETO desde el inicio.
+  function fracasoTransition(){
+    state.transitioning = true;
+    state.inBattle = false;
+    // Limpiar enemigos actuales
+    enemies.forEach(en => en.remove());
+    enemies = [];
+    fracasoOv.classList.add('show');
+    setTimeout(()=>{
+      fracasoOv.classList.remove('show');
+      flashback(() => {
+        // MODIFICADO - Punto 4: retroceso limitado a UN SOLO mundo. Si ya está en retroceso,
+        // permanece fijo en el mundo actual y solo podrá avanzar mediante el botón AVANZAR.
+        if (state.retreat){
+          // NUEVO - Punto 4: ya en retroceso -> no retroceder más, mantener mundo actual
+        } else if (state.world > 1){
+          state.retreatFrom = state.world; // recordamos origen (Punto 3)
+          state.world = state.world - 1;
+          state.retreat = true;
+        } else {
+          // Derrota en mundo 1 -> reinicio completo del mundo 1
+          state.retreat = false;
+          state.retreatFrom = 0;
+        }
+        // Reset scoped -- flags que restauran movimiento y combate normal
+        state.stage = 0;
+        state.avanzarUnlocked = false;
+        state.inBattle = false;              // NUEVO - Punto 1: garantiza que el loop mueva al héroe
+        state.scrolling = true;              // NUEVO - Punto 1
+        state.waveTimer = 3000;              // NUEVO - Punto 1
+        avanzarBtn.classList.add('hidden');
+        stats.hp = effectiveStat('hpMax'); // MODIFICADO - HÉROE
+        syncStats();
+        resetSceneForNewWorld();
+        updHUD();
+      });
+    }, 1000);
+  }
+
+  // NUEVO - helper compartido para reposicionar el escenario en un nuevo mundo
+  function resetSceneForNewWorld(){
+    heroX = heroBaseX;
+    hero.style.transition = '';              // NUEVO - Punto 1: limpia transición residual del combate
+    hero.style.left = heroX + 'px';
+    state.scrollX = 0;
+    parallax.style.transform = 'translateX(0)';
+    state.waveTimer = 3000;
+    state.scrolling = true;
+    state.inBattle = false;                  // NUEVO - Punto 1: refuerza que no quede trabado en batalla
+  }
+
+  // NUEVO - Punto 3: click en AVANZAR -> siguiente mundo (sale del bucle)
+  avanzarBtn.addEventListener('click', () => {
+    if (!state.avanzarUnlocked || state.transitioning) return;
+    avanzarBtn.classList.add('hidden');
+    state.avanzarUnlocked = false;
+    // Limpieza de enemigos actuales para no arrastrarlos
+    enemies.forEach(en => en.remove());
+    enemies = [];
+    state.inBattle = false;
+    nextWorldTransition();
+  });
+
+  // Flashback negro (usado por PRÓXIMO MUNDO y FRACASO)
+  function flashback(cb){
+    state.transitioning = true;
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:absolute;inset:0;background:#000;opacity:0;z-index:50;transition:opacity .45s;pointer-events:none';
+    document.getElementById('top').appendChild(ov);
+    requestAnimationFrame(() => { ov.style.opacity = '1'; });
+    setTimeout(() => {
+      cb();
+      setTimeout(() => {
+        ov.style.opacity = '0';
+        setTimeout(() => { ov.remove(); state.transitioning = false; }, 500);
+      }, 350);
+    }, 500);
+  }
+
+  // ================= NUEVO - Sistema de Rangos + KUNAI =================
+  const RANKS = [
+    {name:'Común',      bg:'#e8e8ee', bd:'#b8bac2', tx:'#2b2f3a'},
+    {name:'Poco Común', bg:'#d4f0d4', bd:'#7cc47c', tx:'#1e4a1e'},
+    {name:'Raro',       bg:'#cce0ff', bd:'#6a9cff', tx:'#153a7a'},
+    {name:'Épico',      bg:'#e0ccff', bd:'#a680ff', tx:'#3a1a7a'},
+    {name:'Legendario', bg:'#ffe8b0', bd:'#ffcf5c', tx:'#5a3808'},
+    {name:'Mítico',     bg:'#ffccdd', bd:'#ff6aa0', tx:'#7a1a3a'},
+    {name:'Ancestral',  bg:'#e0d0b0', bd:'#b89060', tx:'#4a2e0a'},
+    {name:'Celestial',  bg:'#ccf0f0', bd:'#6acfff', tx:'#0a4a6a'},
+    {name:'Exótico',    bg:'#ffb8b8', bd:'#ff6a6a', tx:'#7a1010'},
+    {name:'Divino',     bg:'#fff5cc', bd:'#ffe066', tx:'#6a5008'},
+    {name:'Cósmico',    bg:'#c8b8ff', bd:'#8a6aff', tx:'#2a1a5a'},
+    {name:'Infinito',   bg:'#ffffff', bd:'#c0c8ff', tx:'#1a1a2a'},
+  ];
+  const rankState = {
+    idx: 0,                                          // rango activo (0=Común)
+    slotLv: [1,1,1,1,1,1,1,1],                       // nivel 1-100 por slot
+    kunai: 10,                                       // MODIFICADO - unidades iniciales
+  };
+  // Mapeo slot index -> tipo estadística (según orden del DOM)
+  // 0=HP, 1=ATK, 2=DEF, 3=AGI, 4=CRIT, 5=VEL, 6=EVA, 7=REGEN
+  function applyRankColor(){
+    const r = RANKS[rankState.idx];
+    const grid = document.getElementById('equipGrid');
+    grid.style.setProperty('--rank-bg', `linear-gradient(180deg, ${r.bg}, ${shade(r.bg,-8)})`);
+    grid.style.setProperty('--rank-bd', r.bd);
+    grid.style.setProperty('--rank-tx', r.tx);
+    const chip = document.getElementById('rankChipName');
+    if (chip) chip.textContent = r.name;
+  }
+  function shade(hex, pct){
+    const c = hex.replace('#',''); const n = parseInt(c,16);
+    let r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+    const f = 1 + pct/100;
+    r=Math.max(0,Math.min(255,Math.round(r*f)));
+    g=Math.max(0,Math.min(255,Math.round(g*f)));
+    b=Math.max(0,Math.min(255,Math.round(b*f)));
+    return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');
+  }
+  // Actualiza los "lv" visibles en los 8 slots
+  const slotLvEls = document.querySelectorAll('.equip .slot .lv');
+  function refreshSlotLevels(){
+    rankState.slotLv.forEach((lv,i)=>{ if(slotLvEls[i]) slotLvEls[i].textContent = lv; });
+  }
+  // Aplica bonus a una estadística según tipo por 1 nivel
+  function applyLevelBonus(slotIdx){
+    switch(slotIdx){
+      case 0: { const pct = (Math.random()<0.5?2:3)/100; const inc = Math.max(1, Math.round(stats.hpMax*pct));
+                stats.hpMax += inc; stats.hp = Math.min(stats.hpMax, stats.hp + inc); break; }
+      case 1: { const pct = (Math.random()<0.5?2:3)/100; stats.atk = Math.round((stats.atk*(1+pct))*10)/10; break; }
+      case 2: { const pct = (Math.random()<0.5?2:3)/100; stats.def = Math.round((stats.def*(1+pct))*10)/10; break; }
+      case 3: { const pct = (Math.random()<0.5?2:3)/100; stats.agi = Math.round((stats.agi*(1+pct))*10)/10; break; }
+      case 4: { stats.crit = Math.round((stats.crit + 0.01)*100)/100; break; }
+      case 5: { const pct = (Math.random()<0.5?2:3)/100; stats.vel = Math.round((stats.vel*(1+pct))*10)/10; break; }
+      case 6: { stats.eva = Math.round((stats.eva + 0.02)*100)/100; break; }
+      case 7: { stats.regen = Math.round((stats.regen + 0.07)*100)/100; break; }
+    }
+  }
+  // ---- Overlay UI ----
+  const rankOv = document.getElementById('rankOv');
+  const rankListEl = document.getElementById('rankList');
+  const rankPayBtn = document.getElementById('rankPay');
+  function allMaxed(){ return rankState.slotLv.every(v=>v>=100); }
+  function renderRankOverlay(){
+    rankListEl.innerHTML = '';
+    // Mostrar 3 rangos: activo + 2 siguientes bloqueados
+    for (let k=0; k<3; k++){
+      const i = rankState.idx + k;
+      if (i >= RANKS.length) break;
+      const r = RANKS[i];
+      const div = document.createElement('div');
+      div.className = 'rank-item' + (k===0 ? ' active' : ' locked');
+      div.style.background = `linear-gradient(135deg, ${r.bg}, ${shade(r.bg,-6)})`;
+      div.style.color = r.tx;
+      div.style.borderColor = r.bd;
+      div.innerHTML = `<span class="rn">${r.name}</span><span class="rp">${k===0?'100%':'0%'}</span>`;
+      rankListEl.appendChild(div);
+    }
+    const canPay = allMaxed() && state.gold >= 10000 && rankState.idx < RANKS.length-1;
+    rankPayBtn.disabled = !canPay;
+    rankPayBtn.textContent = allMaxed() ? 'Pagar 10.000 💰' : 'Maximiza los 8 equipos (Nv 100)';
+  }
+  document.getElementById('rankChip').addEventListener('click', ()=>{
+    renderRankOverlay(); rankOv.classList.add('show');
+  });
+  document.getElementById('rankClose').addEventListener('click', ()=> rankOv.classList.remove('show'));
+  rankOv.addEventListener('click', (e)=>{ if(e.target===rankOv) rankOv.classList.remove('show'); });
+  rankPayBtn.addEventListener('click', ()=>{
+    if (!allMaxed() || state.gold < 10000 || rankState.idx >= RANKS.length-1) return;
+    state.gold -= 10000;
+    rankState.idx++;
+    rankState.slotLv = [1,1,1,1,1,1,1,1]; // reinicio de niveles, stats acumulados se mantienen
+    applyRankColor();
+    refreshSlotLevels();
+    syncStats();
+    updHUD();
+    renderRankOverlay();
+  });
+  // ---- KUNAI: click genera equipo aleatorio del rango activo ----
+  const kunaiCountEl = document.getElementById('kunaiCount');
+  // [NUEVO] metadatos por slot para la ventana de resultado de la forja
+  const SLOT_META = [
+    {em:'❤️', nm:'HP'},        {em:'⚔️', nm:'ATAQUE'},
+    {em:'🛡️', nm:'DEFENSA'},   {em:'💨', nm:'AGILIDAD'},
+    {em:'💥', nm:'CRÍTICO'},   {em:'👟', nm:'VELOCIDAD'},
+    {em:'🌀', nm:'EVASIÓN'},   {em:'🔄', nm:'REGEN'}
+  ];
+  // [NUEVO] refs para la UI de forja y recompensa de oro
+  const forgeFxEl = document.getElementById('forgeFx');
+  const forgeResultEl = document.getElementById('forgeResult');
+  const goldRewardEl = document.getElementById('goldReward');
+  document.getElementById('frClose').addEventListener('click', ()=> forgeResultEl.classList.remove('show'));
+  forgeResultEl.addEventListener('click', (e)=>{ if(e.target===forgeResultEl) forgeResultEl.classList.remove('show'); });
+  // [NUEVO] feedback visual de oro obtenido al centro de la pantalla
+  function showGoldReward(amount){
+    if (!goldRewardEl) return;
+    goldRewardEl.textContent = '+' + fmt(amount) + ' 💰'; // MODIFICADO - Punto 2
+    goldRewardEl.classList.remove('show');
+    // reflow para reiniciar la animación
+    void goldRewardEl.offsetWidth;
+    goldRewardEl.classList.add('show');
+    clearTimeout(showGoldReward._t);
+    showGoldReward._t = setTimeout(()=> goldRewardEl.classList.remove('show'), 900);
+  }
+  // [NUEVO] efecto visual de forja (~900ms) y callback al terminar
+  function playForgeEffect(cb){
+    const progEl = document.getElementById('forgeProgress');
+    if (progEl){ progEl.classList.remove('show'); void progEl.offsetWidth; progEl.classList.add('show'); }
+    if (!forgeFxEl) {
+      setTimeout(()=>{ if(progEl) progEl.classList.remove('show'); cb && cb(); }, 850);
+      return;
+    }
+    forgeFxEl.classList.remove('show');
+    void forgeFxEl.offsetWidth;
+    forgeFxEl.classList.add('show');
+    setTimeout(()=>{
+      forgeFxEl.classList.remove('show');
+      if (progEl) progEl.classList.remove('show');
+      cb && cb();
+    }, 900);
+  }
+  // [NUEVO] muestra la ventana transparente con el detalle de la forja
+  function showForgeResult(slotIdx, prevLv, newLv){
+    const meta = SLOT_META[slotIdx] || {em:'❔', nm:'?'};
+    document.getElementById('frEm').textContent  = meta.em;
+    document.getElementById('frNm').textContent  = meta.nm;
+    document.getElementById('frSlot').textContent = (slotIdx+1) + ' / 8 · ' + meta.nm;
+    document.getElementById('frOld').textContent = 'Nv ' + prevLv;
+    document.getElementById('frNew').textContent = 'Nv ' + newLv;
+    forgeResultEl.classList.add('show');
+  }
+  // ---- KUNAI: click genera equipo aleatorio del rango activo ----
+  const appEl = document.querySelector('.app');
+  const kunaiMainEl = document.getElementById('kunaiMain');
+  kunaiMainEl.addEventListener('click', ()=>{
+    if (rankState.kunai <= 0) return;
+    // Elegir slot aleatorio que no esté al máximo
+    const available = [];
+    for (let i=0;i<8;i++) if (rankState.slotLv[i] < 100) available.push(i);
+    if (available.length === 0) return; // todos maxeados: requiere pagar rango
+    const pick = available[Math.floor(Math.random()*available.length)];
+    const prevLv = rankState.slotLv[pick];                          // [NUEVO]
+    // [MODIFICADO] incremento aleatorio 1..3 niveles (respetando cap 100)
+    const desiredInc = 1 + Math.floor(Math.random()*3);
+    const newLv = Math.min(100, prevLv + desiredInc);
+    const realInc = newLv - prevLv;
+    for (let k=0; k<realInc; k++) applyLevelBonus(pick);            // [MODIFICADO] aplica el bonus tantas veces como niveles subidos
+    const heroPickMap = {0:0,1:1,2:2,3:3,5:4,7:5};                 // NUEVO - HÉROE: excluye CRÍTICO y EVASIÓN
+    if (heroPickMap[pick] !== undefined){ for (let k=0; k<realInc; k++) improveHeroSlot(heroPickMap[pick]); } // NUEVO - HÉROE
+    rankState.slotLv[pick] = newLv;
+    rankState.kunai -= 1;
+    kunaiCountEl.textContent = fmt(rankState.kunai); // MODIFICADO - Punto 2
+    refreshSlotLevels();
+    syncStats();
+    // MODIFICADO - se eliminó la sacudida del HUD/app al forjar (se conserva el destello del botón KUNAI)
+    kunaiMainEl.classList.remove('flash'); void kunaiMainEl.offsetWidth; kunaiMainEl.classList.add('flash');
+    // [NUEVO] animación de forja (con barra de progreso) + ventana de resultado al terminar
+    playForgeEffect(() => showForgeResult(pick, prevLv, newLv));
+  });
+
+  // [NUEVO] Modo AUTO: toggle ON/OFF, hace click en KUNAI y auto-cierra el resultado tras 1s
+  const autoBtn = document.getElementById('autoKunai');
+  const autoStateEl = document.getElementById('autoState');
+  let autoOn = false;
+  let autoTimer = null;
+  function stopAuto(){
+    autoOn = false;
+    autoBtn.setAttribute('data-on','0');
+    autoStateEl.textContent = 'OFF';
+    if (autoTimer){ clearTimeout(autoTimer); autoTimer = null; }
+  }
+  function scheduleAutoTick(delay){
+    if (!autoOn) return;
+    if (autoTimer) clearTimeout(autoTimer);
+    autoTimer = setTimeout(autoTick, delay);
+  }
+  function autoTick(){
+    if (!autoOn) return;
+    if (rankState.kunai <= 0){ stopAuto(); return; }
+    // Si la ventana de resultado sigue abierta, ciérrala primero
+    if (forgeResultEl.classList.contains('show')){
+      forgeResultEl.classList.remove('show');
+      scheduleAutoTick(300);
+      return;
+    }
+    kunaiMainEl.click();
+    // esperar animación (~950ms) + 1s viendo el resultado antes del OK
+    scheduleAutoTick(950 + 1000);
+    // programar el "click OK" automático 1s después de que aparezca la ventana
+    setTimeout(()=>{
+      if (!autoOn) return;
+      if (forgeResultEl.classList.contains('show')) forgeResultEl.classList.remove('show');
+    }, 950 + 1000);
+  }
+  autoBtn.addEventListener('click', ()=>{
+    if (autoOn){ stopAuto(); return; }
+    if (rankState.kunai <= 0) return; // no tiene sentido activar sin kunais
+    autoOn = true;
+    autoBtn.setAttribute('data-on','1');
+    autoStateEl.textContent = 'ON';
+    autoTick();
+  });
+
+  // NUEVO - CRIPTA KUNAI: motor de combate ninja aislado, adaptado al juego sin importar scripts externos.
+  const appRoot = document.querySelector('.app');
+  const cryptBattleEl = document.getElementById('cryptBattle');
+  const cryptCanvas = document.getElementById('cryptCanvas');
+  const cryptCtx = cryptCanvas ? cryptCanvas.getContext('2d') : null;
+  const cryptVictoryEl = document.getElementById('cryptVictory');
+  const cryptRoundsEl = document.getElementById('cryptRounds');
+  const cryptWinNameEl = document.getElementById('cryptWinName');
+  const cryptStopEl = document.getElementById('cryptStop'); // NUEVO
+  const worldLabelEl = document.getElementById('worldLabel');
+  const crypt = {active:false, paid:0, round:0, last:0, fighters:[], particles:[], nums:[], shots:[], shake:0, flash:0, mountains:[], trees:[], finishTimer:0, dungeon:'crypt'}; // MODIFICADO
+  // NUEVO - CRIPTA KUNAI: única fuente de verdad para las stats del NINJA (scroll NINJA del HUD).
+  // El enemigo en batalla y el HUD leen ambos de aquí, quedando siempre sincronizados.
+  const NINJA_STATS = {hp:50, atk:5, def:3};
+  const CW = 393, CH = 480, CGROUND = 410, CSC = .92, CNW = Math.round(30*CSC), CNH = Math.round(50*CSC); // NUEVO
+
+  class CryptParticle{ // NUEVO
+    constructor(x,y,vx,vy,c,l,s,t){this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.c=c;this.l=l;this.m=l;this.s=s;this.t=t;this.r=Math.random()*6.28;this.rs=(Math.random()-.5)*.15}
+    update(dt){this.x+=this.vx*dt;this.y+=this.vy*dt;if(this.t==='spark')this.vy+=.2*dt;if(this.t==='smoke'){this.vx*=.96;this.vy*=.96;this.s+=.25*dt}if(this.t==='leaf'){this.vx=Math.sin(performance.now()*.002+this.x*.05)*.55;this.vy+=.018*dt;this.r+=this.rs*dt}this.l-=dt}
+    draw(g){const a=Math.max(0,this.l/this.m);if(a<=0)return;g.save();g.globalAlpha=a;g.fillStyle=this.c;if(this.t==='leaf'){g.translate(this.x,this.y);g.rotate(this.r);g.fillRect(-this.s,-this.s*.35,this.s*2,this.s*.7)}else{g.beginPath();g.arc(this.x,this.y,this.s,0,6.28);g.fill()}g.restore()}
+    dead(){return this.l<=0||this.s>45}
+  }
+  class CryptNum{ // NUEVO
+    constructor(x,y,v,crit,received=false){this.x=x;this.y=y;this.v=Math.round(v);this.crit=crit;this.received=received;this.vy=-4;this.l=55} // MODIFICADO
+    update(dt){this.y+=this.vy*dt;this.vy+=.16*dt;this.l-=dt}
+    draw(g){g.save();g.globalAlpha=Math.max(0,this.l/55);g.font=`900 ${this.crit?17:12}px Arial Black`;g.textAlign='center';g.strokeStyle='#000';g.lineWidth=4;g.strokeText(this.v,this.x,this.y);g.fillStyle=this.crit?'#ffe040':(this.received?'#ff3a3a':'#fff');g.fillText(this.v,this.x,this.y);g.restore()} // MODIFICADO
+    dead(){return this.l<=0}
+  }
+  class CryptShot{ // NUEVO
+    constructor(x,y,vx,vy,o){this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.o=o;this.c=o.glow;this.s=9;this.l=150;this.dead=false;this.tr=[]}
+    update(dt){this.tr.unshift({x:this.x,y:this.y});if(this.tr.length>10)this.tr.pop();this.x+=this.vx*dt;this.y+=this.vy*dt;this.l-=dt;if(this.l<=0||this.x<-20||this.x>CW+20)this.dead=true;if(Math.random()<.3)crypt.particles.push(new CryptParticle(this.x,this.y,(Math.random()-.5)*1.6,(Math.random()-.5)*1.6,this.c,12,2,'spark'))}
+    draw(g){this.tr.forEach((p,i)=>{g.save();g.globalAlpha=(1-i/this.tr.length)*.45;g.fillStyle=this.c;g.beginPath();g.arc(p.x,p.y,this.s*(1-i/this.tr.length),0,6.28);g.fill();g.restore()});const gr=g.createRadialGradient(this.x,this.y,0,this.x,this.y,this.s*2.2);gr.addColorStop(0,'#fff');gr.addColorStop(.35,this.c);gr.addColorStop(1,'transparent');g.fillStyle=gr;g.beginPath();g.arc(this.x,this.y,this.s*2.2,0,6.28);g.fill()}
+  }
+  class CryptFighter{ // NUEVO
+    constructor(x,id){this.id=id;this.x=x;this.y=CGROUND-CNH;this.vx=0;this.vy=0;this.on=true;this.face=id===0;this.name=id===0?'KAITO':'NINJA';this.col=id===0?'#e8a030':'#6855cc';this.glow=id===0?'#ff8c00':'#9932cc';this.skin=id===0?'#f5c09a':'#d8c8e8';this.max=id===0?effectiveStat('hpMax'):NINJA_STATS.hp;this.hp=id===0?stats.hp:this.max;this.atk=id===0?effectiveStat('atk'):NINJA_STATS.atk;this.def=id===0?effectiveStat('def'):NINJA_STATS.def;this.cd=0; // MODIFICADO - HÉROE
+      this.jcd=30+Math.random()*60;this.stun=0;this.flash=0;this.tX=x;this.tY=this.y;this.dash=0;this.dead=false;this.anim=0;this.trail=[]}
+    get cx(){return this.x+CNW/2} get cy(){return this.y+CNH/2}
+    hit(d,from){if(this.dead)return;if(Math.random()<.12&&this.stun<=0){cryptSmoke(this.cx,this.cy,14);this.x=Math.max(6,Math.min(CW-CNW-6,from.x+(from.face?-45:45)));cryptSmoke(this.cx,this.cy,8);return}const block=Math.random()<.24;const val=Math.max(1,(d-this.def*.35)*(block ? .35 : 1));this.hp=Math.max(0,this.hp-val);crypt.nums.push(new CryptNum(this.cx,this.y-4,val,d>this.max*.12,this.id===0)); // MODIFICADO
+      cryptSparks(this.cx,this.cy,d>this.max*.12?16:9,d>this.max*.12?'#ffd700':'#ff4422');this.vx+=(from.cx<this.cx?1:-1)*10;this.stun=18;this.flash=15;crypt.shake=Math.max(crypt.shake,d>this.max*.12?9:4);if(this.hp<=0)this.dead=true}
+    update(dt,enemy){if(this.dead){cryptSmoke(this.cx,this.cy,1);return}this.flash-=dt;this.stun-=dt;this.cd-=dt;this.jcd-=dt;this.vy+=this.on?0:.38*dt;this.x+=this.vx*dt;this.y+=this.vy*dt;this.vx*=.87;if(this.y>=CGROUND-CNH){this.y=CGROUND-CNH;this.vy=0;this.on=true}else this.on=false;if(this.x<3){this.x=3;this.vx=5;if(this.on){this.vy=-9;this.on=false}}if(this.x>CW-CNW-3){this.x=CW-CNW-3;this.vx=-5;if(this.on){this.vy=-9;this.on=false}}this.face=enemy.cx>this.cx;if(this.stun>0)return;this.dash+=dt;if(this.dash>48){this.dash=0;this.tX=25+Math.random()*(CW-55);this.tY=Math.random()<.4?CGROUND-CNH-55-Math.random()*110:CGROUND-CNH}const dx=this.tX-this.x,dy=this.tY-this.y,len=Math.hypot(dx,dy)||1;if(len>8){this.vx+=(dx/len)*1.4;if(dy<-20&&this.on){this.vy=-10;this.on=false}}this.anim+=dt;if(Math.abs(this.vx)+Math.abs(this.vy)>4&&this.anim>4){this.anim=0;this.trail.unshift({x:this.cx,y:this.cy,a:.45});if(this.trail.length>5)this.trail.pop()}this.trail.forEach(t=>t.a-=.035*dt);this.trail=this.trail.filter(t=>t.a>0);const dist=Math.hypot(this.cx-enemy.cx,this.cy-enemy.cy);if(dist<54&&this.cd<=0){const crit=this.id===0&&Math.random()*100<stats.crit;enemy.hit(this.atk*(crit?2:1)*(0.9+Math.random()*.3),this);this.cd=34}else if(dist>145&&this.jcd<=0){const sx=(enemy.cx-this.cx)/(dist||1)*5, sy=(enemy.cy-this.cy)/(dist||1)*5;crypt.shots.push(new CryptShot(this.cx,this.cy,sx,sy,this));this.jcd=95;cryptSparks(this.cx,this.cy,12,this.glow)}}
+    draw(g){this.trail.forEach(t=>{g.save();g.globalAlpha=t.a;g.fillStyle=this.glow;g.beginPath();g.ellipse(t.x,t.y,CNW*.45,CNH*.45,0,0,6.28);g.fill();g.restore()});g.save();if(!this.face){g.translate(this.x+CNW/2,0);g.scale(-1,1);g.translate(-(this.x+CNW/2),0)}const x=this.x,y=this.y,fl=this.flash>0&&Math.sin(this.flash*1.5)>0,bc=fl?'#ff3333':this.col,sc=fl?'#ff8866':this.skin;g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.ellipse(x+CNW/2,CGROUND,CNW*.7,5,0,0,6.28);g.fill();g.fillStyle='#222';g.fillRect(x+1,y+CNH-5,CNW*.42,5);g.fillRect(x+CNW*.55,y+CNH-5,CNW*.42,5);g.fillStyle=bc;g.fillRect(x+2,y+CNH*.62,CNW*.38,CNH*.36);g.fillRect(x+CNW*.56,y+CNH*.62,CNW*.38,CNH*.36);g.fillStyle='#333';g.fillRect(x+1,y+CNH*.60,CNW-2,3);g.fillStyle=bc;g.fillRect(x+2,y+CNH*.30,CNW-4,CNH*.32);g.fillRect(x-4,y+CNH*.32,5,CNH*.25);g.fillRect(x+CNW-1,y+CNH*.32,5,CNH*.25);g.fillStyle=sc;g.fillRect(x+CNW*.36,y+CNH*.27,CNW*.28,CNH*.06);g.beginPath();g.arc(x+CNW/2,y+CNH*.155,CNW*.4,0,6.28);g.fill();g.fillStyle=this.id===0?'#1b1208':'#111118';g.beginPath();g.arc(x+CNW/2,y+CNH*.10,CNW*.42,3.14,6.28);g.fill();g.fillStyle=this.id===0?'#ff6600':'#2233aa';g.fillRect(x+CNW*.1,y+CNH*.07,CNW*.8,4);g.fillStyle='#c8c8c8';g.fillRect(x+CNW*.28,y+CNH*.07,CNW*.44,4);g.fillStyle='#111';g.beginPath();g.arc(x+CNW*.62,y+CNH*.155,2.2,0,6.28);g.fill();if(this.stun>5){g.fillStyle='#ffd700';g.font='10px Arial';g.fillText('★',x+CNW/2,y-4)}g.restore();this.hpbar(g)}
+    hpbar(g){const w=48,x=this.x+CNW/2-w/2,y=this.y-14,r=Math.max(0,this.hp/this.max);g.fillStyle='rgba(0,0,0,.75)';g.fillRect(x-1,y-1,w+2,6);g.fillStyle=r>.5?'#44ee44':r>.25?'#ffaa00':'#ff2222';g.fillRect(x,y,w*r,4);g.font='900 8px Arial';g.textAlign='center';g.fillStyle=this.id===0?'#ffd700':'#aa88ff';g.fillText(this.name,this.x+CNW/2,y-3)}
+  }
+  function cryptSparks(x,y,n,c){for(let i=0;i<n;i++){const a=Math.random()*6.28,sp=1.5+Math.random()*4;crypt.particles.push(new CryptParticle(x,y,Math.cos(a)*sp,Math.sin(a)*sp,c,18+Math.random()*12,2+Math.random()*2,'spark'))}}
+  function cryptSmoke(x,y,n){for(let i=0;i<n;i++)crypt.particles.push(new CryptParticle(x+(Math.random()-.5)*CNW,y+(Math.random()-.5)*CNH,(Math.random()-.5)*1.3,-1-Math.random(),'#bbb',28+Math.random()*16,4+Math.random()*4,'smoke'))}
+  function cryptGenBg(){crypt.mountains=[];crypt.trees=[];for(let x=0;x<=CW;x+=12){crypt.mountains.push({x,y:90+Math.sin(x*.018)*55+Math.cos(x*.04)*30,l:0});crypt.mountains.push({x,y:130+Math.sin(x*.024+1)*45+Math.cos(x*.03)*22,l:1})}crypt.mountains.push({x:CW,y:90+Math.sin(CW*.018)*55+Math.cos(CW*.04)*30,l:0});crypt.mountains.push({x:CW,y:130+Math.sin(CW*.024+1)*45+Math.cos(CW*.03)*22,l:1});for(let i=0;i<14;i++)crypt.trees.push({x:15+i*28+Math.random()*10,h:80+Math.random()*90,w:22+Math.random()*28})}
+  function cryptDrawTree(t){const g=cryptCtx,base=CGROUND;g.fillStyle='#3a2208';g.fillRect(t.x-3,base-t.h*.45,7,t.h*.45);['#1a3a0a','#2a5a10','#3a7018'].forEach((c,i)=>{g.fillStyle=c;g.beginPath();g.arc(t.x+(i-1)*5,base-t.h*.55-i*12,t.w*(.55-i*.06),0,6.28);g.fill()})}
+  function cryptDrawBg(){const g=cryptCtx;if(crypt.dungeon==='forest'){const sky=g.createLinearGradient(0,0,0,CGROUND);sky.addColorStop(0,'#07100c');sky.addColorStop(.55,'#142018');sky.addColorStop(1,'#24301f');g.fillStyle=sky;g.fillRect(0,0,CW,CH);g.fillStyle='rgba(190,210,190,.10)';for(let y=95;y<255;y+=34)g.fillRect(0,y,CW,18);crypt.trees.forEach(t=>{g.fillStyle='#21150f';g.fillRect(t.x-5,CGROUND-t.h*.65,10,t.h*.65);g.strokeStyle='#2b1c14';g.lineWidth=4;g.beginPath();g.moveTo(t.x,CGROUND-t.h*.45);g.lineTo(t.x-18,CGROUND-t.h*.72);g.moveTo(t.x+1,CGROUND-t.h*.52);g.lineTo(t.x+20,CGROUND-t.h*.82);g.stroke();g.fillStyle='rgba(25,45,25,.7)';g.beginPath();g.arc(t.x,CGROUND-t.h*.85,t.w*.5,0,6.28);g.fill()});const gr=g.createLinearGradient(0,CGROUND-8,0,CH);gr.addColorStop(0,'#27301f');gr.addColorStop(.2,'#1b160f');gr.addColorStop(1,'#090604');g.fillStyle=gr;g.fillRect(0,CGROUND-8,CW,CH-CGROUND+8);return}const wall=g.createRadialGradient(CW*.52,CH*.38,35,CW*.5,CH*.45,360);wall.addColorStop(0,'#4d4942');wall.addColorStop(.42,'#24211f');wall.addColorStop(1,'#050403');g.fillStyle=wall;g.fillRect(0,0,CW,CH);for(let i=0;i<9;i++){g.fillStyle=`rgba(${70+i*7},${66+i*5},${58+i*3},.18)`;g.beginPath();g.ellipse(35+i*45,120+Math.sin(i)*35,55,24,Math.sin(i)*.7,0,6.28);g.fill()}g.fillStyle='rgba(255,180,80,.18)';g.beginPath();g.arc(72,82,34,0,6.28);g.fill();const floor=g.createLinearGradient(0,CGROUND-8,0,CH);floor.addColorStop(0,'#2d2924');floor.addColorStop(.45,'#181411');floor.addColorStop(1,'#070504');g.fillStyle=floor;g.fillRect(0,CGROUND-8,CW,CH-CGROUND+8);g.fillStyle='rgba(0,0,0,.45)';g.fillRect(0,0,22,CH);g.fillRect(CW-22,0,22,CH)} // MODIFICADO
+  function payCryptRound(){ // NUEVO
+    const cost = criptaKunaiCost();
+    if (state.gold < cost) return false;
+    state.gold -= cost;
+    crypt.paid++;
+    updHUD();
+    return true;
+  }
+  function startCryptMode(dungeon='crypt'){ // MODIFICADO
+    crypt.paid = 0; crypt.round = 0; crypt.active = true; crypt.finishTimer = 0; crypt.dungeon = dungeon; // MODIFICADO
+    if (!payCryptRound()){ crypt.active = false; return false; } // MODIFICADO
+    state.paused = true; state.inBattle = false; enemies.forEach(en=>en.remove()); enemies=[];
+    appRoot.classList.add('crypt-mode');
+    if (worldLabelEl) worldLabelEl.textContent = 'NINJA';
+    if (cryptVictoryEl) cryptVictoryEl.classList.remove('show');
+    cryptGenBg(); cryptNextRound(); // MODIFICADO
+    if (!crypt.last) requestAnimationFrame(cryptLoop);
+    return true;
+  }
+  function endCryptMode(){ // NUEVO
+    crypt.active = false; state.paused = false; appRoot.classList.remove('crypt-mode');
+    if (worldLabelEl) worldLabelEl.textContent = 'Mundo';
+    if (cryptVictoryEl) cryptVictoryEl.classList.remove('show');
+    resetSceneForNewWorld(); updHUD();
+  }
+  function cryptNextRound(){ // NUEVO
+    crypt.round++; crypt.particles=[]; crypt.nums=[]; crypt.shots=[]; crypt.flash=0; crypt.shake=0; crypt.finishTimer=0;
+    crypt.fighters=[new CryptFighter(62,0),new CryptFighter(305,1)];
+    if (cryptRoundsEl) cryptRoundsEl.textContent = (crypt.dungeon==='forest'?'BOSQUE SOMBRÍO':'CRIPTA KUNAI') + ' · RONDA ' + crypt.round + ' · ORO ' + fmt(state.gold); // MODIFICADO
+    // MODIFICADO - CRIPTA KUNAI: el HUD (scroll NINJA) y el enemigo en batalla leen ambos de NINJA_STATS.
+    if (wsHpEl) wsHpEl.textContent = fmt(NINJA_STATS.hp);
+    if (wsAtkEl) wsAtkEl.textContent = fmt(NINJA_STATS.atk);
+    if (wsDefEl) wsDefEl.textContent = fmt(NINJA_STATS.def);
+  }
+  function cryptLoop(ts){ // NUEVO
+    const dt=Math.min(((ts-(crypt.last||ts))/16.667)||1,3); crypt.last=ts;
+    if (crypt.active && cryptCtx){cryptUpdate(dt);cryptRender()}
+    requestAnimationFrame(cryptLoop);
+  }
+  function cryptUpdate(dt){ // NUEVO
+    if (Math.random()<.025) crypt.particles.push(new CryptParticle(Math.random()*CW,-5,0,.5+Math.random()*.5,Math.random()<.5?'#2a4a1a':'#386020',180,2,'leaf'));
+    const [a,b]=crypt.fighters;if(a&&!b.dead)a.update(dt,b);if(b&&!a.dead)b.update(dt,a);
+    crypt.shots.forEach(s=>s.update(dt));
+    crypt.shots.forEach(s=>crypt.fighters.forEach(f=>{if(!s.dead&&f!==s.o&&!f.dead&&Math.hypot(s.x-f.cx,s.y-f.cy)<s.s+CNW/2){f.hit(12+Math.random()*10,s.o);cryptSparks(s.x,s.y,16,s.c);s.dead=true}}));
+    crypt.shots=crypt.shots.filter(s=>!s.dead); crypt.particles.forEach(p=>p.update(dt)); crypt.particles=crypt.particles.filter(p=>!p.dead()); crypt.nums.forEach(n=>n.update(dt)); crypt.nums=crypt.nums.filter(n=>!n.dead());
+    if ((a.dead||b.dead) && !crypt.finishTimer){crypt.finishTimer=1;if(!a.dead){state.gold += Math.round(10*Math.pow(1.10,state.world-1));showGoldReward(Math.round(10*Math.pow(1.10,state.world-1)));rankState.kunai += 2;if(kunaiCountEl)kunaiCountEl.textContent=fmt(rankState.kunai);if(cryptWinNameEl)cryptWinNameEl.textContent='KAITO';cryptVictoryEl.classList.add('show')}else{if(cryptWinNameEl)cryptWinNameEl.textContent='NINJA';cryptVictoryEl.classList.add('show')}}
+    if (crypt.finishTimer){crypt.finishTimer+=dt;if(crypt.finishTimer>95){if(payCryptRound()){cryptVictoryEl.classList.remove('show');cryptNextRound()}else{stats.hp=Math.max(1,a.dead?effectiveStat('hpMax')*.35:effectiveStat('hpMax'));syncStats();updHUD();endCryptMode()} }} // MODIFICADO - HÉROE
+  }
+  if (cryptStopEl) cryptStopEl.addEventListener('click', endCryptMode); // NUEVO
+  function cryptRender(){ // NUEVO
+    const g=cryptCtx,s=crypt.shake>0?(Math.random()-.5)*crypt.shake:0;crypt.shake*=.9;g.save();g.translate(s,-s*.4);cryptDrawBg();crypt.shots.forEach(x=>x.draw(g));crypt.fighters.forEach(f=>f.draw(g));crypt.particles.forEach(p=>p.draw(g));crypt.nums.forEach(n=>n.draw(g));if(crypt.finishTimer){g.fillStyle='rgba(255,220,0,.22)';g.font='900 16px Arial Black';g.textAlign='center';g.fillText('K.O.',CW/2,70)}g.restore()}
+
+  // NUEVO - Botón MAZMORRAS: pausa/reanuda el juego y muestra/oculta la ventana
+  const mazmOv = document.getElementById('mazmOv');
+  const mazmBtn = document.querySelector('.btn.mazm');
+  if (mazmBtn && mazmOv){
+    mazmBtn.addEventListener('click', ()=>{
+      const isOpen = mazmOv.classList.toggle('show');
+      state.paused = isOpen; // pausa total del loop principal
+      if (isOpen) updCriptaKunai(); // NUEVO - refresca costo al abrir
+    });
+    // Los scrolls numerados por ahora no realizan ninguna acción (placeholder)
+    mazmOv.querySelectorAll('.mazm-scroll').forEach(el=>{
+      // MODIFICADO - CRIPTA KUNAI (scroll 1): valida el oro requerido
+      if (el.getAttribute('data-mazm') === '1' || el.getAttribute('data-mazm') === '2'){ // MODIFICADO
+        el.addEventListener('click', ()=>{
+          if (state.gold < criptaKunaiCost()){ // NUEVO - oro insuficiente
+            const w = document.getElementById('mazmWarn');
+            if (w){
+              w.classList.add('show');
+              clearTimeout(w._t);
+              w._t = setTimeout(()=>w.classList.remove('show'), 1800);
+            }
+            return;
+          }
+          mazmOv.classList.remove('show'); // NUEVO - CRIPTA KUNAI: cerrar selector y entrar
+          startCryptMode(el.getAttribute('data-mazm') === '2' ? 'forest' : 'crypt'); // MODIFICADO
+        });
+      } else {
+        el.addEventListener('click', ()=>{ /* sin acción por ahora */ });
+      }
+    });
+  }
+
+
+
+  // NUEVO - Botón HÉROE: alterna la vista y pausa/restaura solo el cuadro superior
+  const heroBtn = document.querySelector('.btn.heroe');
+  if (heroBtn && heroViewEl){
+    heroBtn.addEventListener('click', ()=>{
+      state.heroViewOpen = !state.heroViewOpen;
+      heroViewEl.classList.toggle('show', state.heroViewOpen);
+      if (state.heroViewOpen) updateHeroView();
+    });
+  }
+
+  // Inicialización visual
+  applyRankColor();
+  refreshSlotLevels();
+  // ================= FIN Sistema de Rangos + KUNAI =================
+
+  requestAnimationFrame(loop);
+})();
+
+</script>
+</body>
+</html>
