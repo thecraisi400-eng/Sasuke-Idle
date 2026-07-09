@@ -545,7 +545,7 @@
   .hero-view-bottom{flex:1;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:7px;padding-top:10px;min-height:0} /* MODIFICADO - HÉROE */
   .hero-eq-slot{position:relative;border:1px solid #3a4680;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.45);overflow:hidden} /* MODIFICADO - HÉROE */
-  .hero-eq-slot.c1{background:#141833}.hero-eq-slot.c2{background:#1a1f38}.hero-eq-slot.c3{background:#0b0d17}
+  .hero-eq-slot{background:#141833}
   .hero-eq-slot .he-em{font-size:25px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.7))} /* MODIFICADO - HÉROE */
   .hero-eq-slot .he-plus{font-size:17px;line-height:1;font-weight:900;color:#ffd76b;text-shadow:0 1px 2px #000} /* MODIFICADO - HÉROE */
   .hero-eq-slot .he-name{position:absolute;left:0;right:0;top:5px;text-align:center;font-size:8px;font-weight:800;color:#c9d3ff;letter-spacing:.5px} /* MODIFICADO - HÉROE */
@@ -949,7 +949,7 @@
     heroEquipViewEl.innerHTML = '';
     heroPanelStats.forEach((meta, i)=>{
       const slot = document.createElement('div');
-      slot.className = 'hero-eq-slot c' + ((i % 3) + 1);
+      slot.className = 'hero-eq-slot';
       slot.innerHTML = `<span class="he-name">${meta.label}</span><span class="he-em">${meta.em}</span><span class="he-plus" id="hePlus${i}">+${heroEquipState.levels[i]}</span>`;
       heroEquipViewEl.appendChild(slot);
     });
