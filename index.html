@@ -526,6 +526,29 @@
   .mazm-scroll.t4{background:linear-gradient(160deg,#0f2440 0%,#2a78c0 55%,#04101c 100%)}
   .mazm-scroll.t5{background:linear-gradient(160deg,#2a2000 0%,#a58020 55%,#1a1200 100%)}
   .mazm-scroll.t6{background:linear-gradient(160deg,#1a0a04 0%,#a03a08 55%,#180a04 100%)}
+
+
+  /* NUEVO - Vista HÉROE limitada al cuadro superior */
+  .hero-view{position:absolute;inset:0;z-index:65;display:none;overflow:hidden;
+    background:linear-gradient(180deg,#141833 0%,#1a1f38 52%,#0b0d17 100%);
+    border:1px solid rgba(106,255,192,.22);padding:10px;pointer-events:auto}
+  .hero-view.show{display:flex;flex-direction:column}
+  .hero-view-top{height:50%;display:grid;grid-template-columns:1fr 1fr;gap:8px;min-height:0}
+  .hero-preview{position:relative;border:1px solid #3a4680;border-radius:12px;background:radial-gradient(ellipse at center,#2a3560,#0b0d17 72%);overflow:hidden}
+  .hero-preview .char{position:absolute;left:50%;bottom:54px;transform:translateX(-50%) scale(2.2);transform-origin:bottom center}
+  .hero-preview .char .hpbar{display:none}
+  .hero-live-stats{display:grid;grid-template-rows:repeat(4,1fr);gap:6px}
+  .hero-stat{display:flex;align-items:center;justify-content:space-between;border:1px solid #3a4680;border-radius:10px;
+    background:linear-gradient(180deg,#20264a,#0f1328);padding:6px 8px;font-size:12px;font-weight:900;color:#c9d3ff}
+  .hero-stat b{color:#fff;font-size:13px;text-shadow:0 1px 2px #000}
+  .hero-view-bottom{height:50%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:7px;padding-top:10px;min-height:0}
+  .hero-eq-slot{position:relative;border:1px solid #3a4680;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.45);overflow:hidden}
+  .hero-eq-slot.c1{background:#141833}.hero-eq-slot.c2{background:#1a1f38}.hero-eq-slot.c3{background:#0b0d17}
+  .hero-eq-slot .he-em{font-size:25px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.7))}
+  .hero-eq-slot .he-plus{position:absolute;right:7px;bottom:5px;font-size:12px;font-weight:900;color:#ffd76b;text-shadow:0 1px 2px #000}
+  .hero-eq-slot .he-name{position:absolute;left:6px;top:5px;font-size:8px;font-weight:800;color:#c9d3ff;letter-spacing:.5px}
+
   /* NUEVO - Aviso de oro insuficiente con fondo transparente */
   .mazm-warn{position:absolute;inset:0;z-index:90;display:none;align-items:center;justify-content:center;
     background:transparent}
@@ -631,6 +654,22 @@
         <div id="mazmWarn" class="mazm-warn"><div class="mazm-warn-box">No tienes el oro suficiente para entrar a CRIPTA KUNAI</div></div>
       </div>
     </div>
+
+
+    <!-- NUEVO - Vista HÉROE (solo ocupa el cuadro superior) -->
+    <div id="heroView" class="hero-view">
+      <div class="hero-view-top">
+        <div class="hero-preview"><div id="heroViewSprite" class="char hero walking"></div></div>
+        <div class="hero-live-stats">
+          <div class="hero-stat"><span>❤️ HP</span><b id="hvHp">0</b></div>
+          <div class="hero-stat"><span>⚔️ ATAQUE</span><b id="hvAtk">0</b></div>
+          <div class="hero-stat"><span>🛡️ DEFENSA</span><b id="hvDef">0</b></div>
+          <div class="hero-stat"><span>🔄 REGEN</span><b id="hvRegen">0</b></div>
+        </div>
+      </div>
+      <div class="hero-view-bottom" id="heroEquipView"></div>
+    </div>
+
     <!-- NUEVO - Overlays PRÓXIMO MUNDO / FRACASO -->
     <div id="nextWorldOv" class="big-overlay next-world"><div class="card">PRÓXIMO MUNDO</div></div>
     <div id="fracasoOv" class="big-overlay fracaso"><div class="card">FRACASO</div></div>
@@ -762,6 +801,7 @@
     inBattle: false,
     waveTimer: 3000,
     transitioning: false,
+    heroViewOpen: false, // NUEVO - HÉROE: pausa aislada del cuadro superior
     // NUEVO - Puntos 4/5: modo retroceso y control de progreso
     retreat: false,        // true = fue devuelto al mundo anterior
     retreatFrom: 0,        // mundo original antes de perder
@@ -777,6 +817,15 @@
     regen: 0.01   // HP por segundo
   };
   const $ = id => document.getElementById(id);
+  // NUEVO - HÉROE: mejoras propias de los 6 slots (50% del valor inicial del panel principal)
+  const heroEquipState = {
+    levels: [0,0,0,0,0,0],
+    maxLevel: 200,
+    stats: {hpMax:50, atk:7.5, def:2.5, agi:2, vel:3.5, regen:0.005}
+  };
+  // NUEVO - HÉROE: lectura efectiva = panel principal + bonus de la vista HÉROE
+  function heroBonus(key){ return heroEquipState.stats[key] || 0; }
+  function effectiveStat(key){ return (stats[key] || 0) + heroBonus(key); }
   const parallax = $('parallax');
   const hero = $('hero');
   const enemiesLayer = $('enemies');
@@ -813,7 +862,7 @@
   }
   // NUEVO - Punto 1: poder total real = sumatoria de los 8 atributos provenientes de los slots
   function computePower(){
-    return Math.round(stats.hpMax + stats.atk + stats.def + stats.agi + stats.crit + stats.vel + stats.eva + stats.regen);
+    return Math.round(effectiveStat('hpMax') + effectiveStat('atk') + effectiveStat('def') + effectiveStat('agi') + stats.crit + effectiveStat('vel') + stats.eva + effectiveStat('regen')); // MODIFICADO - HÉROE
   }
   // MODIFICADO - Punto 2: aplico fmt() a los valores numéricos de los slots
   function syncStats(){
@@ -826,11 +875,12 @@
     slotVals[6].textContent = stats.eva.toFixed(2) + '%';
     slotVals[7].textContent = stats.regen.toFixed(2);
     updateHeroHpBar(); // NUEVO - Punto 3
+    updateHeroView(); // NUEVO - HÉROE: mantiene la vista sincronizada en tiempo real
   }
   // NUEVO - Punto 3: actualiza la barra de HP sobre el héroe (color según %)
   function updateHeroHpBar(){
     if (!heroHpFill) return;
-    const pct = Math.max(0, Math.min(100, (stats.hp / stats.hpMax) * 100));
+    const pct = Math.max(0, Math.min(100, (stats.hp / effectiveStat('hpMax')) * 100)); // MODIFICADO - HÉROE
     heroHpFill.style.width = pct + '%';
     heroHpFill.classList.remove('mid','low');
     if (pct <= 30) heroHpFill.classList.add('low');
@@ -876,6 +926,51 @@
     updateWaveStats(); // NUEVO - Punto 4: refresca stats de oleada al cambiar mundo/etapa
   }
   updHUD();
+
+  // NUEVO - HÉROE: render y control de la vista superior aislada
+  const heroViewEl = $('heroView');
+  const heroEquipViewEl = $('heroEquipView');
+  const heroViewSpriteEl = $('heroViewSprite');
+  const heroPanelStats = [
+    {key:'hpMax', label:'HP', em:'❤️'},
+    {key:'atk', label:'ATAQUE', em:'⚔️'},
+    {key:'def', label:'DEFENSA', em:'🛡️'},
+    {key:'agi', label:'AGILIDAD', em:'💨'},
+    {key:'vel', label:'VELOCIDAD', em:'👟'},
+    {key:'regen', label:'REGEN', em:'🔄'}
+  ];
+  if (heroViewSpriteEl){
+    heroViewSpriteEl.innerHTML = hero.innerHTML; // NUEVO - HÉROE: reutiliza el sprite existente sin tocar el original
+  }
+  function renderHeroEquipView(){
+    if (!heroEquipViewEl) return;
+    heroEquipViewEl.innerHTML = '';
+    heroPanelStats.forEach((meta, i)=>{
+      const slot = document.createElement('div');
+      slot.className = 'hero-eq-slot c' + ((i % 3) + 1);
+      slot.innerHTML = `<span class="he-name">${meta.label}</span><span class="he-em">${meta.em}</span><span class="he-plus" id="hePlus${i}">+${heroEquipState.levels[i]}</span>`;
+      heroEquipViewEl.appendChild(slot);
+    });
+  }
+  function updateHeroView(){
+    if ($('hvHp')) $('hvHp').textContent = fmt(effectiveStat('hpMax'));
+    if ($('hvAtk')) $('hvAtk').textContent = fmt(effectiveStat('atk'));
+    if ($('hvDef')) $('hvDef').textContent = fmt(effectiveStat('def'));
+    if ($('hvRegen')) $('hvRegen').textContent = effectiveStat('regen').toFixed(3);
+    heroEquipState.levels.forEach((lv,i)=>{ const el = $('hePlus'+i); if (el) el.textContent = '+' + lv; });
+  }
+  function improveHeroSlot(slotIdx){
+    if (slotIdx < 0 || slotIdx >= heroPanelStats.length || heroEquipState.levels[slotIdx] >= heroEquipState.maxLevel) return false;
+    const key = heroPanelStats[slotIdx].key;
+    heroEquipState.stats[key] = Math.round((heroEquipState.stats[key] * 1.03) * 100000) / 100000;
+    heroEquipState.levels[slotIdx]++;
+    stats.hp = Math.min(effectiveStat('hpMax'), stats.hp);
+    updateHeroView();
+    updHUD();
+    return true;
+  }
+  renderHeroEquipView();
+  updateHeroView();
 
 
   function spark(x,y,color='#ffe14a'){
@@ -980,11 +1075,11 @@
   function loop(now){
     const dt = Math.min(40, now-last); last = now;
     // NUEVO - Pausa total cuando la ventana de MAZMORRAS está abierta
-    if (state.paused){ requestAnimationFrame(loop); return; }
+    if (state.paused || state.heroViewOpen){ requestAnimationFrame(loop); return; } // MODIFICADO - HÉROE: pausa solo procesos del cuadro superior
 
     // NUEVO - Punto 7: REGEN por segundo (siempre activa, no altera otras mecánicas)
-    if (stats.hp > 0 && stats.hp < stats.hpMax){
-      stats.hp = Math.min(stats.hpMax, stats.hp + stats.regen * (dt/1000));
+    if (stats.hp > 0 && stats.hp < effectiveStat('hpMax')){ // MODIFICADO - HÉROE
+      stats.hp = Math.min(effectiveStat('hpMax'), stats.hp + effectiveStat('regen') * (dt/1000)); // MODIFICADO - HÉROE
       syncStats();
     }
 
@@ -1030,7 +1125,7 @@
   const battleCd = new WeakMap();
   function battleTick(e, dt){
     // MODIFICADO - Punto 7: cadencia base 420ms, AGILIDAD/VELOCIDAD la reducen levemente
-    const atkCd = Math.max(220, 420 - (stats.agi + stats.vel) * 3);
+    const atkCd = Math.max(220, 420 - (effectiveStat('agi') + effectiveStat('vel')) * 3); // MODIFICADO - HÉROE
     const cd = (battleCd.get(e)||0) - dt;
     if (cd > 0){ battleCd.set(e, cd); return; }
     battleCd.set(e, atkCd);
@@ -1049,7 +1144,7 @@
     // Regla: probabilidad efectiva = stats.crit%. Crítico si el roll > 95 (según spec).
     const critHit = stats.crit > 95 ? (Math.random()*100 < stats.crit) : (Math.random()*100 < Math.max(0, stats.crit - 95));
     const enemyDef = parseFloat(e.dataset.def) || 0;
-    const rawDmg = Math.max(1, stats.atk - enemyDef * 0.5);
+    const rawDmg = Math.max(1, effectiveStat('atk') - enemyDef * 0.5); // MODIFICADO - HÉROE
     const dmg = Math.round(rawDmg * (critHit ? 2 : 1) * (0.9 + Math.random()*0.2));
     e.dataset.hp = Math.max(0, e.dataset.hp - dmg);
     const bar = e.querySelector('.hpbar i');
@@ -1062,7 +1157,7 @@
     if (evaHit){
       evadidoText(heroX+2, 480-135);
     } else {
-      const edmg = Math.max(1, Math.round(parseFloat(e.dataset.atk) * (0.9+Math.random()*0.2) - stats.def * 0.4));
+      const edmg = Math.max(1, Math.round(parseFloat(e.dataset.atk) * (0.9+Math.random()*0.2) - effectiveStat('def') * 0.4)); // MODIFICADO - HÉROE
       stats.hp = Math.max(0, stats.hp - edmg);
       damageText(heroX+4, 480-130, edmg, false);
       syncStats();
@@ -1121,7 +1216,7 @@
         state.stage = 0;
         state.world++;
         // [NUEVO] Recuperación total de HP al avanzar de mundo.
-        stats.hp = stats.hpMax;
+        stats.hp = effectiveStat('hpMax'); // MODIFICADO - HÉROE
         syncStats();
         // Si al avanzar alcanzamos/superamos el mundo del que fuimos devueltos, salir del retroceso
         if (state.retreat && state.world >= state.retreatFrom){
@@ -1169,7 +1264,7 @@
         state.scrolling = true;              // NUEVO - Punto 1
         state.waveTimer = 3000;              // NUEVO - Punto 1
         avanzarBtn.classList.add('hidden');
-        stats.hp = stats.hpMax;
+        stats.hp = effectiveStat('hpMax'); // MODIFICADO - HÉROE
         syncStats();
         resetSceneForNewWorld();
         updHUD();
@@ -1385,6 +1480,8 @@
     const newLv = Math.min(100, prevLv + desiredInc);
     const realInc = newLv - prevLv;
     for (let k=0; k<realInc; k++) applyLevelBonus(pick);            // [MODIFICADO] aplica el bonus tantas veces como niveles subidos
+    const heroPickMap = {0:0,1:1,2:2,3:3,5:4,7:5};                 // NUEVO - HÉROE: excluye CRÍTICO y EVASIÓN
+    if (heroPickMap[pick] !== undefined){ for (let k=0; k<realInc; k++) improveHeroSlot(heroPickMap[pick]); } // NUEVO - HÉROE
     rankState.slotLv[pick] = newLv;
     rankState.kunai -= 1;
     kunaiCountEl.textContent = fmt(rankState.kunai); // MODIFICADO - Punto 2
@@ -1473,9 +1570,10 @@
     draw(g){this.tr.forEach((p,i)=>{g.save();g.globalAlpha=(1-i/this.tr.length)*.45;g.fillStyle=this.c;g.beginPath();g.arc(p.x,p.y,this.s*(1-i/this.tr.length),0,6.28);g.fill();g.restore()});const gr=g.createRadialGradient(this.x,this.y,0,this.x,this.y,this.s*2.2);gr.addColorStop(0,'#fff');gr.addColorStop(.35,this.c);gr.addColorStop(1,'transparent');g.fillStyle=gr;g.beginPath();g.arc(this.x,this.y,this.s*2.2,0,6.28);g.fill()}
   }
   class CryptFighter{ // NUEVO
-    constructor(x,id){this.id=id;this.x=x;this.y=CGROUND-CNH;this.vx=0;this.vy=0;this.on=true;this.face=id===0;this.name=id===0?'KAITO':'NINJA';this.col=id===0?'#e8a030':'#6855cc';this.glow=id===0?'#ff8c00':'#9932cc';this.skin=id===0?'#f5c09a':'#d8c8e8';this.max=id===0?stats.hpMax:NINJA_STATS.hp;this.hp=id===0?stats.hp:this.max;this.atk=id===0?stats.atk:NINJA_STATS.atk;this.def=id===0?stats.def:NINJA_STATS.def;this.cd=0;this.jcd=30+Math.random()*60;this.stun=0;this.flash=0;this.tX=x;this.tY=this.y;this.dash=0;this.dead=false;this.anim=0;this.trail=[]}
+    constructor(x,id){this.id=id;this.x=x;this.y=CGROUND-CNH;this.vx=0;this.vy=0;this.on=true;this.face=id===0;this.name=id===0?'KAITO':'NINJA';this.col=id===0?'#e8a030':'#6855cc';this.glow=id===0?'#ff8c00':'#9932cc';this.skin=id===0?'#f5c09a':'#d8c8e8';this.max=id===0?effectiveStat('hpMax'):NINJA_STATS.hp;this.hp=id===0?stats.hp:this.max;this.atk=id===0?effectiveStat('atk'):NINJA_STATS.atk;this.def=id===0?effectiveStat('def'):NINJA_STATS.def;this.cd=0; // MODIFICADO - HÉROE
+      this.jcd=30+Math.random()*60;this.stun=0;this.flash=0;this.tX=x;this.tY=this.y;this.dash=0;this.dead=false;this.anim=0;this.trail=[]}
     get cx(){return this.x+CNW/2} get cy(){return this.y+CNH/2}
-    hit(d,from){if(this.dead)return;if(Math.random()<.12&&this.stun<=0){cryptSmoke(this.cx,this.cy,14);this.x=Math.max(6,Math.min(CW-CNW-6,from.x+(from.face?-45:45)));cryptSmoke(this.cx,this.cy,8);return}const block=Math.random()<.24;const val=Math.max(1,(d-this.def*.35)*(block?.35:1));this.hp=Math.max(0,this.hp-val);crypt.nums.push(new CryptNum(this.cx,this.y-4,val,d>this.max*.12));cryptSparks(this.cx,this.cy,d>this.max*.12?16:9,d>this.max*.12?'#ffd700':'#ff4422');this.vx+=(from.cx<this.cx?1:-1)*10;this.stun=18;this.flash=15;crypt.shake=Math.max(crypt.shake,d>this.max*.12?9:4);if(this.hp<=0)this.dead=true}
+    hit(d,from){if(this.dead)return;if(Math.random()<.12&&this.stun<=0){cryptSmoke(this.cx,this.cy,14);this.x=Math.max(6,Math.min(CW-CNW-6,from.x+(from.face?-45:45)));cryptSmoke(this.cx,this.cy,8);return}const block=Math.random()<.24;const val=Math.max(1,(d-this.def*.35)*(block ? .35 : 1));this.hp=Math.max(0,this.hp-val);crypt.nums.push(new CryptNum(this.cx,this.y-4,val,d>this.max*.12));cryptSparks(this.cx,this.cy,d>this.max*.12?16:9,d>this.max*.12?'#ffd700':'#ff4422');this.vx+=(from.cx<this.cx?1:-1)*10;this.stun=18;this.flash=15;crypt.shake=Math.max(crypt.shake,d>this.max*.12?9:4);if(this.hp<=0)this.dead=true}
     update(dt,enemy){if(this.dead){cryptSmoke(this.cx,this.cy,1);return}this.flash-=dt;this.stun-=dt;this.cd-=dt;this.jcd-=dt;this.vy+=this.on?0:.38*dt;this.x+=this.vx*dt;this.y+=this.vy*dt;this.vx*=.87;if(this.y>=CGROUND-CNH){this.y=CGROUND-CNH;this.vy=0;this.on=true}else this.on=false;if(this.x<3){this.x=3;this.vx=5;if(this.on){this.vy=-9;this.on=false}}if(this.x>CW-CNW-3){this.x=CW-CNW-3;this.vx=-5;if(this.on){this.vy=-9;this.on=false}}this.face=enemy.cx>this.cx;if(this.stun>0)return;this.dash+=dt;if(this.dash>48){this.dash=0;this.tX=25+Math.random()*(CW-55);this.tY=Math.random()<.4?CGROUND-CNH-55-Math.random()*110:CGROUND-CNH}const dx=this.tX-this.x,dy=this.tY-this.y,len=Math.hypot(dx,dy)||1;if(len>8){this.vx+=(dx/len)*1.4;if(dy<-20&&this.on){this.vy=-10;this.on=false}}this.anim+=dt;if(Math.abs(this.vx)+Math.abs(this.vy)>4&&this.anim>4){this.anim=0;this.trail.unshift({x:this.cx,y:this.cy,a:.45});if(this.trail.length>5)this.trail.pop()}this.trail.forEach(t=>t.a-=.035*dt);this.trail=this.trail.filter(t=>t.a>0);const dist=Math.hypot(this.cx-enemy.cx,this.cy-enemy.cy);if(dist<54&&this.cd<=0){const crit=this.id===0&&Math.random()*100<stats.crit;enemy.hit(this.atk*(crit?2:1)*(0.9+Math.random()*.3),this);this.cd=34}else if(dist>145&&this.jcd<=0){const sx=(enemy.cx-this.cx)/(dist||1)*5, sy=(enemy.cy-this.cy)/(dist||1)*5;crypt.shots.push(new CryptShot(this.cx,this.cy,sx,sy,this));this.jcd=95;cryptSparks(this.cx,this.cy,12,this.glow)}}
     draw(g){this.trail.forEach(t=>{g.save();g.globalAlpha=t.a;g.fillStyle=this.glow;g.beginPath();g.ellipse(t.x,t.y,CNW*.45,CNH*.45,0,0,6.28);g.fill();g.restore()});g.save();if(!this.face){g.translate(this.x+CNW/2,0);g.scale(-1,1);g.translate(-(this.x+CNW/2),0)}const x=this.x,y=this.y,fl=this.flash>0&&Math.sin(this.flash*1.5)>0,bc=fl?'#ff3333':this.col,sc=fl?'#ff8866':this.skin;g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.ellipse(x+CNW/2,CGROUND,CNW*.7,5,0,0,6.28);g.fill();g.fillStyle='#222';g.fillRect(x+1,y+CNH-5,CNW*.42,5);g.fillRect(x+CNW*.55,y+CNH-5,CNW*.42,5);g.fillStyle=bc;g.fillRect(x+2,y+CNH*.62,CNW*.38,CNH*.36);g.fillRect(x+CNW*.56,y+CNH*.62,CNW*.38,CNH*.36);g.fillStyle='#333';g.fillRect(x+1,y+CNH*.60,CNW-2,3);g.fillStyle=bc;g.fillRect(x+2,y+CNH*.30,CNW-4,CNH*.32);g.fillRect(x-4,y+CNH*.32,5,CNH*.25);g.fillRect(x+CNW-1,y+CNH*.32,5,CNH*.25);g.fillStyle=sc;g.fillRect(x+CNW*.36,y+CNH*.27,CNW*.28,CNH*.06);g.beginPath();g.arc(x+CNW/2,y+CNH*.155,CNW*.4,0,6.28);g.fill();g.fillStyle=this.id===0?'#1b1208':'#111118';g.beginPath();g.arc(x+CNW/2,y+CNH*.10,CNW*.42,3.14,6.28);g.fill();g.fillStyle=this.id===0?'#ff6600':'#2233aa';g.fillRect(x+CNW*.1,y+CNH*.07,CNW*.8,4);g.fillStyle='#c8c8c8';g.fillRect(x+CNW*.28,y+CNH*.07,CNW*.44,4);g.fillStyle='#111';g.beginPath();g.arc(x+CNW*.62,y+CNH*.155,2.2,0,6.28);g.fill();if(this.stun>5){g.fillStyle='#ffd700';g.font='10px Arial';g.fillText('★',x+CNW/2,y-4)}g.restore();this.hpbar(g)}
     hpbar(g){const w=48,x=this.x+CNW/2-w/2,y=this.y-14,r=Math.max(0,this.hp/this.max);g.fillStyle='rgba(0,0,0,.75)';g.fillRect(x-1,y-1,w+2,6);g.fillStyle=r>.5?'#44ee44':r>.25?'#ffaa00':'#ff2222';g.fillRect(x,y,w*r,4);g.font='900 8px Arial';g.textAlign='center';g.fillStyle=this.id===0?'#ffd700':'#aa88ff';g.fillText(this.name,this.x+CNW/2,y-3)}
@@ -1531,7 +1629,7 @@
     crypt.shots.forEach(s=>crypt.fighters.forEach(f=>{if(!s.dead&&f!==s.o&&!f.dead&&Math.hypot(s.x-f.cx,s.y-f.cy)<s.s+CNW/2){f.hit(12+Math.random()*10,s.o);cryptSparks(s.x,s.y,16,s.c);s.dead=true}}));
     crypt.shots=crypt.shots.filter(s=>!s.dead); crypt.particles.forEach(p=>p.update(dt)); crypt.particles=crypt.particles.filter(p=>!p.dead()); crypt.nums.forEach(n=>n.update(dt)); crypt.nums=crypt.nums.filter(n=>!n.dead());
     if ((a.dead||b.dead) && !crypt.finishTimer){crypt.finishTimer=1;if(!a.dead){state.gold += Math.round(10*Math.pow(1.10,state.world-1));showGoldReward(Math.round(10*Math.pow(1.10,state.world-1)));rankState.kunai += 2;if(kunaiCountEl)kunaiCountEl.textContent=fmt(rankState.kunai);if(cryptWinNameEl)cryptWinNameEl.textContent='KAITO';cryptVictoryEl.classList.add('show')}else{if(cryptWinNameEl)cryptWinNameEl.textContent='NINJA';cryptVictoryEl.classList.add('show')}}
-    if (crypt.finishTimer){crypt.finishTimer+=dt;if(crypt.finishTimer>95){if(payCryptRound()){cryptVictoryEl.classList.remove('show');cryptNextRound()}else{stats.hp=Math.max(1,a.dead?stats.hpMax*.35:stats.hpMax);syncStats();updHUD();endCryptMode()}}} // MODIFICADO
+    if (crypt.finishTimer){crypt.finishTimer+=dt;if(crypt.finishTimer>95){if(payCryptRound()){cryptVictoryEl.classList.remove('show');cryptNextRound()}else{stats.hp=Math.max(1,a.dead?effectiveStat('hpMax')*.35:effectiveStat('hpMax'));syncStats();updHUD();endCryptMode()} }} // MODIFICADO - HÉROE
   }
   if (cryptStopEl) cryptStopEl.addEventListener('click', endCryptMode); // NUEVO
   function cryptRender(){ // NUEVO
@@ -1566,6 +1664,18 @@
       } else {
         el.addEventListener('click', ()=>{ /* sin acción por ahora */ });
       }
+    });
+  }
+
+
+
+  // NUEVO - Botón HÉROE: alterna la vista y pausa/restaura solo el cuadro superior
+  const heroBtn = document.querySelector('.btn.heroe');
+  if (heroBtn && heroViewEl){
+    heroBtn.addEventListener('click', ()=>{
+      state.heroViewOpen = !state.heroViewOpen;
+      heroViewEl.classList.toggle('show', state.heroViewOpen);
+      if (state.heroViewOpen) updateHeroView();
     });
   }
 
