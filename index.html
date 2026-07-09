@@ -620,6 +620,7 @@
             <span class="mazm-badge">II</span>
             <span class="mazm-icon">🌲</span><!-- MODIFICADO -->
             <span class="mazm-name">BOSQUE SOMBRÍO</span>
+            <span class="mazm-cost-pill"><span class="emj">💰</span><span class="criptaKunaiCostMirror">40</span></span><!-- NUEVO -->
           </div>
           <div class="mazm-scroll t3" data-mazm="3">
             <span class="mazm-badge">III</span>
@@ -906,12 +907,7 @@
     const el = document.getElementById('criptaKunaiCost'); // MODIFICADO
     if (!el) return;
     const cost = criptaKunaiCost();
-    el.textContent = fmt(cost);
-    const wrap = el.closest('.mazm-cost-pill') || el.closest('.mazm-dgn-cost');
-    if (wrap){
-      wrap.classList.toggle('ok', state.gold >= cost);
-      wrap.classList.toggle('no', state.gold < cost);
-    }
+    els.forEach(el=>{el.textContent = fmt(cost); const wrap = el.closest('.mazm-cost-pill') || el.closest('.mazm-dgn-cost'); if (wrap){wrap.classList.toggle('ok', state.gold >= cost); wrap.classList.toggle('no', state.gold < cost);}}); // MODIFICADO
   }
 
   function updHUD(){
