@@ -589,7 +589,7 @@
             <span class="mazm-badge">I</span>
             <span class="mazm-icon">🗡️</span>
             <span class="mazm-name">CRIPTA KUNAI</span>
-            <span class="mazm-cost-pill"><span class="emj">💰</span><span id="criptaKunaiCost">30</span></span>
+            <span class="mazm-cost-pill"><span class="emj">💰</span><span id="criptaKunaiCost">40</span><!-- MODIFICADO --></span>
           </div>
           <div class="mazm-scroll t2" data-mazm="2">
             <span class="mazm-badge">II</span>
@@ -847,6 +847,7 @@
 
   // NUEVO - Costo dinámico de CRIPTA KUNAI: base 30, +25% por cada mundo a partir del mundo 2
   function criptaKunaiCost(){
+    if (state.world === 1) return 40; // NUEVO
     return Math.ceil(30 * Math.pow(1.25, Math.max(0, state.world - 1)));
   }
   // NUEVO - Refresca el número y el color del costo según el oro disponible
