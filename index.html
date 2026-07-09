@@ -476,6 +476,8 @@
   .crypt-victory .cv-name{font-size:34px;font-weight:900;letter-spacing:4px;color:#ffd700;-webkit-text-stroke:1px rgba(255,200,0,.45)}
   .crypt-victory .cv-sub{font-size:10px;letter-spacing:3px;color:#aaa;font-weight:900}
   .crypt-rounds{position:absolute;left:10px;bottom:10px;z-index:14;color:#ffd76b;font-weight:900;font-size:11px;text-shadow:0 2px 4px #000;letter-spacing:1px}
+  .crypt-stop{position:absolute;right:10px;bottom:10px;z-index:15;background:rgba(20,8,8,.82);color:#ffd76b;border:1px solid rgba(255,215,107,.65);border-radius:9px;padding:6px 10px;font-size:10px;font-weight:900;letter-spacing:1px;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.55)} /* NUEVO */
+  .crypt-stop:active{transform:translateY(1px)} /* NUEVO */
 
   /* NUEVO - Ventana de MAZMORRAS (pastel, combina con la paleta del juego) */
   .mazm-ov{position:absolute;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;
@@ -574,6 +576,7 @@
     <div id="cryptBattle" class="crypt-canvas-wrap">
       <canvas id="cryptCanvas" width="393" height="480"></canvas>
       <div id="cryptRounds" class="crypt-rounds"></div>
+      <button id="cryptStop" class="crypt-stop">DETENER</button><!-- NUEVO -->
       <div id="cryptVictory" class="crypt-victory"><div class="cv-banner"><div class="cv-label">VENCEDOR</div><div id="cryptWinName" class="cv-name">KAITO</div><div class="cv-sub">★ VICTORIA ★</div></div></div>
     </div>
 
@@ -676,7 +679,7 @@
         <div class="kunai"><div class="blade"></div><div class="handle"></div><div class="ring"></div></div>
         <div class="k-info" style="flex:1;align-items:center;justify-content:center;text-align:center">
           <span><b style="color:#ffd76b;font-size:11px">KUNAI</b></span><!-- MODIFICADO: renombrado -->
-          <span class="k-count">x<b id="kunaiCount">50</b></span><!-- NUEVO: contador -->
+          <span class="k-count">x<b id="kunaiCount">10</b></span><!-- MODIFICADO: contador inicial -->
         </div>
         <div id="forgeProgress" class="forge-progress"><div class="fp-fill"></div><div class="fp-label">FORJANDO...</div></div>
       </div>
@@ -1232,7 +1235,7 @@
   const rankState = {
     idx: 0,                                          // rango activo (0=Común)
     slotLv: [1,1,1,1,1,1,1,1],                       // nivel 1-100 por slot
-    kunai: 50,                                       // unidades iniciales
+    kunai: 10,                                       // MODIFICADO - unidades iniciales
   };
   // Mapeo slot index -> tipo estadística (según orden del DOM)
   // 0=HP, 1=ATK, 2=DEF, 3=AGI, 4=CRIT, 5=VEL, 6=EVA, 7=REGEN
@@ -1444,6 +1447,7 @@
   const cryptVictoryEl = document.getElementById('cryptVictory');
   const cryptRoundsEl = document.getElementById('cryptRounds');
   const cryptWinNameEl = document.getElementById('cryptWinName');
+  const cryptStopEl = document.getElementById('cryptStop'); // NUEVO
   const worldLabelEl = document.getElementById('worldLabel');
   const crypt = {active:false, paid:0, round:0, last:0, fighters:[], particles:[], nums:[], shots:[], shake:0, flash:0, mountains:[], trees:[], finishTimer:0};
   // NUEVO - CRIPTA KUNAI: única fuente de verdad para las stats del NINJA (scroll NINJA del HUD).
@@ -1481,18 +1485,22 @@
   function cryptGenBg(){crypt.mountains=[];crypt.trees=[];for(let x=0;x<=CW;x+=12){crypt.mountains.push({x,y:90+Math.sin(x*.018)*55+Math.cos(x*.04)*30,l:0});crypt.mountains.push({x,y:130+Math.sin(x*.024+1)*45+Math.cos(x*.03)*22,l:1})}crypt.mountains.push({x:CW,y:90+Math.sin(CW*.018)*55+Math.cos(CW*.04)*30,l:0});crypt.mountains.push({x:CW,y:130+Math.sin(CW*.024+1)*45+Math.cos(CW*.03)*22,l:1});for(let i=0;i<14;i++)crypt.trees.push({x:15+i*28+Math.random()*10,h:80+Math.random()*90,w:22+Math.random()*28})}
   function cryptDrawTree(t){const g=cryptCtx,base=CGROUND;g.fillStyle='#3a2208';g.fillRect(t.x-3,base-t.h*.45,7,t.h*.45);['#1a3a0a','#2a5a10','#3a7018'].forEach((c,i)=>{g.fillStyle=c;g.beginPath();g.arc(t.x+(i-1)*5,base-t.h*.55-i*12,t.w*(.55-i*.06),0,6.28);g.fill()})}
   function cryptDrawBg(){const g=cryptCtx,sky=g.createLinearGradient(0,0,0,CGROUND);sky.addColorStop(0,'#3a7fbf');sky.addColorStop(.55,'#82c8e8');sky.addColorStop(1,'#b8dff0');g.fillStyle=sky;g.fillRect(0,0,CW,CH);g.fillStyle='#ffee80';g.shadowColor='#ffe060';g.shadowBlur=18;g.beginPath();g.arc(58,50,15,0,6.28);g.fill();g.shadowBlur=0;[0,1].forEach(l=>{const pts=crypt.mountains.filter(p=>p.l===l);g.fillStyle=l?'#4a7040':'#6b8fa8';g.beginPath();g.moveTo(0,CH);pts.forEach(p=>g.lineTo(p.x,p.y));g.lineTo(CW,CH);g.fill()});crypt.trees.forEach(cryptDrawTree);const gr=g.createLinearGradient(0,CGROUND-8,0,CH);gr.addColorStop(0,'#4a7020');gr.addColorStop(.15,'#5a3a1a');gr.addColorStop(1,'#1e1004');g.fillStyle=gr;g.fillRect(0,CGROUND-8,CW,CH-CGROUND+8)}
-  function startCryptMode(){ // NUEVO
+  function payCryptRound(){ // NUEVO
     const cost = criptaKunaiCost();
     if (state.gold < cost) return false;
     state.gold -= cost;
-    const extra = Math.floor(state.gold / cost);
-    state.gold -= extra * cost;
-    crypt.paid = 1 + extra; crypt.round = 0; crypt.active = true; crypt.finishTimer = 0;
+    crypt.paid++;
+    updHUD();
+    return true;
+  }
+  function startCryptMode(){ // NUEVO
+    crypt.paid = 0; crypt.round = 0; crypt.active = true; crypt.finishTimer = 0; // MODIFICADO
+    if (!payCryptRound()){ crypt.active = false; return false; } // MODIFICADO
     state.paused = true; state.inBattle = false; enemies.forEach(en=>en.remove()); enemies=[];
     appRoot.classList.add('crypt-mode');
     if (worldLabelEl) worldLabelEl.textContent = 'NINJA';
     if (cryptVictoryEl) cryptVictoryEl.classList.remove('show');
-    updHUD(); cryptGenBg(); cryptNextRound();
+    cryptGenBg(); cryptNextRound(); // MODIFICADO
     if (!crypt.last) requestAnimationFrame(cryptLoop);
     return true;
   }
@@ -1505,7 +1513,7 @@
   function cryptNextRound(){ // NUEVO
     crypt.round++; crypt.particles=[]; crypt.nums=[]; crypt.shots=[]; crypt.flash=0; crypt.shake=0; crypt.finishTimer=0;
     crypt.fighters=[new CryptFighter(62,0),new CryptFighter(305,1)];
-    if (cryptRoundsEl) cryptRoundsEl.textContent = 'CRIPTA KUNAI · RONDA ' + crypt.round + ' / ' + crypt.paid;
+    if (cryptRoundsEl) cryptRoundsEl.textContent = 'CRIPTA KUNAI · RONDA ' + crypt.round + ' · ORO ' + fmt(state.gold); // MODIFICADO
     // MODIFICADO - CRIPTA KUNAI: el HUD (scroll NINJA) y el enemigo en batalla leen ambos de NINJA_STATS.
     if (wsHpEl) wsHpEl.textContent = fmt(NINJA_STATS.hp);
     if (wsAtkEl) wsAtkEl.textContent = fmt(NINJA_STATS.atk);
@@ -1523,8 +1531,9 @@
     crypt.shots.forEach(s=>crypt.fighters.forEach(f=>{if(!s.dead&&f!==s.o&&!f.dead&&Math.hypot(s.x-f.cx,s.y-f.cy)<s.s+CNW/2){f.hit(12+Math.random()*10,s.o);cryptSparks(s.x,s.y,16,s.c);s.dead=true}}));
     crypt.shots=crypt.shots.filter(s=>!s.dead); crypt.particles.forEach(p=>p.update(dt)); crypt.particles=crypt.particles.filter(p=>!p.dead()); crypt.nums.forEach(n=>n.update(dt)); crypt.nums=crypt.nums.filter(n=>!n.dead());
     if ((a.dead||b.dead) && !crypt.finishTimer){crypt.finishTimer=1;if(!a.dead){state.gold += Math.round(10*Math.pow(1.10,state.world-1));showGoldReward(Math.round(10*Math.pow(1.10,state.world-1)));rankState.kunai += 2;if(kunaiCountEl)kunaiCountEl.textContent=fmt(rankState.kunai);if(cryptWinNameEl)cryptWinNameEl.textContent='KAITO';cryptVictoryEl.classList.add('show')}else{if(cryptWinNameEl)cryptWinNameEl.textContent='NINJA';cryptVictoryEl.classList.add('show')}}
-    if (crypt.finishTimer){crypt.finishTimer+=dt;if(crypt.finishTimer>95){if(!a.dead && crypt.round<crypt.paid){cryptVictoryEl.classList.remove('show');updHUD();cryptNextRound()}else{stats.hp=Math.max(1,a.dead?stats.hpMax*.35:stats.hpMax);syncStats();updHUD();endCryptMode()}}}
+    if (crypt.finishTimer){crypt.finishTimer+=dt;if(crypt.finishTimer>95){if(payCryptRound()){cryptVictoryEl.classList.remove('show');cryptNextRound()}else{stats.hp=Math.max(1,a.dead?stats.hpMax*.35:stats.hpMax);syncStats();updHUD();endCryptMode()}}} // MODIFICADO
   }
+  if (cryptStopEl) cryptStopEl.addEventListener('click', endCryptMode); // NUEVO
   function cryptRender(){ // NUEVO
     const g=cryptCtx,s=crypt.shake>0?(Math.random()-.5)*crypt.shake:0;crypt.shake*=.9;g.save();g.translate(s,-s*.4);cryptDrawBg();crypt.shots.forEach(x=>x.draw(g));crypt.fighters.forEach(f=>f.draw(g));crypt.particles.forEach(p=>p.draw(g));crypt.nums.forEach(n=>n.draw(g));if(crypt.finishTimer){g.fillStyle='rgba(255,220,0,.22)';g.font='900 16px Arial Black';g.textAlign='center';g.fillText('K.O.',CW/2,70)}g.restore()}
 
