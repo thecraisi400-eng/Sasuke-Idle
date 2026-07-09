@@ -896,7 +896,7 @@
     if (wsAtkEl) wsAtkEl.textContent = fmt(st.atk); // MODIFICADO - Punto 2
     if (wsDefEl) wsDefEl.textContent = fmt(st.def); // MODIFICADO - Punto 2
   }
-  syncStats();
+  updateHeroHpBar(); // MODIFICADO - evita llamar updateHeroView antes de inicializar la vista HÉROE
 
   // MODIFICADO - Costo dinámico de CRIPTA KUNAI: base 40, +25% por cada mundo a partir del mundo 2
   function criptaKunaiCost(){
@@ -968,7 +968,7 @@
     return true;
   }
   renderHeroEquipView();
-  updateHeroView();
+  syncStats(); // MODIFICADO - sincroniza cuando la vista HÉROE ya existe
 
 
   function spark(x,y,color='#ffe14a'){
