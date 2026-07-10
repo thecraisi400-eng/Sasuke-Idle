@@ -1033,25 +1033,32 @@
       holder.appendChild(sprite);
     }
     sprite.style.transform = 'scale(1.35)'; // MODIFICADO - CRIPTAS KUNAI: sin giros bruscos ni flip visual
-    const maxX = 118; // MODIFICADO - CRIPTAS KUNAI: margen seguro para que no salga de cámara
-    let x = 0, startX = 0, targetX = 0, moveStart = 0, moveDuration = 0, pauseUntil = 0, targetDir = -1;
+    const bounds = {x:118, yMin:-72, yMax:22}; // MODIFICADO - CRIPTAS KUNAI: límites seguros para caminar en todas las direcciones
+    let x = 0, y = 0, startX = 0, startY = 0, targetX = 0, targetY = 0, moveStart = 0, moveDuration = 0, pauseUntil = 0;
     const easeInOut = t => t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2; // NUEVO - CRIPTAS KUNAI
     const beginStep = (now)=>{
-      targetDir *= -1; // MODIFICADO - CRIPTAS KUNAI: camina izquierda/derecha de forma ordenada
-      startX = x;
-      targetX = Math.max(-maxX, Math.min(maxX, targetDir * rand(36, maxX)));
+      startX = x; startY = y;
+      // MODIFICADO - CRIPTAS KUNAI: nuevo objetivo aleatorio en X/Y para permitir diagonales naturales
+      do {
+        targetX = rand(-bounds.x, bounds.x);
+        targetY = rand(bounds.yMin, bounds.yMax);
+      } while (Math.hypot(targetX - startX, targetY - startY) < 42);
       moveStart = now;
-      moveDuration = rand(1800, 2600);
+      const distance = Math.hypot(targetX - startX, targetY - startY);
+      const calmSpeed = rand(0.028, 0.044); // px/ms: lento, sensación de exploración tranquila
+      moveDuration = Math.max(2400, Math.min(5600, distance / calmSpeed));
     };
     const tick = (now)=>{
       if (!state.cryptasOpen){ cryptasHeroRaf = null; return; }
       if (!moveStart && now >= pauseUntil) beginStep(now);
       if (moveStart){
         const t = Math.min(1, (now - moveStart) / moveDuration);
-        x = startX + (targetX - startX) * easeInOut(t);
-        const footBob = Math.sin(t * Math.PI) * -1.5; // NUEVO - CRIPTAS KUNAI: leve paso, no salto
-        holder.style.transform = `translate(calc(-50% + ${x}px), ${footBob}px)`; // MODIFICADO - CRIPTAS KUNAI: movimiento fluido sobre el suelo
-        if (t >= 1){ moveStart = 0; pauseUntil = now + rand(260, 520); }
+        const eased = easeInOut(t);
+        x = startX + (targetX - startX) * eased;
+        y = startY + (targetY - startY) * eased;
+        const footBob = Math.sin(t * Math.PI * 6) * -0.7; // MODIFICADO - CRIPTAS KUNAI: paso sutil, no salto
+        holder.style.transform = `translate(calc(-50% + ${x}px), ${y + footBob}px)`; // MODIFICADO - CRIPTAS KUNAI: movimiento lento en X/Y y diagonales
+        if (t >= 1){ moveStart = 0; pauseUntil = now + rand(420, 1100); } // MODIFICADO - CRIPTAS KUNAI: intervalos aleatorios razonables
       }
       cryptasHeroRaf = requestAnimationFrame(tick);
     };
