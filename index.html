@@ -500,7 +500,7 @@
   .mazm-cur .emj{font-size:17px}
   /* MODIFICADO - MAZMORRAS: nuevo sistema visual tipo pergamino premium */
   .mazm-scroll{position:relative;min-height:96px;border-radius:16px;cursor:pointer;user-select:none;overflow:visible;
-    display:grid;grid-template-columns:54px 1fr;grid-template-rows:1fr auto;align-items:center;column-gap:10px;padding:16px 24px 13px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:7px;padding:16px 24px 13px; /* MODIFICADO - MAZMORRAS: centra el texto alfanumérico del scroll */
     border:1px solid rgba(122,72,28,.55);background:linear-gradient(180deg,#f7d99a,#c99042 48%,#7b431e 100%);
     box-shadow:0 10px 18px rgba(0,0,0,.45),inset 0 2px 0 rgba(255,244,190,.62),inset 0 -18px 22px rgba(73,34,13,.34);
     transition:transform .18s ease,filter .18s ease,box-shadow .18s ease} /* MODIFICADO */
@@ -509,11 +509,11 @@
   .mazm-scroll::before{content:"";position:absolute;left:-10px;right:-10px;top:9px;bottom:9px;border-radius:14px;background:linear-gradient(90deg,#7a421b 0 18px,transparent 18px calc(100% - 18px),#7a421b calc(100% - 18px));box-shadow:inset 0 0 0 1px rgba(255,226,145,.26);pointer-events:none;z-index:0} /* MODIFICADO */
   .mazm-scroll::after{content:"";position:absolute;inset:6px 12px;border-radius:12px;background:linear-gradient(120deg,rgba(255,255,255,.26),transparent 38%),repeating-linear-gradient(0deg,rgba(88,45,20,.08) 0 1px,transparent 1px 8px);pointer-events:none;z-index:0} /* MODIFICADO */
   .mazm-scroll > *{position:relative;z-index:1}
-  .mazm-icon{grid-row:1 / span 2;font-size:31px;line-height:1;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:rgba(42,20,10,.26);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 3px 8px rgba(0,0,0,.28);filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))} /* MODIFICADO */
-  .mazm-name{align-self:end;font-family:Georgia,serif;font-weight:900;font-size:13px;letter-spacing:1px;color:#fff4c7;text-align:left;text-shadow:0 2px 2px rgba(57,25,7,.85);line-height:1.1;padding:0} /* MODIFICADO */
+  .mazm-icon{position:absolute;left:24px;top:50%;transform:translateY(-50%);font-size:31px;line-height:1;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:rgba(42,20,10,.26);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 3px 8px rgba(0,0,0,.28);filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))} /* MODIFICADO - MAZMORRAS: icono fuera del flujo para no descentrar el texto */
+  .mazm-name{font-family:Georgia,serif;font-weight:900;font-size:13px;letter-spacing:1px;color:#fff4c7;text-align:center;text-shadow:0 2px 2px rgba(57,25,7,.85);line-height:1.1;padding:0;width:100%} /* MODIFICADO - MAZMORRAS: nombre centrado */
   .mazm-badge{position:absolute;top:8px;left:12px;background:linear-gradient(180deg,#2f1b10,#0f0805);border:1px solid rgba(255,215,107,.38);border-radius:8px;padding:2px 6px;font-size:8px;font-weight:900;color:#ffd76b;letter-spacing:1.2px;z-index:2;font-family:Georgia,serif} /* MODIFICADO */
   .mazm-lock{position:absolute;top:8px;right:14px;background:rgba(35,18,9,.7);border:1px solid rgba(255,215,107,.42);border-radius:18px;padding:2px 7px;font-size:8px;font-weight:800;color:#ffe08a;letter-spacing:.5px;z-index:2} /* MODIFICADO */
-  .mazm-cost-pill{justify-self:start;display:inline-flex;align-items:center;gap:4px;margin-top:6px;background:rgba(39,19,8,.62);border:1px solid rgba(255,230,150,.5);border-radius:14px;padding:3px 10px;font-weight:900;font-size:11px;color:#ffe08a;font-family:Georgia,serif} /* MODIFICADO */
+  .mazm-cost-pill{display:inline-flex;align-items:center;justify-content:center;gap:4px;margin-top:0;background:rgba(39,19,8,.62);border:1px solid rgba(255,230,150,.5);border-radius:14px;padding:3px 10px;font-weight:900;font-size:11px;color:#ffe08a;font-family:Georgia,serif} /* MODIFICADO - MAZMORRAS: costo centrado bajo el nombre */
   .mazm-cost-pill.ok{color:#8bffb5;border-color:rgba(139,255,181,.65)} /* MODIFICADO */
   .mazm-cost-pill.no{color:#ff9d9d;border-color:rgba(255,157,157,.65)} /* MODIFICADO */
   .mazm-cost-pill .emj{font-size:12px}
@@ -605,18 +605,18 @@
         <div class="mazm-title">✦ MAZMORRAS ✦</div>
         <div class="mazm-grid">
           <div class="mazm-scroll t1" data-mazm="1">
-            <span class="mazm-badge">I</span>
+            <!-- ELIMINADO - MAZMORRAS: número romano del scroll -->
             <span class="mazm-icon">🗡️</span>
             <span class="mazm-name">CRIPTA KUNAI</span>
             <span class="mazm-cost-pill"><span class="emj">💰</span><span id="criptaKunaiCost">40</span><!-- MODIFICADO --></span>
           </div>
           <div class="mazm-scroll t2" data-mazm="2">
-            <span class="mazm-badge">II</span>
+            <!-- ELIMINADO - MAZMORRAS: número romano del scroll -->
             <span class="mazm-icon">🌲</span><!-- NUEVO -->
             <span class="mazm-name">BOSQUE SOMBRÍO</span><!-- NUEVO -->
           </div>
           <div class="mazm-scroll t3" data-mazm="3">
-            <span class="mazm-badge">III</span>
+            <!-- ELIMINADO - MAZMORRAS: número romano del scroll -->
             <span class="mazm-lock">🔒</span>
             <span class="mazm-icon">🐉</span>
             <span class="mazm-name">TEMPLO DRAGÓN</span>
@@ -873,6 +873,7 @@
     if (wsAtkEl) wsAtkEl.textContent = fmt(st.atk); // MODIFICADO - Punto 2
     if (wsDefEl) wsDefEl.textContent = fmt(st.def); // MODIFICADO - Punto 2
   }
+  stats.hp = effectiveStat('hpMax'); // NUEVO - Inicialización: el héroe comienza con HP máximo efectivo
   syncStats();
 
   // MODIFICADO - Costo dinámico de CRIPTA KUNAI: base 40, +20% fijo por cada mundo superado
