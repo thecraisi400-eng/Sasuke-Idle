@@ -1609,15 +1609,18 @@
     updHUD();
     return true;
   }
-  function startCryptMode(dungeon='crypt'){ // MODIFICADO
-    crypt.paid = 0; crypt.round = 0; crypt.active = true; crypt.finishTimer = 0; crypt.dungeon = dungeon; // MODIFICADO
-    if (dungeon === 'crypt' && !payCryptRound()){ crypt.active = false; return false; } // MODIFICADO
-    state.paused = true; state.inBattle = false; enemies.forEach(en=>en.remove()); enemies=[];
-    appRoot.classList.add('crypt-mode');
-    if (worldLabelEl) worldLabelEl.textContent = 'NINJA';
-    if (cryptVictoryEl) cryptVictoryEl.classList.remove('show');
-    cryptGenBg(); cryptNextRound(); // MODIFICADO
-    if (!crypt.last) requestAnimationFrame(cryptLoop);
+  function startCryptMode(dungeon='crypt'){ // MODIFICADO - usa el sistema de batalla principal en CRIPTA KUNAI/BOSQUE SOMBRÍO
+    if (dungeon === 'crypt' && !payCryptRound()) return false; // MODIFICADO - conserva el coste de entrada antes de iniciar la batalla principal
+    crypt.active = false; crypt.finishTimer = 0; crypt.dungeon = dungeon; // MODIFICADO - asegura que el motor aislado quede desactivado
+    appRoot.classList.remove('crypt-mode'); // MODIFICADO - evita mostrar el canvas aislado de CRIPTA/BOSQUE
+    if (cryptVictoryEl) cryptVictoryEl.classList.remove('show'); // MODIFICADO
+    if (worldLabelEl) worldLabelEl.textContent = 'Mundo'; // MODIFICADO
+    enemies.forEach(en=>en.remove()); enemies=[]; // MODIFICADO - limpia enemigos previos antes de usar spawnWave()
+    state.paused = false; state.inBattle = false; state.transitioning = false; state.retreatWave3Hold = false; // MODIFICADO - reactiva el loop principal
+    resetSceneForNewWorld(); // MODIFICADO - misma preparación visual que la pantalla principal
+    state.waveTimer = 3000; // MODIFICADO - misma cadencia de aparición que batalla principal
+    spawnWave(); // NUEVO - CRIPTA KUNAI/BOSQUE SOMBRÍO combaten con el sistema principal
+    updHUD(); // MODIFICADO
     return true;
   }
   function endCryptMode(){ // NUEVO
