@@ -1024,20 +1024,30 @@
   function startCryptasHeroMotion(){
     const holder = $('cryptasHero');
     if (!holder) return;
-    if (!holder.firstElementChild){
-      const clone = hero.cloneNode(true);
-      clone.removeAttribute('id');
-      clone.classList.add('walking');
-      holder.appendChild(clone);
+    let sprite = holder.firstElementChild; // NUEVO - CRIPTAS KUNAI
+    if (!sprite){
+      sprite = hero.cloneNode(true);
+      sprite.removeAttribute('id');
+      sprite.removeAttribute('style'); // NUEVO - CRIPTAS KUNAI: evita heredar left/transform del héroe principal
+      sprite.classList.add('walking');
+      holder.appendChild(sprite);
     }
-    let x = 0, y = 0, tx = 0, ty = 0, nextPick = 0;
+    const maxX = 132; // NUEVO - CRIPTAS KUNAI: margen seguro para que no salga de cámara
+    let x = 0, y = 0, tx = 0, ty = 0, nextPick = 0, lastX = 0, targetDir = -1;
+    const pickTarget = (now)=>{
+      targetDir *= -1; // NUEVO - CRIPTAS KUNAI: alterna izquierda/derecha para evitar quedarse a un solo lado
+      tx = Math.max(-maxX, Math.min(maxX, targetDir * rand(28, maxX)));
+      ty = rand(-8, 4);
+      nextPick = now + rand(1100, 1900);
+    };
     const tick = (now)=>{
       if (!state.cryptasOpen){ cryptasHeroRaf = null; return; }
-      if (now >= nextPick){
-        tx = rand(-112, 112); ty = rand(-10, 6); nextPick = now + rand(650, 1350); // MODIFICADO - CRIPTAS KUNAI: movimiento errático sobre el suelo
-      }
-      x += (tx - x) * 0.025; y += (ty - y) * 0.025;
+      if (now >= nextPick || Math.abs(tx - x) < 1.5) pickTarget(now); // MODIFICADO - CRIPTAS KUNAI
+      lastX = x;
+      x += (tx - x) * 0.018; y += (ty - y) * 0.018; // MODIFICADO - CRIPTAS KUNAI: movimiento más suave
+      x = Math.max(-maxX, Math.min(maxX, x));
       holder.style.transform = `translate(calc(-50% + ${x}px), ${y}px)`; // MODIFICADO - CRIPTAS KUNAI: conserva el anclaje al suelo
+      sprite.style.transform = `scale(1.35) scaleX(${x < lastX ? -1 : 1})`; // NUEVO - CRIPTAS KUNAI: mira a izquierda/derecha según avance
       cryptasHeroRaf = requestAnimationFrame(tick);
     };
     if (!cryptasHeroRaf) cryptasHeroRaf = requestAnimationFrame(tick);
