@@ -951,6 +951,7 @@
     slotVals[6].textContent = stats.eva.toFixed(2) + '%';
     slotVals[7].textContent = stats.regen.toFixed(2);
     updateHeroHpBar(); // NUEVO - Punto 3
+    updateCryptasHeroHpBar(); // NUEVO - CRIPTAS KUNAI: sincroniza HP visible del clon dentro de la cripta
     updateHeroView(); // NUEVO - HÉROE: mantiene la vista sincronizada en tiempo real
   }
   // NUEVO - Punto 3: actualiza la barra de HP sobre el héroe (color según %)
@@ -961,6 +962,15 @@
     heroHpFill.classList.remove('mid','low');
     if (pct <= 30) heroHpFill.classList.add('low');
     else if (pct <= 60) heroHpFill.classList.add('mid');
+  }
+  function updateCryptasHeroHpBar(){ // NUEVO - CRIPTAS KUNAI: actualiza la barra de HP del personaje clonado en la cripta
+    const fill = document.querySelector('#cryptasHero .hero .hpbar i'); // NUEVO - CRIPTAS KUNAI
+    if (!fill) return; // NUEVO - CRIPTAS KUNAI
+    const pct = Math.max(0, Math.min(100, (stats.hp / effectiveStat('hpMax')) * 100)); // NUEVO - CRIPTAS KUNAI
+    fill.style.width = pct + '%'; // NUEVO - CRIPTAS KUNAI
+    fill.classList.remove('mid','low'); // NUEVO - CRIPTAS KUNAI
+    if (pct <= 30) fill.classList.add('low'); // NUEVO - CRIPTAS KUNAI
+    else if (pct <= 60) fill.classList.add('mid'); // NUEVO - CRIPTAS KUNAI
   }
   // NUEVO - Punto 4: actualiza el panel de stats de la oleada actual
   function updateWaveStats(){
@@ -1046,6 +1056,7 @@
       sprite = hero.cloneNode(true);
       sprite.removeAttribute('id');
       sprite.removeAttribute('style'); // NUEVO - CRIPTAS KUNAI: evita heredar left/transform del héroe principal
+      const cryptasHpFill = sprite.querySelector('.hpbar i'); if (cryptasHpFill) cryptasHpFill.removeAttribute('id'); // NUEVO - CRIPTAS KUNAI: evita ID duplicado y permite refrescar HP local
       sprite.classList.add('walking');
       holder.appendChild(sprite);
     }
@@ -1166,7 +1177,7 @@
     cryptasState.roundCredit=false; // NUEVO - CRIPTAS KUNAI: consume el crédito de ronda pagada
     const startBtn=$('cryptasStart'); if (startBtn) startBtn.style.display='none'; // NUEVO
     const holder=$('cryptasHero'); if (!holder) return;
-    cryptasState.active=true; cryptasState.heroX=Math.round(393*.45); cryptasState.paidRound=true; cryptasState.consumedRound=false; stats.hp=effectiveStat('hpMax'); syncStats(); // MODIFICADO - CRIPTAS KUNAI: al pulsar INICIAR inicia con HP full
+    cryptasBattleCd=0; cryptasState.active=true; cryptasState.heroX=Math.round(393*.45); cryptasState.paidRound=true; cryptasState.consumedRound=false; stats.hp=effectiveStat('hpMax'); syncStats(); // MODIFICADO - CRIPTAS KUNAI: al pulsar INICIAR recarga y muestra HP al 100%
     holder.style.transition='left 2.4s ease, transform 2.4s ease'; holder.style.left='14%'; holder.style.transform='translate(-50%, 15px)'; // MODIFICADO - CRIPTAS KUNAI: izquierda más lenta y 15px abajo solo en este tramo
     cryptasState.sequenceTimers.push(setTimeout(()=>{ holder.style.left='45%'; holder.style.transition='left 2.07s linear, transform .2s'; holder.style.transform='translateX(-50%)'; },2400)); // MODIFICADO - CRIPTAS KUNAI: derecha con velocidad equivalente y vuelve a Y normal
     cryptasState.sequenceTimers.push(setTimeout(()=>{ cryptasState.heroX=Math.round(393*.45); spawnCryptasRound(); if (!cryptasState.raf) cryptasState.raf=requestAnimationFrame(cryptasLoop); },4470)); // MODIFICADO - CRIPTAS KUNAI: espera acorde a caminatas reducidas
