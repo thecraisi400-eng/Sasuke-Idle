@@ -602,7 +602,7 @@
   .cryptas-enemies .enemy{bottom:120px} /* NUEVO - CRIPTAS KUNAI: enemigos alineados al suelo de la cripta */
   .cryptas-fx{position:absolute;inset:0;z-index:9;pointer-events:none} /* NUEVO - CRIPTAS KUNAI: efectos locales visibles en la cripta */
   .cryptas-stop{position:absolute;left:10px;bottom:10px;z-index:12;padding:5px 9px;border-radius:9px;border:1px solid rgba(255,215,107,.65);background:rgba(20,10,5,.72);color:#ffd76b;font-size:10px;font-weight:900;letter-spacing:.6px;box-shadow:0 3px 8px rgba(0,0,0,.42);cursor:pointer} /* NUEVO - CRIPTAS KUNAI: botón pequeño DETENER/SALIR */
-  .cryptas-hud-right .world-title{text-align:center} /* MODIFICADO - CRIPTAS KUNAI: centra el nombre NINJA */
+  .cryptas-hud-right .world-title{text-align:center;justify-content:center} /* MODIFICADO - CRIPTAS KUNAI: centra horizontalmente NINJA dentro del scroll */
   .cryptas-result{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;pointer-events:none;background:transparent} /* NUEVO - CRIPTAS KUNAI: ventana transparente de resultado/descuento */
   .cryptas-result.show{display:flex} /* NUEVO - CRIPTAS KUNAI */
   .cryptas-result-box{min-width:170px;padding:14px 18px;border-radius:14px;border:2px solid rgba(255,215,107,.72);background:rgba(8,8,10,.34);color:#fff;text-align:center;font-weight:900;text-shadow:0 2px 3px #000;box-shadow:0 8px 22px rgba(0,0,0,.35);backdrop-filter:blur(1px)} /* NUEVO - CRIPTAS KUNAI */
@@ -742,7 +742,7 @@
       <div id="cryptasResult" class="cryptas-result"><div class="cryptas-result-box" id="cryptasResultBox"></div></div><!-- NUEVO - CRIPTAS KUNAI: mensaje GANASTE/descuento -->
       <button id="cryptasStop" class="cryptas-stop" type="button">SALIR</button><!-- NUEVO - CRIPTAS KUNAI: DETENER/SALIR -->
       <div id="cryptasHero" class="cryptas-hero"></div><!-- MODIFICADO - CRIPTAS KUNAI: eliminado texto de entrada pagada -->
-      <div class="cryptas-start" id="cryptasStart">EMPEZAR</div><!-- MODIFICADO - CRIPTAS KUNAI: disparador real de combate -->
+      <div class="cryptas-start" id="cryptasStart">INICIAR</div><!-- MODIFICADO - CRIPTAS KUNAI: etiqueta solicitada para iniciar combate -->
     </div>
 
     <!-- NUEVO - CRIPTAS KUNAI: aviso visual de oro insuficiente -->
@@ -1084,13 +1084,14 @@
 
 
   const CRYPTAS_ENEMY_STATS = {hp:100, atk:7, def:3.5}; // NUEVO - CRIPTAS KUNAI: stats fijas e invariables del NINJA
-  const cryptasState = {active:false, fighting:false, paidRound:false, consumedRound:false, roundCredit:false, enemy:null, raf:null, nextTimer:null, heroX:0}; // NUEVO - CRIPTAS KUNAI
-  function setCryptasStopMode(){ const b=$('cryptasStop'); if (b) b.textContent = cryptasState.fighting ? 'DETENER' : 'SALIR'; } // NUEVO - CRIPTAS KUNAI
+  const cryptasState = {active:false, fighting:false, paidRound:false, consumedRound:false, roundCredit:false, enemy:null, raf:null, nextTimer:null, sequenceTimers:[], heroX:0}; // MODIFICADO - CRIPTAS KUNAI: guarda timers de caminata para poder detener sin salir
+  function setCryptasStopMode(){ const b=$('cryptasStop'); if (b) b.textContent = cryptasState.active ? 'DETENER' : 'SALIR'; } // MODIFICADO - CRIPTAS KUNAI: DETENER aparece desde INICIAR hasta cancelar el combate
+  function clearCryptasSequenceTimers(){ cryptasState.sequenceTimers.forEach(clearTimeout); cryptasState.sequenceTimers=[]; } // NUEVO - CRIPTAS KUNAI: limpia timers del trayecto INICIAR/DETENER
   function cryptasResetLayers(){ const el=$('cryptasEnemies'); if (el) el.innerHTML=''; const fx=$('cryptasFx'); if (fx) fx.innerHTML=''; cryptasState.enemy=null; } // NUEVO - CRIPTAS KUNAI
   function showCryptasResult(html, ms=1100){ const ov=$('cryptasResult'), box=$('cryptasResultBox'); if (!ov || !box) return; box.innerHTML=html; ov.classList.add('show'); clearTimeout(showCryptasResult._t); showCryptasResult._t=setTimeout(()=>ov.classList.remove('show'), ms); } // NUEVO - CRIPTAS KUNAI: ventana transparente de ganancia/descuento
   function exitCryptasKunai(refund=false){ // NUEVO - CRIPTAS KUNAI: salida segura al escenario principal
     if (refund && cryptasState.paidRound && !cryptasState.consumedRound){ state.gold += cryptasEntryCost(); } // NUEVO - CRIPTAS KUNAI: reembolso de ronda nula
-    clearTimeout(cryptasState.nextTimer); cryptasState.nextTimer = null; // NUEVO
+    clearTimeout(cryptasState.nextTimer); cryptasState.nextTimer = null; clearCryptasSequenceTimers(); // MODIFICADO - CRIPTAS KUNAI
     cryptasState.active=false; cryptasState.fighting=false; cryptasState.paidRound=false; cryptasState.consumedRound=false; cryptasState.roundCredit=false; // MODIFICADO - CRIPTAS KUNAI
     if (cryptasState.raf){ cancelAnimationFrame(cryptasState.raf); cryptasState.raf=null; } // NUEVO
     cryptasResetLayers(); // NUEVO
@@ -1101,7 +1102,7 @@
   }
   function stopCryptasFight(){ // NUEVO - CRIPTAS KUNAI: DETENER solo cancela la pelea y mantiene al héroe caminando dentro de la cripta
     if (cryptasState.paidRound && !cryptasState.consumedRound){ state.gold += cryptasEntryCost(); } // MODIFICADO - CRIPTAS KUNAI: reembolsa la ronda detenida
-    clearTimeout(cryptasState.nextTimer); cryptasState.nextTimer=null; // NUEVO
+    clearTimeout(cryptasState.nextTimer); cryptasState.nextTimer=null; clearCryptasSequenceTimers(); // MODIFICADO - CRIPTAS KUNAI
     if (cryptasState.raf){ cancelAnimationFrame(cryptasState.raf); cryptasState.raf=null; } // NUEVO
     cryptasState.active=false; cryptasState.fighting=false; cryptasState.paidRound=false; cryptasState.consumedRound=false; cryptasState.roundCredit=false; // MODIFICADO - CRIPTAS KUNAI
     cryptasResetLayers(); // NUEVO
@@ -1158,17 +1159,17 @@
     }
     cryptasState.raf=requestAnimationFrame(cryptasLoop);
   }
-  function startCryptasSequence(){ // NUEVO - CRIPTAS KUNAI: EMPEZAR mueve al héroe y prepara la primera pelea
+  function startCryptasSequence(){ // MODIFICADO - CRIPTAS KUNAI: INICIAR mueve al héroe y prepara la primera pelea
     if (cryptasState.active) return;
     if (cryptasHeroRaf){ cancelAnimationFrame(cryptasHeroRaf); cryptasHeroRaf=null; } // NUEVO - detiene paseo ambiental
     if (!cryptasState.roundCredit){ const cost=cryptasEntryCost(); if (state.gold < cost){ showCryptasWarning(); startCryptasHeroMotion(); return; } state.gold=Math.max(0,state.gold-cost); updHUD(); } // NUEVO - CRIPTAS KUNAI: re-empezar tras DETENER vuelve a cobrar la ronda
     cryptasState.roundCredit=false; // NUEVO - CRIPTAS KUNAI: consume el crédito de ronda pagada
     const startBtn=$('cryptasStart'); if (startBtn) startBtn.style.display='none'; // NUEVO
     const holder=$('cryptasHero'); if (!holder) return;
-    cryptasState.active=true; cryptasState.heroX=Math.round(393*.45); cryptasState.paidRound=true; cryptasState.consumedRound=false; stats.hp=effectiveStat('hpMax'); syncStats(); // MODIFICADO - CRIPTAS KUNAI: al pulsar EMPEZAR inicia con HP full
-    holder.style.transition='left 1.45s ease, transform 1.45s ease'; holder.style.left='14%'; holder.style.transform='translateX(-50%)'; // MODIFICADO - CRIPTAS KUNAI: desplazamiento a la izquierda más lento
-    setTimeout(()=>{ holder.style.left='45%'; holder.style.transition='left 2.15s linear, transform .2s'; },1460); // MODIFICADO - CRIPTAS KUNAI: caminata a la derecha más lenta
-    setTimeout(()=>{ cryptasState.heroX=Math.round(393*.45); spawnCryptasRound(); if (!cryptasState.raf) cryptasState.raf=requestAnimationFrame(cryptasLoop); },3650); // MODIFICADO - CRIPTAS KUNAI: espera acorde a la caminata lenta
+    cryptasState.active=true; cryptasState.heroX=Math.round(393*.45); cryptasState.paidRound=true; cryptasState.consumedRound=false; stats.hp=effectiveStat('hpMax'); syncStats(); // MODIFICADO - CRIPTAS KUNAI: al pulsar INICIAR inicia con HP full
+    holder.style.transition='left 2.4s ease, transform 2.4s ease'; holder.style.left='14%'; holder.style.transform='translate(-50%, 15px)'; // MODIFICADO - CRIPTAS KUNAI: izquierda más lenta y 15px abajo solo en este tramo
+    cryptasState.sequenceTimers.push(setTimeout(()=>{ holder.style.left='45%'; holder.style.transition='left 2.07s linear, transform .2s'; holder.style.transform='translateX(-50%)'; },2400)); // MODIFICADO - CRIPTAS KUNAI: derecha con velocidad equivalente y vuelve a Y normal
+    cryptasState.sequenceTimers.push(setTimeout(()=>{ cryptasState.heroX=Math.round(393*.45); spawnCryptasRound(); if (!cryptasState.raf) cryptasState.raf=requestAnimationFrame(cryptasLoop); },4470)); // MODIFICADO - CRIPTAS KUNAI: espera acorde a caminatas reducidas
     setCryptasStopMode();
   }
 
@@ -1836,7 +1837,7 @@
   const cryptasStartEl = document.getElementById('cryptasStart'); // NUEVO - CRIPTAS KUNAI
   if (cryptasStartEl) cryptasStartEl.addEventListener('click', startCryptasSequence); // NUEVO - CRIPTAS KUNAI
   const cryptasStopEl = document.getElementById('cryptasStop'); // NUEVO - CRIPTAS KUNAI
-  if (cryptasStopEl) cryptasStopEl.addEventListener('click', ()=>{ if (cryptasState.fighting) stopCryptasFight(); else exitCryptasKunai(false); }); // MODIFICADO - CRIPTAS KUNAI: DETENER no sale, solo detiene la pelea
+  if (cryptasStopEl) cryptasStopEl.addEventListener('click', ()=>{ if (cryptasState.active) stopCryptasFight(); else exitCryptasKunai(false); }); // MODIFICADO - CRIPTAS KUNAI: DETENER no sale; SALIR solo aparece tras detener
 
   // Inicialización visual
   applyRankColor();
