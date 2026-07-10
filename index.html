@@ -493,6 +493,8 @@
   .mazm-scroll > *{position:relative;z-index:1}
   .mazm-icon{position:absolute;left:24px;top:50%;transform:translateY(-50%);font-size:31px;line-height:1;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:rgba(42,20,10,.26);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 3px 8px rgba(0,0,0,.28);filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))} /* MODIFICADO - MAZMORRAS: icono fuera del flujo para no descentrar el texto */
   .mazm-name{font-family:Georgia,serif;font-weight:900;font-size:13px;letter-spacing:1px;color:#fff4c7;text-align:center;text-shadow:0 2px 2px rgba(57,25,7,.85);line-height:1.1;padding:0;width:100%} /* MODIFICADO - MAZMORRAS: nombre centrado */
+  .mazm-entry-cost{margin-top:2px;padding:3px 9px;border-radius:10px;background:rgba(20,10,5,.45);border:1px solid rgba(255,215,107,.48);color:#ffd76b;font-size:10px;font-weight:900;letter-spacing:.5px;text-shadow:0 1px 2px #000} /* NUEVO - CRIPTAS KUNAI: coste visible antes de entrar */
+  .mazm-entry-cost.insufficient{color:#ff9a9a;border-color:rgba(255,90,90,.65);background:rgba(70,10,10,.45)} /* NUEVO - CRIPTAS KUNAI */
   .mazm-badge{position:absolute;top:8px;left:12px;background:linear-gradient(180deg,#2f1b10,#0f0805);border:1px solid rgba(255,215,107,.38);border-radius:8px;padding:2px 6px;font-size:8px;font-weight:900;color:#ffd76b;letter-spacing:1.2px;z-index:2;font-family:Georgia,serif} /* MODIFICADO */
   .mazm-lock{position:absolute;top:8px;right:14px;background:rgba(35,18,9,.7);border:1px solid rgba(255,215,107,.42);border-radius:18px;padding:2px 7px;font-size:8px;font-weight:800;color:#ffe08a;letter-spacing:.5px;z-index:2} /* MODIFICADO */
   /* Fondos temáticos por mazmorra */
@@ -623,6 +625,7 @@
             <!-- ELIMINADO - MAZMORRAS: número romano del scroll -->
             <span class="mazm-icon">🗡️</span>
             <span class="mazm-name">CRIPTA KUNAI</span>
+            <span class="mazm-entry-cost" id="cryptaKunaiCost">Entrada: 40 💰</span><!-- NUEVO - CRIPTAS KUNAI: muestra el oro requerido -->
           </div>
           <div class="mazm-scroll t2" data-mazm="2">
             <!-- ELIMINADO - MAZMORRAS: número romano del scroll -->
@@ -934,7 +937,8 @@
   function updateCryptasPanels(){
     const refs = {
       gold:$('ckGold'), gem:$('ckGem'), power:$('ckPower'), world:$('ckWorld'),
-      hp:$('ckHp'), atk:$('ckAtk'), def:$('ckDef'), cost:$('ckCost'), name:$('ckName')
+      hp:$('ckHp'), atk:$('ckAtk'), def:$('ckDef'), cost:$('ckCost'), name:$('ckName'),
+      entryCost:$('cryptaKunaiCost') // NUEVO - CRIPTAS KUNAI: coste visible en MAZMORRAS
     };
     if (!refs.gold) return;
     refs.gold.textContent = fmt(state.gold);
@@ -944,7 +948,12 @@
     refs.hp.textContent = fmt(effectiveStat('hpMax'));
     refs.atk.textContent = fmt(effectiveStat('atk'));
     refs.def.textContent = fmt(effectiveStat('def'));
-    refs.cost.textContent = fmt(cryptasEntryCost());
+    const entryCost = cryptasEntryCost(); // NUEVO - CRIPTAS KUNAI
+    refs.cost.textContent = fmt(entryCost);
+    if (refs.entryCost){
+      refs.entryCost.textContent = 'Entrada: ' + fmt(entryCost) + ' 💰'; // NUEVO - CRIPTAS KUNAI
+      refs.entryCost.classList.toggle('insufficient', state.gold < entryCost); // NUEVO - CRIPTAS KUNAI
+    }
     if (refs.name && $('hname')) refs.name.textContent = $('hname').textContent;
   }
 
@@ -960,7 +969,7 @@
   // NUEVO - CRIPTAS KUNAI: entra al escenario y detiene solo la lógica del área superior
   function enterCryptasKunai(){
     const cost = cryptasEntryCost();
-    if (state.gold < cost){ showCryptasWarning(); return; }
+    if (state.gold < cost){ updateCryptasPanels(); showCryptasWarning(); return; } // MODIFICADO - CRIPTAS KUNAI: mantiene visible el coste requerido
     state.gold = Math.max(0, state.gold - cost);
     state.paused = false;
     state.heroViewOpen = false;
