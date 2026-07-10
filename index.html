@@ -470,12 +470,13 @@
   .app.crypt-mode .world{min-width:130px}
   .app.crypt-mode .world-title{font-size:11px;color:#ffd76b;justify-content:center;letter-spacing:1px}
   .app.crypt-mode #world,.app.crypt-mode .stages{display:none}
-  .crypt-victory{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:13;background:radial-gradient(ellipse at center,rgba(0,0,0,.72),rgba(0,0,0,.9));pointer-events:none}
-  .crypt-victory.show{display:flex}
-  .crypt-victory .cv-banner{border-top:1px solid rgba(255,200,0,.45);border-bottom:1px solid rgba(255,200,0,.45);padding:12px 34px;text-align:center;animation:winPulse .8s ease-in-out infinite alternate}
-  .crypt-victory .cv-label{font-size:10px;letter-spacing:5px;color:#aa8800;font-weight:900}
-  .crypt-victory .cv-name{font-size:34px;font-weight:900;letter-spacing:4px;color:#ffd700;-webkit-text-stroke:1px rgba(255,200,0,.45)}
-  .crypt-victory .cv-sub{font-size:10px;letter-spacing:3px;color:#aaa;font-weight:900}
+  .crypt-victory{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:13;background:linear-gradient(180deg,rgba(4,3,8,.58),rgba(4,3,8,.86));pointer-events:none} /* MODIFICADO - CRIPTA KUNAI: ventana de victoria reemplazada */
+  .crypt-victory.show{display:flex} /* MODIFICADO */
+  .crypt-victory .cv-banner{position:relative;width:248px;min-height:132px;padding:24px 18px 18px;text-align:center;border-radius:18px;background:linear-gradient(180deg,rgba(31,28,48,.96),rgba(12,12,24,.98));border:1px solid rgba(255,215,107,.55);box-shadow:0 18px 38px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.14)} /* MODIFICADO */
+  .crypt-victory .cv-banner::before{content:"✦";position:absolute;top:-19px;left:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;transform:translateX(-50%);border-radius:50%;background:linear-gradient(180deg,#ffe58b,#bb7b24);color:#231505;font-size:19px;font-weight:900;box-shadow:0 6px 14px rgba(0,0,0,.55)} /* NUEVO */
+  .crypt-victory .cv-label{font-size:24px;letter-spacing:3px;color:#fff0a8;font-weight:900;text-shadow:0 2px 8px rgba(255,174,56,.45)} /* MODIFICADO */
+  .crypt-victory .cv-name{margin-top:12px;font-size:22px;font-weight:900;letter-spacing:1px;color:#7dffac;text-shadow:0 0 12px rgba(125,255,172,.42)} /* MODIFICADO */
+  .crypt-victory .cv-sub{display:inline-flex;margin-top:12px;padding:5px 14px;border-radius:999px;background:rgba(255,215,107,.12);border:1px solid rgba(255,215,107,.38);font-size:9px;letter-spacing:2px;color:#ffd76b;font-weight:900} /* MODIFICADO */
   .crypt-rounds{position:absolute;left:10px;bottom:10px;z-index:14;color:#ffd76b;font-weight:900;font-size:11px;text-shadow:0 2px 4px #000;letter-spacing:1px}
   .crypt-stop{position:absolute;right:10px;bottom:10px;z-index:15;background:rgba(20,8,8,.82);color:#ffd76b;border:1px solid rgba(255,215,107,.65);border-radius:9px;padding:6px 10px;font-size:10px;font-weight:900;letter-spacing:1px;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.55)} /* NUEVO */
   .crypt-stop:active{transform:translateY(1px)} /* NUEVO */
@@ -491,42 +492,35 @@
   .mazm-ov.show .mazm-card{transform:scale(1)}
   .mazm-title{text-align:center;color:#4a3a7a;font-weight:800;letter-spacing:2px;font-size:16px;margin-bottom:16px;
     text-shadow:0 1px 0 rgba(255,255,255,.7)}
-  .mazm-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .mazm-grid{display:grid;grid-template-columns:1fr;gap:12px;max-width:318px;margin:0 auto;width:100%} /* MODIFICADO - MAZMORRAS: scrolls un poco más grandes */
   .mazm-currency{display:flex;justify-content:center;gap:14px;margin-top:16px}
   .mazm-cur{display:flex;align-items:center;gap:6px;font-weight:800;font-size:15px;color:#4a3a7a;
     background:linear-gradient(180deg,#fff5db,#ffe6a8);border:2px solid #e0b567;border-radius:12px;padding:6px 14px;
     box-shadow:0 3px 8px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.7)}
   .mazm-cur .emj{font-size:17px}
-  /* MODIFICADO - Mazmorras: tarjetas de dungeon temáticas y profesionales */
-  .mazm-scroll{position:relative;height:108px;border-radius:13px;cursor:pointer;user-select:none;overflow:hidden;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:9px 5px 7px;
-    border:1.5px solid rgba(255,255,255,.14);
-    box-shadow:0 6px 14px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.18),inset 0 -22px 30px rgba(0,0,0,.4);
-    transition:transform .18s ease,filter .18s ease,box-shadow .18s ease}
-  .mazm-scroll:hover{transform:translateY(-2px);filter:brightness(1.1);box-shadow:0 10px 18px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.25),inset 0 -22px 30px rgba(0,0,0,.4)}
-  .mazm-scroll:active{transform:translateY(1px) scale(.98)}
-  .mazm-scroll::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 18%,rgba(255,255,255,.28),transparent 60%);pointer-events:none;z-index:0}
-  .mazm-scroll::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent 0 9px,rgba(255,255,255,.035) 9px 10px);pointer-events:none;z-index:0}
+  /* MODIFICADO - MAZMORRAS: nuevo sistema visual tipo pergamino premium */
+  .mazm-scroll{position:relative;min-height:96px;border-radius:16px;cursor:pointer;user-select:none;overflow:visible;
+    display:grid;grid-template-columns:54px 1fr;grid-template-rows:1fr auto;align-items:center;column-gap:10px;padding:16px 24px 13px;
+    border:1px solid rgba(122,72,28,.55);background:linear-gradient(180deg,#f7d99a,#c99042 48%,#7b431e 100%);
+    box-shadow:0 10px 18px rgba(0,0,0,.45),inset 0 2px 0 rgba(255,244,190,.62),inset 0 -18px 22px rgba(73,34,13,.34);
+    transition:transform .18s ease,filter .18s ease,box-shadow .18s ease} /* MODIFICADO */
+  .mazm-scroll:hover{transform:translateY(-2px) scale(1.015);filter:saturate(1.08);box-shadow:0 14px 22px rgba(0,0,0,.52),inset 0 2px 0 rgba(255,244,190,.72),inset 0 -18px 22px rgba(73,34,13,.30)} /* MODIFICADO */
+  .mazm-scroll:active{transform:translateY(1px) scale(.99)} /* MODIFICADO */
+  .mazm-scroll::before{content:"";position:absolute;left:-10px;right:-10px;top:9px;bottom:9px;border-radius:14px;background:linear-gradient(90deg,#7a421b 0 18px,transparent 18px calc(100% - 18px),#7a421b calc(100% - 18px));box-shadow:inset 0 0 0 1px rgba(255,226,145,.26);pointer-events:none;z-index:0} /* MODIFICADO */
+  .mazm-scroll::after{content:"";position:absolute;inset:6px 12px;border-radius:12px;background:linear-gradient(120deg,rgba(255,255,255,.26),transparent 38%),repeating-linear-gradient(0deg,rgba(88,45,20,.08) 0 1px,transparent 1px 8px);pointer-events:none;z-index:0} /* MODIFICADO */
   .mazm-scroll > *{position:relative;z-index:1}
-  .mazm-icon{font-size:32px;line-height:1;filter:drop-shadow(0 3px 5px rgba(0,0,0,.7))}
-  .mazm-name{font-family:Georgia,serif;font-weight:900;font-size:11px;letter-spacing:1.1px;color:#fff;text-align:center;
-    text-shadow:0 2px 3px rgba(0,0,0,.8);line-height:1.1;padding:0 2px}
-  .mazm-badge{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.28);
-    border-radius:7px;padding:2px 5px;font-size:8px;font-weight:900;color:#fff;letter-spacing:1.4px;z-index:2;font-family:Georgia,serif}
-  .mazm-lock{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);border:1px solid rgba(255,215,107,.35);
-    border-radius:18px;padding:2px 6px;font-size:8px;font-weight:800;color:#ffd76b;letter-spacing:.5px;z-index:2}
-  .mazm-cost-pill{display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,.55);border:1px solid rgba(255,215,107,.55);
-    border-radius:14px;padding:2px 9px;font-weight:900;font-size:11px;color:#ffd76b;font-family:Georgia,serif}
-  .mazm-cost-pill.ok{color:#7effb0;border-color:rgba(126,255,176,.6)}
-  .mazm-cost-pill.no{color:#ff8a8a;border-color:rgba(255,138,138,.6)}
+  .mazm-icon{grid-row:1 / span 2;font-size:31px;line-height:1;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:rgba(42,20,10,.26);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 3px 8px rgba(0,0,0,.28);filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))} /* MODIFICADO */
+  .mazm-name{align-self:end;font-family:Georgia,serif;font-weight:900;font-size:13px;letter-spacing:1px;color:#fff4c7;text-align:left;text-shadow:0 2px 2px rgba(57,25,7,.85);line-height:1.1;padding:0} /* MODIFICADO */
+  .mazm-badge{position:absolute;top:8px;left:12px;background:linear-gradient(180deg,#2f1b10,#0f0805);border:1px solid rgba(255,215,107,.38);border-radius:8px;padding:2px 6px;font-size:8px;font-weight:900;color:#ffd76b;letter-spacing:1.2px;z-index:2;font-family:Georgia,serif} /* MODIFICADO */
+  .mazm-lock{position:absolute;top:8px;right:14px;background:rgba(35,18,9,.7);border:1px solid rgba(255,215,107,.42);border-radius:18px;padding:2px 7px;font-size:8px;font-weight:800;color:#ffe08a;letter-spacing:.5px;z-index:2} /* MODIFICADO */
+  .mazm-cost-pill{justify-self:start;display:inline-flex;align-items:center;gap:4px;margin-top:6px;background:rgba(39,19,8,.62);border:1px solid rgba(255,230,150,.5);border-radius:14px;padding:3px 10px;font-weight:900;font-size:11px;color:#ffe08a;font-family:Georgia,serif} /* MODIFICADO */
+  .mazm-cost-pill.ok{color:#8bffb5;border-color:rgba(139,255,181,.65)} /* MODIFICADO */
+  .mazm-cost-pill.no{color:#ff9d9d;border-color:rgba(255,157,157,.65)} /* MODIFICADO */
   .mazm-cost-pill .emj{font-size:12px}
   /* Fondos temáticos por mazmorra */
-  .mazm-scroll.t1{background:linear-gradient(160deg,#2a0f2e 0%,#5a1a7a 55%,#0a0518 100%)}
-  .mazm-scroll.t2{background:linear-gradient(160deg,#0a2818 0%,#1e6a3a 55%,#04180d 100%)}
-  .mazm-scroll.t3{background:linear-gradient(160deg,#3a0f0f 0%,#a02828 55%,#180404 100%)}
-  .mazm-scroll.t4{background:linear-gradient(160deg,#0f2440 0%,#2a78c0 55%,#04101c 100%)}
-  .mazm-scroll.t5{background:linear-gradient(160deg,#2a2000 0%,#a58020 55%,#1a1200 100%)}
-  .mazm-scroll.t6{background:linear-gradient(160deg,#1a0a04 0%,#a03a08 55%,#180a04 100%)}
+  .mazm-scroll.t1{background:linear-gradient(135deg,#43204e 0%,#8b4f9d 42%,#3c1a46 100%)} /* MODIFICADO */
+  .mazm-scroll.t2{background:linear-gradient(135deg,#184026 0%,#4d8e55 42%,#17371f 100%)} /* MODIFICADO */
+  .mazm-scroll.t3{background:linear-gradient(135deg,#512420 0%,#a4584d 42%,#3d1716 100%)} /* MODIFICADO */
 
 
   /* NUEVO - Vista HÉROE limitada al cuadro superior */
@@ -602,7 +596,7 @@
       <canvas id="cryptCanvas" width="393" height="480"></canvas>
       <div id="cryptRounds" class="crypt-rounds"></div>
       <button id="cryptStop" class="crypt-stop">DETENER</button><!-- NUEVO -->
-      <div id="cryptVictory" class="crypt-victory"><div class="cv-banner"><div class="cv-label">VENCEDOR</div><div id="cryptWinName" class="cv-name">KAITO</div><div class="cv-sub">★ VICTORIA ★</div></div></div>
+      <div id="cryptVictory" class="crypt-victory"><div class="cv-banner"><div id="cryptResultLabel" class="cv-label">VICTORIA</div><div id="cryptWinName" class="cv-name">+0 KUNAI</div><div id="cryptResultSub" class="cv-sub">RECOMPENSA</div></div></div><!-- MODIFICADO - CRIPTA KUNAI: nuevo modelo visual de resultado -->
     </div>
 
     <!-- NUEVO - Ventana de MAZMORRAS (ocupa todo el cuadro superior) -->
@@ -627,24 +621,7 @@
             <span class="mazm-icon">🐉</span>
             <span class="mazm-name">TEMPLO DRAGÓN</span>
           </div>
-          <div class="mazm-scroll t4" data-mazm="4">
-            <span class="mazm-badge">IV</span>
-            <span class="mazm-lock">🔒</span>
-            <span class="mazm-icon">❄️</span>
-            <span class="mazm-name">RUINAS DE HIELO</span>
-          </div>
-          <div class="mazm-scroll t5" data-mazm="5">
-            <span class="mazm-badge">V</span>
-            <span class="mazm-lock">🔒</span>
-            <span class="mazm-icon">🔮</span>
-            <span class="mazm-name">TORRE ARCANA</span>
-          </div>
-          <div class="mazm-scroll t6" data-mazm="6">
-            <span class="mazm-badge">VI</span>
-            <span class="mazm-lock">🔒</span>
-            <span class="mazm-icon">🔥</span>
-            <span class="mazm-name">ABISMO INFERNAL</span>
-          </div>
+          <!-- MODIFICADO - MAZMORRAS: eliminados los 3 scrolls finales para conservar solo los 3 primeros -->
 
         </div>
         <div class="mazm-currency">
@@ -807,7 +784,8 @@
     // NUEVO - Puntos 4/5: modo retroceso y control de progreso
     retreat: false,        // true = fue devuelto al mundo anterior
     retreatFrom: 0,        // mundo original antes de perder
-    avanzarUnlocked: false // scroll AVANZAR habilitado tras oleada 3 en retroceso
+    avanzarUnlocked: false, // scroll AVANZAR habilitado tras oleada 3 en retroceso
+    retreatWave3Hold: false // NUEVO - inmoviliza al héroe al repetir oleada 3 tras retroceso
   };
   // NUEVO - Puntos 6/7: stats sincronizados con los 8 slots del personaje
   const stats = {
@@ -897,9 +875,9 @@
   }
   syncStats();
 
-  // MODIFICADO - Costo dinámico de CRIPTA KUNAI: base 40, +25% por cada mundo a partir del mundo 2
+  // MODIFICADO - Costo dinámico de CRIPTA KUNAI: base 40, +20% fijo por cada mundo superado
   function criptaKunaiCost(){
-    return Math.ceil(40 * Math.pow(1.25, Math.max(0, state.world - 1))); // MODIFICADO
+    return Math.ceil(40 * Math.pow(1.20, Math.max(0, state.world - 1))); // MODIFICADO
   }
   // NUEVO - Refresca el número y el color del costo según el oro disponible
   function updCriptaKunai(){
@@ -1054,7 +1032,7 @@
     else if (state.world === 3) n = 1 + Math.floor(Math.random()*3);// [NUEVO] Mundo 3: 1..3 aleatorio
     else n = 1 + Math.floor(Math.random()*3);                       // fallback (comportamiento original)
     for(let i=0;i<n;i++) enemies.push(makeEnemy(i*44));
-    state.scrolling = true;
+    state.scrolling = !state.retreatWave3Hold; // MODIFICADO
   }
 
   // NUEVO - Punto 7: mensaje flotante "EVADIDO"
@@ -1086,7 +1064,7 @@
         heroX += 0.06*dt;
         hero.style.left = heroX + 'px';
       } else {
-        if (state.scrolling || enemies.length===0){
+        if ((state.scrolling || enemies.length===0) && !state.retreatWave3Hold){ // MODIFICADO
           state.scrollX -= 0.05*dt;
           const shift = state.scrollX % 786;
           parallax.style.transform = `translateX(${shift}px)`;
@@ -1184,7 +1162,8 @@
             avanzarBtn.classList.remove('hidden');
             state.stage = 2;      // permanece en oleada 3 (índice 2 activo)
             state.waveTimer = 3000;
-            state.scrolling = true;
+            state.retreatWave3Hold = true; // NUEVO
+            state.scrolling = false; // MODIFICADO
           } else {
             // Punto 1: ventana PRÓXIMO MUNDO durante 1s, luego flashback y siguiente mundo
             nextWorldTransition();
@@ -1220,6 +1199,7 @@
           state.retreat = false;
           state.retreatFrom = 0;
           state.avanzarUnlocked = false;
+          state.retreatWave3Hold = false; // NUEVO
           avanzarBtn.classList.add('hidden');
         }
         resetSceneForNewWorld();
@@ -1259,6 +1239,7 @@
         state.avanzarUnlocked = false;
         state.inBattle = false;              // NUEVO - Punto 1: garantiza que el loop mueva al héroe
         state.scrolling = true;              // NUEVO - Punto 1
+        state.retreatWave3Hold = false;      // NUEVO
         state.waveTimer = 3000;              // NUEVO - Punto 1
         avanzarBtn.classList.add('hidden');
         stats.hp = effectiveStat('hpMax'); // MODIFICADO - HÉROE
@@ -1277,7 +1258,7 @@
     state.scrollX = 0;
     parallax.style.transform = 'translateX(0)';
     state.waveTimer = 3000;
-    state.scrolling = true;
+    state.scrolling = !state.retreatWave3Hold; // MODIFICADO
     state.inBattle = false;                  // NUEVO - Punto 1: refuerza que no quede trabado en batalla
   }
 
@@ -1541,12 +1522,14 @@
   const cryptVictoryEl = document.getElementById('cryptVictory');
   const cryptRoundsEl = document.getElementById('cryptRounds');
   const cryptWinNameEl = document.getElementById('cryptWinName');
+  const cryptResultLabelEl = document.getElementById('cryptResultLabel'); // NUEVO
+  const cryptResultSubEl = document.getElementById('cryptResultSub'); // NUEVO
   const cryptStopEl = document.getElementById('cryptStop'); // NUEVO
   const worldLabelEl = document.getElementById('worldLabel');
   const crypt = {active:false, paid:0, round:0, last:0, fighters:[], particles:[], nums:[], shots:[], shake:0, flash:0, mountains:[], trees:[], finishTimer:0, dungeon:'crypt'}; // MODIFICADO
   // NUEVO - CRIPTA KUNAI: única fuente de verdad para las stats del NINJA (scroll NINJA del HUD).
   // El enemigo en batalla y el HUD leen ambos de aquí, quedando siempre sincronizados.
-  const NINJA_STATS = {hp:50, atk:5, def:3};
+  const NINJA_STATS = {hp:100, atk:7, def:3}; // MODIFICADO
   const CW = 393, CH = 480, CGROUND = 410, CSC = .92, CNW = Math.round(30*CSC), CNH = Math.round(50*CSC); // NUEVO
 
   class CryptParticle{ // NUEVO
@@ -1644,6 +1627,7 @@
   }
   function cryptNextRound(){ // NUEVO
     crypt.round++; crypt.particles=[]; crypt.nums=[]; crypt.shots=[]; crypt.flash=0; crypt.shake=0; crypt.finishTimer=0;
+    stats.hp = effectiveStat('hpMax'); syncStats(); // NUEVO
     crypt.fighters=[new CryptFighter(62,0),new CryptFighter(305,1)];
     if (cryptRoundsEl) cryptRoundsEl.textContent = (crypt.dungeon==='forest'?'BOSQUE SOMBRÍO':'CRIPTA KUNAI') + ' · RONDA ' + crypt.round + ' · ORO ' + fmt(state.gold); // MODIFICADO
     // MODIFICADO - CRIPTA KUNAI: el HUD (scroll NINJA) y el enemigo en batalla leen ambos de NINJA_STATS.
@@ -1662,7 +1646,7 @@
     crypt.shots.forEach(s=>s.update(dt));
     crypt.shots.forEach(s=>crypt.fighters.forEach(f=>{if(!s.dead&&f!==s.o&&!f.dead&&Math.hypot(s.x-f.cx,s.y-f.cy)<s.s+CNW/2){f.hit(12+Math.random()*10,s.o);cryptSparks(s.x,s.y,16,s.c);s.dead=true}}));
     crypt.shots=crypt.shots.filter(s=>!s.dead); crypt.particles.forEach(p=>p.update(dt)); crypt.particles=crypt.particles.filter(p=>!p.dead()); crypt.nums.forEach(n=>n.update(dt)); crypt.nums=crypt.nums.filter(n=>!n.dead());
-    if ((a.dead||b.dead) && !crypt.finishTimer){crypt.finishTimer=1;if(!a.dead){if(crypt.dungeon==='crypt'){state.gold += Math.round(10*Math.pow(1.10,state.world-1));showGoldReward(Math.round(10*Math.pow(1.10,state.world-1)));rankState.kunai += 2;if(kunaiCountEl)kunaiCountEl.textContent=fmt(rankState.kunai)}if(cryptWinNameEl)cryptWinNameEl.textContent='KAITO';cryptVictoryEl.classList.add('show')}else{if(cryptWinNameEl)cryptWinNameEl.textContent='NINJA';cryptVictoryEl.classList.add('show')}} // MODIFICADO
+    if ((a.dead||b.dead) && !crypt.finishTimer){crypt.finishTimer=1;if(!a.dead){let kunaiReward=0;if(crypt.dungeon==='crypt'){state.gold += Math.round(10*Math.pow(1.10,state.world-1));showGoldReward(Math.round(10*Math.pow(1.10,state.world-1)));kunaiReward=2;rankState.kunai += kunaiReward;if(kunaiCountEl)kunaiCountEl.textContent=fmt(rankState.kunai)}if(cryptResultLabelEl)cryptResultLabelEl.textContent='VICTORIA';if(cryptWinNameEl)cryptWinNameEl.textContent='+'+fmt(kunaiReward)+' KUNAI';if(cryptResultSubEl)cryptResultSubEl.textContent='RECOMPENSA';cryptVictoryEl.classList.add('show')}else{if(cryptResultLabelEl)cryptResultLabelEl.textContent='DERROTA';if(cryptWinNameEl)cryptWinNameEl.textContent='0 KUNAI';if(cryptResultSubEl)cryptResultSubEl.textContent='SIN RECOMPENSA';cryptVictoryEl.classList.add('show')}} // MODIFICADO
     if (crypt.finishTimer){crypt.finishTimer+=dt;if(crypt.finishTimer>95){if(crypt.dungeon==='crypt'&&payCryptRound()){cryptVictoryEl.classList.remove('show');cryptNextRound()}else{stats.hp=Math.max(1,a.dead?effectiveStat('hpMax')*.35:effectiveStat('hpMax'));syncStats();updHUD();endCryptMode()} }} // MODIFICADO
   }
   if (cryptStopEl) cryptStopEl.addEventListener('click', endCryptMode); // NUEVO
