@@ -493,6 +493,8 @@
   .mazm-scroll > *{position:relative;z-index:1}
   .mazm-icon{position:absolute;left:24px;top:50%;transform:translateY(-50%);font-size:31px;line-height:1;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:rgba(42,20,10,.26);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 3px 8px rgba(0,0,0,.28);filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))} /* MODIFICADO - MAZMORRAS: icono fuera del flujo para no descentrar el texto */
   .mazm-name{font-family:Georgia,serif;font-weight:900;font-size:13px;letter-spacing:1px;color:#fff4c7;text-align:center;text-shadow:0 2px 2px rgba(57,25,7,.85);line-height:1.1;padding:0;width:100%} /* MODIFICADO - MAZMORRAS: nombre centrado */
+  .mazm-entry-cost{margin-top:2px;padding:3px 9px;border-radius:10px;background:rgba(20,10,5,.45);border:1px solid rgba(255,215,107,.48);color:#ffd76b;font-size:10px;font-weight:900;letter-spacing:.5px;text-shadow:0 1px 2px #000} /* NUEVO - CRIPTAS KUNAI: coste visible antes de entrar */
+  .mazm-entry-cost.insufficient{color:#ff9a9a;border-color:rgba(255,90,90,.65);background:rgba(70,10,10,.45)} /* NUEVO - CRIPTAS KUNAI */
   .mazm-badge{position:absolute;top:8px;left:12px;background:linear-gradient(180deg,#2f1b10,#0f0805);border:1px solid rgba(255,215,107,.38);border-radius:8px;padding:2px 6px;font-size:8px;font-weight:900;color:#ffd76b;letter-spacing:1.2px;z-index:2;font-family:Georgia,serif} /* MODIFICADO */
   .mazm-lock{position:absolute;top:8px;right:14px;background:rgba(35,18,9,.7);border:1px solid rgba(255,215,107,.42);border-radius:18px;padding:2px 7px;font-size:8px;font-weight:800;color:#ffe08a;letter-spacing:.5px;z-index:2} /* MODIFICADO */
   /* Fondos temáticos por mazmorra */
@@ -530,6 +532,82 @@
   .mazm-warn-box{background:rgba(20,24,51,.72);color:#fff;border:2px solid #a08aff;border-radius:14px;
     padding:16px 20px;font-weight:800;font-size:14px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.5);
     backdrop-filter:blur(2px);max-width:80%}
+
+
+  /* NUEVO - CRIPTAS KUNAI: vista aislada del área superior */
+  .top.cryptas-open > .stars, .top.cryptas-open > .moon, .top.cryptas-open > .scene,
+  .top.cryptas-open > #hero, .top.cryptas-open > #enemies, .top.cryptas-open > #fx,
+  .top.cryptas-open > #avanzar, .top.cryptas-open > #mazmOv, .top.cryptas-open > #heroView,
+  .top.cryptas-open > #nextWorldOv, .top.cryptas-open > #fracasoOv, .top.cryptas-open > .hud{display:none} /* NUEVO */
+  .cryptas-view{position:absolute;inset:0;z-index:95;display:none;overflow:hidden;pointer-events:auto;
+    background:
+      radial-gradient(ellipse at 50% 58%,rgba(132,116,88,.32),transparent 34%),
+      radial-gradient(ellipse at 50% 8%,rgba(255,214,128,.16),transparent 42%),
+      linear-gradient(180deg,#171714 0%,#24221f 42%,#0c0b0a 100%)} /* NUEVO */
+  .cryptas-view.show{display:block} /* NUEVO */
+  .cryptas-cave{position:absolute;inset:0;overflow:hidden;
+    background-image:
+      radial-gradient(circle at 18% 28%,rgba(120,116,108,.35) 0 2px,transparent 3px),
+      radial-gradient(circle at 72% 35%,rgba(84,80,74,.45) 0 3px,transparent 4px),
+      radial-gradient(circle at 44% 78%,rgba(156,144,118,.2) 0 2px,transparent 3px),
+      repeating-linear-gradient(112deg,rgba(255,255,255,.025) 0 2px,transparent 2px 16px)} /* NUEVO */
+  .cryptas-cave::before{content:"";position:absolute;left:-20px;right:-20px;top:0;height:150px;
+    background:linear-gradient(180deg,#34312c,#171512);
+    clip-path:polygon(0 0,100% 0,100% 54%,92% 40%,86% 67%,80% 37%,70% 60%,63% 35%,56% 72%,48% 42%,38% 65%,31% 38%,22% 70%,16% 43%,8% 62%,0 46%);
+    box-shadow:0 12px 28px rgba(0,0,0,.55)} /* NUEVO */
+  .cryptas-cave::after{content:"";position:absolute;left:-20px;right:-20px;bottom:0;height:150px;
+    background:linear-gradient(0deg,#2a2722,#11100f);
+    clip-path:polygon(0 100%,100% 100%,100% 58%,91% 68%,84% 38%,77% 70%,68% 46%,60% 78%,51% 44%,43% 72%,36% 51%,28% 79%,19% 45%,11% 66%,0 55%)} /* NUEVO */
+  .cryptas-floor{position:absolute;left:0;right:0;bottom:0;height:180px;z-index:2;
+    background:
+      radial-gradient(ellipse at 50% 0%,rgba(190,175,140,.22),transparent 45%),
+      linear-gradient(180deg,#34302a 0%,#211e1a 48%,#100f0d 100%);
+    border-top:2px solid rgba(171,151,112,.35);box-shadow:inset 0 14px 22px rgba(0,0,0,.42)} /* NUEVO - CRIPTAS KUNAI: suelo de piedra para que el personaje no flote */
+  .cryptas-floor::before{content:"";position:absolute;inset:0;background-image:
+      radial-gradient(ellipse at 28px 24px,#5d574d 0 12px,transparent 13px),
+      radial-gradient(ellipse at 92px 54px,#2b2824 0 9px,transparent 10px),
+      radial-gradient(ellipse at 170px 34px,#6b6255 0 14px,transparent 15px),
+      radial-gradient(ellipse at 252px 70px,#3c3730 0 11px,transparent 12px),
+      radial-gradient(ellipse at 330px 36px,#756b5b 0 10px,transparent 11px),
+      repeating-linear-gradient(8deg,rgba(255,255,255,.035) 0 1px,transparent 1px 18px);opacity:.9} /* NUEVO */
+  .cryptas-stone-path{position:absolute;left:-20px;right:-20px;bottom:54px;height:70px;z-index:3;
+    background:linear-gradient(180deg,#81735e,#4c4338 58%,#28241f);
+    border-top:2px solid rgba(202,184,145,.55);border-bottom:2px solid rgba(0,0,0,.65);
+    box-shadow:inset 0 8px 14px rgba(255,238,180,.08),inset 0 -10px 18px rgba(0,0,0,.42);
+    transform:skewY(-1deg)} /* NUEVO - CRIPTAS KUNAI: camino similar al escenario principal */
+  .cryptas-stone-path::before{content:"";position:absolute;inset:0;background-image:
+      radial-gradient(circle at 36px 22px,#2d2923 2px,transparent 3px),
+      radial-gradient(circle at 94px 44px,#a29478 2px,transparent 3px),
+      radial-gradient(circle at 168px 18px,#3a342c 3px,transparent 4px),
+      radial-gradient(circle at 236px 50px,#b5a17d 2px,transparent 3px),
+      radial-gradient(circle at 318px 24px,#2f2a24 3px,transparent 4px);background-size:393px 70px} /* NUEVO */
+  .cryptas-rocks{position:absolute;left:0;right:0;bottom:70px;height:88px;z-index:4;pointer-events:none} /* NUEVO */
+  .cryptas-rocks span{position:absolute;bottom:0;width:30px;height:18px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#8a8172,#3d3832 72%,#1d1b18);box-shadow:0 3px 5px rgba(0,0,0,.55)} /* NUEVO */
+  .cryptas-rocks span:nth-child(1){left:18px;bottom:10px}.cryptas-rocks span:nth-child(2){left:80px;bottom:38px;width:22px;height:14px}.cryptas-rocks span:nth-child(3){right:34px;bottom:18px;width:38px;height:22px}.cryptas-rocks span:nth-child(4){right:112px;bottom:48px;width:20px;height:13px} /* NUEVO */
+  .cryptas-torch{position:absolute;bottom:150px;width:18px;height:76px;z-index:5;background:linear-gradient(90deg,#2d1709,#6b3b18,#241107);border-radius:4px;box-shadow:0 4px 8px rgba(0,0,0,.55)} /* NUEVO */
+  .cryptas-torch.left{left:32px}.cryptas-torch.right{right:32px} /* NUEVO */
+  .cryptas-torch::before{content:"";position:absolute;left:50%;top:-28px;width:32px;height:42px;transform:translateX(-50%);border-radius:50% 50% 45% 45%;
+    background:radial-gradient(circle at 50% 72%,#fff1a8 0 9%,#ffb13a 18%,#d85a16 42%,rgba(216,90,22,0) 70%);filter:blur(.2px);animation:torchFlicker .8s infinite alternate ease-in-out} /* NUEVO */
+  .cryptas-torch::after{content:"";position:absolute;left:50%;top:-44px;width:112px;height:112px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,rgba(255,164,62,.28),transparent 68%);pointer-events:none} /* NUEVO */
+  @keyframes torchFlicker{0%{transform:translateX(-50%) scale(.92) rotate(-3deg);opacity:.86}100%{transform:translateX(-50%) scale(1.08) rotate(3deg);opacity:1}} /* NUEVO */
+  .cryptas-light{position:absolute;inset:0;z-index:6;background:radial-gradient(ellipse at 50% 55%,rgba(255,218,140,.16),rgba(0,0,0,.24) 60%,rgba(0,0,0,.66));pointer-events:none} /* MODIFICADO - CRIPTAS KUNAI */
+  .cryptas-start{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:116px;height:116px;border-radius:50%;z-index:7;
+    display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;letter-spacing:1.8px;color:#f8e7b0;
+    background:radial-gradient(circle at 35% 30%,#6c6557,#24211d 72%);border:2px solid #b69658;
+    box-shadow:0 0 28px rgba(255,200,110,.28),inset 0 2px 8px rgba(255,255,255,.12),inset 0 -10px 20px rgba(0,0,0,.5);
+    text-shadow:0 2px 3px #000;pointer-events:none} /* NUEVO */
+  .cryptas-hero{position:absolute;left:50%;bottom:120px;transform:translateX(-50%);z-index:8;will-change:transform} /* MODIFICADO - CRIPTAS KUNAI: ancla el personaje al suelo */
+  .cryptas-hero .char{position:relative;left:auto;bottom:auto;transform:scale(1.35);transform-origin:center bottom} /* NUEVO */
+  .cryptas-hud-left,.cryptas-hud-right{position:absolute;top:8px;z-index:6;display:flex;flex-direction:column;gap:5px;font-size:11px;pointer-events:none} /* NUEVO */
+  .cryptas-hud-left{left:8px}.cryptas-hud-right{right:8px;align-items:flex-end} /* NUEVO */
+  .cryptas-cost{position:absolute;left:50%;top:124px;transform:translateX(-50%);z-index:6;font-size:11px;font-weight:800;color:#ffd76b;
+    background:rgba(10,9,8,.55);border:1px solid rgba(255,215,107,.45);border-radius:12px;padding:4px 10px;pointer-events:none} /* NUEVO */
+  .cryptas-warn{position:absolute;inset:0;z-index:220;display:none;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.48);backdrop-filter:blur(2px);cursor:pointer} /* NUEVO */
+  .cryptas-warn.show{display:flex} /* NUEVO */
+  .cryptas-warn-box{max-width:300px;padding:16px 20px;border-radius:14px;text-align:center;font-weight:900;font-size:14px;line-height:1.35;
+    background:rgba(20,24,51,.86);border:2px solid #ffd76b;box-shadow:0 10px 28px rgba(0,0,0,.55);color:#fff} /* NUEVO */
+  .cryptas-warn-box small{display:block;margin-top:8px;color:#c9d3ff;font-size:10px;font-weight:700} /* NUEVO */
 </style>
 </head>
 <body>
@@ -579,6 +657,7 @@
             <!-- ELIMINADO - MAZMORRAS: número romano del scroll -->
             <span class="mazm-icon">🗡️</span>
             <span class="mazm-name">CRIPTA KUNAI</span>
+            <span class="mazm-entry-cost" id="cryptaKunaiCost">Entrada: 40 💰</span><!-- NUEVO - CRIPTAS KUNAI: muestra el oro requerido -->
           </div>
           <div class="mazm-scroll t2" data-mazm="2">
             <!-- ELIMINADO - MAZMORRAS: número romano del scroll -->
@@ -622,6 +701,40 @@
     <!-- NUEVO - Overlays PRÓXIMO MUNDO / FRACASO -->
     <div id="nextWorldOv" class="big-overlay next-world"><div class="card">PRÓXIMO MUNDO</div></div>
     <div id="fracasoOv" class="big-overlay fracaso"><div class="card">FRACASO</div></div>
+
+
+
+    <!-- NUEVO - CRIPTAS KUNAI: escenario aislado dentro del área superior -->
+    <div id="cryptasView" class="cryptas-view">
+      <div class="cryptas-cave"></div>
+      <div class="cryptas-floor"></div><!-- NUEVO - CRIPTAS KUNAI: suelo de piedras -->
+      <div class="cryptas-stone-path"></div><!-- NUEVO - CRIPTAS KUNAI: camino transitable -->
+      <div class="cryptas-rocks"><span></span><span></span><span></span><span></span></div><!-- NUEVO - CRIPTAS KUNAI: rocas ambientales -->
+      <div class="cryptas-torch left"></div><div class="cryptas-torch right"></div><!-- NUEVO - CRIPTAS KUNAI: antorchas -->
+      <div class="cryptas-light"></div>
+      <div class="cryptas-hud-left">
+        <div class="chip gold"><span class="emj">💰</span><span id="ckGold">0</span></div>
+        <div class="chip gem"><span class="emj">💎</span><span id="ckGem">0</span></div>
+        <div class="chip power"><span class="emj">⚡</span><span id="ckPower">0</span></div>
+        <div class="hero-name">🥷 <span id="ckName">Kaito el Errante</span></div>
+      </div>
+      <div class="cryptas-hud-right">
+        <div class="world">
+          <div class="world-title">Mundo <span id="ckWorld">1</span></div>
+          <div class="wave-stats">
+            <div class="ws hp"><span class="we">❤️</span><span id="ckHp">0</span></div>
+            <div class="ws atk"><span class="we">⚔️</span><span id="ckAtk">0</span></div>
+            <div class="ws def"><span class="we">🛡️</span><span id="ckDef">0</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="cryptas-cost">Entrada pagada: <span id="ckCost">40</span> 💰</div>
+      <div id="cryptasHero" class="cryptas-hero"></div>
+      <div class="cryptas-start">EMPEZAR</div>
+    </div>
+
+    <!-- NUEVO - CRIPTAS KUNAI: aviso visual de oro insuficiente -->
+    <div id="cryptasWarn" class="cryptas-warn"><div class="cryptas-warn-box">Oro insuficiente para entrar a CRIPTAS KUNAI.<small>Toca para cerrar.</small></div></div>
 
     <!-- HUD -->
     <div class="hud">
@@ -751,6 +864,7 @@
     waveTimer: 3000,
     transitioning: false,
     heroViewOpen: false, // NUEVO - HÉROE: pausa aislada del cuadro superior
+    cryptasOpen: false, // NUEVO - CRIPTAS KUNAI: pausa aislada del cuadro superior
     // NUEVO - Puntos 4/5: modo retroceso y control de progreso
     retreat: false,        // true = fue devuelto al mundo anterior
     retreatFrom: 0,        // mundo original antes de perder
@@ -848,6 +962,87 @@
 
 
 
+
+
+  // NUEVO - CRIPTAS KUNAI: costo escalable por mundo (M1=40, +20% acumulativo)
+  function cryptasEntryCost(){
+    return 40 * Math.pow(1.20, Math.max(0, state.world - 1));
+  }
+
+  // NUEVO - CRIPTAS KUNAI: sincroniza paneles visuales sin heredar interactividad del HUD principal
+  function updateCryptasPanels(){
+    const refs = {
+      gold:$('ckGold'), gem:$('ckGem'), power:$('ckPower'), world:$('ckWorld'),
+      hp:$('ckHp'), atk:$('ckAtk'), def:$('ckDef'), cost:$('ckCost'), name:$('ckName'),
+      entryCost:$('cryptaKunaiCost') // NUEVO - CRIPTAS KUNAI: coste visible en MAZMORRAS
+    };
+    if (!refs.gold) return;
+    refs.gold.textContent = fmt(state.gold);
+    refs.gem.textContent = fmt(state.gem);
+    refs.power.textContent = fmt(computePower());
+    refs.world.textContent = state.world;
+    refs.hp.textContent = fmt(effectiveStat('hpMax'));
+    refs.atk.textContent = fmt(effectiveStat('atk'));
+    refs.def.textContent = fmt(effectiveStat('def'));
+    const entryCost = cryptasEntryCost(); // NUEVO - CRIPTAS KUNAI
+    refs.cost.textContent = fmt(entryCost);
+    if (refs.entryCost){
+      refs.entryCost.textContent = 'Entrada: ' + fmt(entryCost) + ' 💰'; // NUEVO - CRIPTAS KUNAI
+      refs.entryCost.classList.toggle('insufficient', state.gold < entryCost); // NUEVO - CRIPTAS KUNAI
+    }
+    if (refs.name && $('hname')) refs.name.textContent = $('hname').textContent;
+  }
+
+  // NUEVO - CRIPTAS KUNAI: overlay temporal de fondos insuficientes
+  function showCryptasWarning(){
+    const warn = $('cryptasWarn');
+    if (!warn) return;
+    warn.classList.add('show');
+    clearTimeout(showCryptasWarning._t);
+    showCryptasWarning._t = setTimeout(()=>warn.classList.remove('show'), 1800);
+  }
+
+  // NUEVO - CRIPTAS KUNAI: entra al escenario y detiene solo la lógica del área superior
+  function enterCryptasKunai(){
+    const cost = cryptasEntryCost();
+    if (state.gold < cost){ updateCryptasPanels(); showCryptasWarning(); return; } // MODIFICADO - CRIPTAS KUNAI: mantiene visible el coste requerido
+    state.gold = Math.max(0, state.gold - cost);
+    state.paused = false;
+    state.heroViewOpen = false;
+    state.cryptasOpen = true;
+    if (mazmOv) mazmOv.classList.remove('show');
+    if (heroViewEl) heroViewEl.classList.remove('show');
+    $('top').classList.add('cryptas-open');
+    const view = $('cryptasView');
+    if (view) view.classList.add('show');
+    updateCryptasPanels();
+    startCryptasHeroMotion();
+    updHUD();
+  }
+
+  let cryptasHeroRaf = null; // NUEVO - CRIPTAS KUNAI: animación independiente y ligera del sprite visual
+  function startCryptasHeroMotion(){
+    const holder = $('cryptasHero');
+    if (!holder) return;
+    if (!holder.firstElementChild){
+      const clone = hero.cloneNode(true);
+      clone.removeAttribute('id');
+      clone.classList.add('walking');
+      holder.appendChild(clone);
+    }
+    let x = 0, y = 0, tx = 0, ty = 0, nextPick = 0;
+    const tick = (now)=>{
+      if (!state.cryptasOpen){ cryptasHeroRaf = null; return; }
+      if (now >= nextPick){
+        tx = rand(-112, 112); ty = rand(-10, 6); nextPick = now + rand(650, 1350); // MODIFICADO - CRIPTAS KUNAI: movimiento errático sobre el suelo
+      }
+      x += (tx - x) * 0.025; y += (ty - y) * 0.025;
+      holder.style.transform = `translate(calc(-50% + ${x}px), ${y}px)`; // MODIFICADO - CRIPTAS KUNAI: conserva el anclaje al suelo
+      cryptasHeroRaf = requestAnimationFrame(tick);
+    };
+    if (!cryptasHeroRaf) cryptasHeroRaf = requestAnimationFrame(tick);
+  }
+
   function updHUD(){
     $('gold').textContent = fmt(state.gold);          // MODIFICADO - Punto 2
     $('gem').textContent  = fmt(state.gem);           // MODIFICADO - Punto 2
@@ -855,6 +1050,7 @@
     const mgm = document.getElementById('mazmGem'); if (mgm) mgm.textContent = fmt(state.gem); // NUEVO - gemas en MAZMORRAS
     $('power').textContent = fmt(computePower());     // MODIFICADO - Puntos 1 y 2: poder total real
     $('world').textContent = state.world;
+    updateCryptasPanels(); // NUEVO - CRIPTAS KUNAI: paneles visuales sincronizados
     [...stagesEl.children].forEach((el,i)=>{
       el.className = 'stage' + (i<state.stage?' done':i===state.stage?' active':'');
     });
@@ -1010,7 +1206,7 @@
   function loop(now){
     const dt = Math.min(40, now-last); last = now;
     // NUEVO - Pausa total cuando la ventana de MAZMORRAS está abierta
-    if (state.paused || state.heroViewOpen){ requestAnimationFrame(loop); return; } // MODIFICADO - HÉROE: pausa solo procesos del cuadro superior
+    if (state.paused || state.heroViewOpen || state.cryptasOpen){ requestAnimationFrame(loop); return; } // MODIFICADO - CRIPTAS KUNAI: pausa solo procesos del cuadro superior
 
     // NUEVO - Punto 7: REGEN por segundo (siempre activa, no altera otras mecánicas)
     if (stats.hp > 0 && stats.hp < effectiveStat('hpMax')){ // MODIFICADO - HÉROE
@@ -1479,12 +1675,16 @@
   const mazmBtn = document.querySelector('.btn.mazm');
   if (mazmBtn && mazmOv){
     mazmBtn.addEventListener('click', ()=>{
+      if (state.cryptasOpen) return; // NUEVO - CRIPTAS KUNAI: no reemplaza la cripta activa desde el menú inferior
       const isOpen = mazmOv.classList.toggle('show');
       state.paused = isOpen; // pausa total del loop principal
     });
-    // CRIPTA KUNAI y BOSQUE SOMBRÍO quedan vacías: no tienen sistema ni acción interna.
+    // MODIFICADO - CRIPTAS KUNAI: el primer scroll entra al escenario si hay oro suficiente.
     mazmOv.querySelectorAll('.mazm-scroll').forEach(el=>{
-      el.addEventListener('click', ()=>{ /* opción vacía por ahora */ });
+      el.addEventListener('click', ()=>{
+        if (el.dataset.mazm === '1') enterCryptasKunai(); // NUEVO
+        else { const w = $('mazmWarn'); if (w){ w.classList.add('show'); setTimeout(()=>w.classList.remove('show'), 1200); } } // NUEVO
+      });
     });
   }
 
@@ -1494,11 +1694,16 @@
   const heroBtn = document.querySelector('.btn.heroe');
   if (heroBtn && heroViewEl){
     heroBtn.addEventListener('click', ()=>{
+      if (state.cryptasOpen) return; // NUEVO - CRIPTAS KUNAI: conserva intacta la vista superior activa
       state.heroViewOpen = !state.heroViewOpen;
       heroViewEl.classList.toggle('show', state.heroViewOpen);
       if (state.heroViewOpen) updateHeroView();
     });
   }
+
+  // NUEVO - CRIPTAS KUNAI: cerrar aviso informativo sin bloquear la interfaz
+  const cryptasWarnEl = document.getElementById('cryptasWarn');
+  if (cryptasWarnEl) cryptasWarnEl.addEventListener('click', ()=>cryptasWarnEl.classList.remove('show'));
 
   // Inicialización visual
   applyRankColor();
