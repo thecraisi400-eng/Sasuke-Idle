@@ -591,13 +591,13 @@
   .cryptas-torch::after{content:"";position:absolute;left:50%;top:-44px;width:112px;height:112px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,rgba(255,164,62,.28),transparent 68%);pointer-events:none} /* NUEVO */
   @keyframes torchFlicker{0%{transform:translateX(-50%) scale(.92) rotate(-3deg);opacity:.86}100%{transform:translateX(-50%) scale(1.08) rotate(3deg);opacity:1}} /* NUEVO */
   .cryptas-light{position:absolute;inset:0;z-index:6;background:radial-gradient(ellipse at 50% 55%,rgba(255,218,140,.16),rgba(0,0,0,.24) 60%,rgba(0,0,0,.66));pointer-events:none} /* MODIFICADO - CRIPTAS KUNAI */
-  .cryptas-start{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:116px;height:116px;border-radius:50%;z-index:7;
+  .cryptas-start{position:absolute;left:50%;top:calc(48% - 10px);transform:translate(-50%,-50%);width:106px;height:106px;border-radius:50%;z-index:7; /* MODIFICADO - CRIPTAS KUNAI: círculo 10px menor y 10px más arriba */
     display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;letter-spacing:1.8px;color:#f8e7b0;
     background:radial-gradient(circle at 35% 30%,#6c6557,#24211d 72%);border:2px solid #b69658;
     box-shadow:0 0 28px rgba(255,200,110,.28),inset 0 2px 8px rgba(255,255,255,.12),inset 0 -10px 20px rgba(0,0,0,.5);
     text-shadow:0 2px 3px #000;pointer-events:none} /* NUEVO */
   .cryptas-hero{position:absolute;left:50%;bottom:120px;transform:translateX(-50%);z-index:8;will-change:transform} /* MODIFICADO - CRIPTAS KUNAI: ancla el personaje al suelo */
-  .cryptas-hero .char{position:relative;left:auto;bottom:auto;transform:scale(1.35);transform-origin:center bottom} /* NUEVO */
+  .cryptas-hero .char{position:relative;left:auto;bottom:auto;transform:scale(1);transform-origin:center bottom} /* MODIFICADO - CRIPTAS KUNAI: mismo tamaño que el personaje principal */
   .cryptas-hud-left,.cryptas-hud-right{position:absolute;top:8px;z-index:6;display:flex;flex-direction:column;gap:5px;font-size:11px;pointer-events:none} /* NUEVO */
   .cryptas-hud-left{left:8px}.cryptas-hud-right{right:8px;align-items:flex-end} /* NUEVO */
   .cryptas-cost{position:absolute;left:50%;top:124px;transform:translateX(-50%);z-index:6;font-size:11px;font-weight:800;color:#ffd76b;
@@ -728,8 +728,7 @@
           </div>
         </div>
       </div>
-      <div class="cryptas-cost">Entrada pagada: <span id="ckCost">40</span> 💰</div>
-      <div id="cryptasHero" class="cryptas-hero"></div>
+      <div id="cryptasHero" class="cryptas-hero"></div><!-- MODIFICADO - CRIPTAS KUNAI: eliminado texto de entrada pagada -->
       <div class="cryptas-start">EMPEZAR</div>
     </div>
 
@@ -985,7 +984,7 @@
     refs.atk.textContent = fmt(effectiveStat('atk'));
     refs.def.textContent = fmt(effectiveStat('def'));
     const entryCost = cryptasEntryCost(); // NUEVO - CRIPTAS KUNAI
-    refs.cost.textContent = fmt(entryCost);
+    if (refs.cost) refs.cost.textContent = fmt(entryCost); // MODIFICADO - CRIPTAS KUNAI: el texto de entrada pagada fue eliminado
     if (refs.entryCost){
       refs.entryCost.textContent = 'Entrada: ' + fmt(entryCost) + ' 💰'; // NUEVO - CRIPTAS KUNAI
       refs.entryCost.classList.toggle('insufficient', state.gold < entryCost); // NUEVO - CRIPTAS KUNAI
@@ -1032,8 +1031,8 @@
       sprite.classList.add('walking');
       holder.appendChild(sprite);
     }
-    sprite.style.transform = 'scale(1.35)'; // MODIFICADO - CRIPTAS KUNAI: sin giros bruscos ni flip visual
-    const bounds = {x:118, yMin:-72, yMax:22}; // MODIFICADO - CRIPTAS KUNAI: límites seguros para caminar en todas las direcciones
+    sprite.style.transform = 'scale(1)'; // MODIFICADO - CRIPTAS KUNAI: mismo tamaño que el personaje principal, sin giros bruscos
+    const bounds = {x:108, yMin:-24, yMax:34}; // MODIFICADO - CRIPTAS KUNAI: límite superior desde la zona central de las antorchas
     let x = 0, y = 0, startX = 0, startY = 0, targetX = 0, targetY = 0, moveStart = 0, moveDuration = 0, pauseUntil = 0;
     const easeInOut = t => t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2; // NUEVO - CRIPTAS KUNAI
     const beginStep = (now)=>{
@@ -1042,7 +1041,7 @@
       do {
         targetX = rand(-bounds.x, bounds.x);
         targetY = rand(bounds.yMin, bounds.yMax);
-      } while (Math.hypot(targetX - startX, targetY - startY) < 42);
+      } while (Math.hypot(targetX - startX, targetY - startY) < 30); // MODIFICADO - CRIPTAS KUNAI: cambios de dirección más variados sin forzar subir mucho
       moveStart = now;
       const distance = Math.hypot(targetX - startX, targetY - startY);
       const calmSpeed = rand(0.028, 0.044); // px/ms: lento, sensación de exploración tranquila
