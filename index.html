@@ -70,6 +70,10 @@
 
   /* Scene */
   .scene{position:absolute;inset:0;top:0;overflow:hidden}
+  .scene::before{content:"";position:absolute;left:0;top:0;width:200px;height:215px;
+    background:url('assets/images/a1.webp') 0 0 / 2048px 2048px no-repeat;
+    transform:scale(2.24);transform-origin:top left}
+  .stars,.moon,.parallax{display:none}
   .parallax{position:absolute;inset:0;will-change:transform}
 
   /* Distant mountains */
