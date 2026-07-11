@@ -682,18 +682,38 @@
   .tienda-list{overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:2px 4px 8px;min-height:0}
   .tienda-item{min-height:78px;border-radius:14px;background:linear-gradient(135deg,#5a3aa8,#2a1a5a);border:1px solid #a08aff;color:#fff;font-weight:900;letter-spacing:1.5px;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18)}
   .tienda-item:active{transform:translateY(1px)}
-  .event1-view{position:absolute;inset:0;z-index:120;display:none;overflow:hidden;background:#153916}
+  .event1-view{position:absolute;inset:0;z-index:120;display:none;overflow:hidden;background:linear-gradient(180deg,#193f1d,#0b1f0d)}
   .event1-view.show{display:block}
-  .event1-world{position:absolute;inset:-480px 0 0 0;height:960px;will-change:transform;background:linear-gradient(90deg,#123214 0 22%,#85d765 22% 78%,#123214 78% 100%)}
-  .event1-world::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 42% 12%,rgba(255,255,255,.18) 0 2px,transparent 3px),radial-gradient(circle at 55% 34%,rgba(255,255,255,.14) 0 2px,transparent 3px),radial-gradient(circle at 48% 68%,rgba(255,255,255,.12) 0 2px,transparent 3px);background-size:120px 180px}
-  .event1-tree{position:absolute;width:30px;height:42px;border-radius:50% 50% 45% 45%;background:#061006;box-shadow:0 4px 6px rgba(0,0,0,.45)}
-  .event1-tree::after{content:"";position:absolute;left:12px;bottom:-16px;width:6px;height:18px;background:#120904;border-radius:2px}
+  .event1-world{position:absolute;inset:-520px 0 0 0;height:1040px;will-change:transform;
+    background:
+      linear-gradient(90deg,transparent 0 20%,rgba(20,70,24,.55) 20.5% 22%,rgba(255,255,255,.18) 22.2% 22.7%,transparent 23% 77%,rgba(255,255,255,.18) 77.3% 77.8%,rgba(20,70,24,.55) 78% 79.5%,transparent 80%),
+      linear-gradient(90deg,#071707 0 22%,#8cdb6c 22% 78%,#071707 78% 100%)}
+  .event1-world::before{content:"";position:absolute;inset:0;background-image:
+      radial-gradient(ellipse at 50% 8%,rgba(255,255,255,.22) 0 2px,transparent 3px),
+      radial-gradient(ellipse at 45% 26%,rgba(61,135,44,.35) 0 6px,transparent 7px),
+      radial-gradient(ellipse at 58% 42%,rgba(255,255,255,.18) 0 2px,transparent 3px),
+      radial-gradient(ellipse at 47% 63%,rgba(61,135,44,.28) 0 5px,transparent 6px),
+      radial-gradient(ellipse at 54% 82%,rgba(255,255,255,.16) 0 2px,transparent 3px),
+      repeating-linear-gradient(180deg,rgba(255,255,255,.06) 0 1px,transparent 1px 42px);background-size:150px 220px,180px 260px,150px 220px,180px 260px,150px 220px,100% 160px}
+  .event1-world::after{content:"";position:absolute;left:22%;right:22%;top:0;bottom:0;pointer-events:none;box-shadow:inset 16px 0 20px rgba(36,116,32,.28),inset -16px 0 20px rgba(36,116,32,.28)}
+  .event1-tree{position:absolute;width:32px;height:48px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle at 28% 24%,#102814,#020602 72%);box-shadow:0 6px 8px rgba(0,0,0,.55),inset -8px -10px 12px rgba(0,0,0,.55)}
+  .event1-tree::before{content:"";position:absolute;left:-7px;top:14px;width:46px;height:34px;border-radius:50%;background:rgba(2,8,2,.78);filter:blur(.2px)}
+  .event1-tree::after{content:"";position:absolute;left:13px;bottom:-17px;width:7px;height:20px;background:#100704;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.5)}
+  .event1-deco{position:absolute;width:14px;height:10px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#446b3f,#111b10 72%);box-shadow:0 2px 3px rgba(0,0,0,.35)}
+  .event1-flower{position:absolute;width:6px;height:6px;border-radius:50%;background:#d8f08a;box-shadow:7px 2px 0 #9de38f,-5px 4px 0 #efe0ff}
   .event1-hero{position:absolute;left:50%;bottom:112px;transform:translateX(-50%);z-index:5}
-  .event1-hero .char{position:relative;left:auto;bottom:auto}
+  .event1-hero .char{position:relative;left:auto;bottom:auto;transform:none}
   .event1-enemies,.event1-fx{position:absolute;inset:0;z-index:6;pointer-events:none}
-  .event1-scrolls{position:absolute;right:8px;bottom:8px;z-index:10;display:flex;gap:6px}
-  .event1-scroll-slot{width:76px;height:42px;border-radius:9px;background:linear-gradient(180deg,#f7d99a,#9b5a24);border:1px solid #ffd76b;color:#2a1808;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;text-align:center;padding:3px;box-shadow:0 3px 8px rgba(0,0,0,.45)}
-  .event1-hud{position:absolute;left:8px;top:8px;z-index:10;font-size:11px;font-weight:900;color:#fff;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:6px 9px;text-shadow:0 1px 2px #000}
+  .event1-scrolls{position:absolute;right:8px;bottom:8px;z-index:10;display:flex;gap:7px}
+  .event1-scroll-slot{position:relative;width:82px;height:54px;border-radius:13px;background:linear-gradient(135deg,#fff1b8 0%,#d19b44 52%,#704012 100%);border:1px solid rgba(255,232,138,.9);color:#2a1808;font-size:8px;font-weight:900;display:flex;align-items:center;justify-content:center;text-align:center;padding:5px 8px;box-shadow:0 6px 13px rgba(0,0,0,.5),inset 0 2px 0 rgba(255,255,255,.42),inset 0 -11px 14px rgba(78,34,9,.3);font-family:Georgia,serif;overflow:hidden}
+  .event1-scroll-slot::before{content:"";position:absolute;left:-7px;right:-7px;top:8px;bottom:8px;border-radius:10px;background:linear-gradient(90deg,#6f3b13 0 12px,transparent 12px calc(100% - 12px),#6f3b13 calc(100% - 12px));opacity:.9}
+  .event1-scroll-slot::after{content:"";position:absolute;inset:5px 11px;border-radius:10px;background:repeating-linear-gradient(0deg,rgba(82,42,15,.1) 0 1px,transparent 1px 7px),linear-gradient(120deg,rgba(255,255,255,.32),transparent 45%)}
+  .event1-scroll-slot span{position:relative;z-index:1;text-shadow:0 1px 0 rgba(255,240,190,.8);line-height:1.05}
+  .event1-scroll-slot.empty span{opacity:.45;color:#5c391a}
+  .event1-scroll-slot.earth{background:linear-gradient(135deg,#d8c08a,#8a5a25 58%,#3e2410);color:#fff5c7;text-shadow:0 2px 2px #2a1505}
+  .event1-scroll-slot.wind{background:linear-gradient(135deg,#dfffee,#7ed8bd 52%,#1e6d62);color:#f3fffb;text-shadow:0 2px 2px #07382f}
+  .event1-hud-left,.event1-hud-right{position:absolute;top:8px;z-index:10;display:flex;flex-direction:column;gap:5px;font-size:11px;pointer-events:none}
+  .event1-hud-left{left:8px}.event1-hud-right{right:8px;align-items:flex-end}.event1-hud-right .world-title{text-align:center;justify-content:center}
   .event1-msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:15;display:none;background:rgba(0,0,0,.62);border:2px solid #ffd76b;border-radius:14px;padding:16px 20px;text-align:center;font-weight:900;color:#fff;text-shadow:0 2px 3px #000}
   .event1-msg.show{display:block}
 
@@ -844,11 +864,26 @@
 
     <div id="event1View" class="event1-view">
       <div id="event1World" class="event1-world"></div>
-      <div class="event1-hud">EVENTO 1 · Piso <span id="event1Floor">1</span>/50</div>
+      <div class="event1-hud-left">
+        <div class="chip gold"><span class="emj">💰</span><span id="event1Gold">0</span></div>
+        <div class="chip gem"><span class="emj">💎</span><span id="event1Gem">0</span></div>
+        <div class="chip power"><span class="emj">⚡</span><span id="event1Power">0</span></div>
+        <div class="hero-name">🥷 <span id="event1Name">Kaito el Errante</span></div>
+      </div>
+      <div class="event1-hud-right">
+        <div class="world">
+          <div class="world-title">EVENTO 1 <span id="event1Floor">1/50</span></div>
+          <div class="wave-stats">
+            <div class="ws hp"><span class="we">❤️</span><span id="event1Hp">0</span></div>
+            <div class="ws atk"><span class="we">⚔️</span><span id="event1Atk">0</span></div>
+            <div class="ws def"><span class="we">🛡️</span><span id="event1Def">0</span></div>
+          </div>
+        </div>
+      </div>
       <div id="event1Enemies" class="event1-enemies"></div>
       <div id="event1Fx" class="event1-fx"></div>
       <div id="event1Hero" class="event1-hero"></div>
-      <div class="event1-scrolls"><div id="event1ScrollA" class="event1-scroll-slot"></div><div id="event1ScrollB" class="event1-scroll-slot"></div></div>
+      <div class="event1-scrolls"><div id="event1ScrollA" class="event1-scroll-slot empty"><span>VACÍO</span></div><div id="event1ScrollB" class="event1-scroll-slot empty"><span>VACÍO</span></div></div>
       <div id="event1Msg" class="event1-msg"></div>
     </div>
 
@@ -2032,9 +2067,22 @@
     [[18,40],[342,86],[44,180],[316,250],[16,360],[350,438],[52,570],[310,650],[22,760],[344,845]].forEach(([x,y])=>{
       const t=document.createElement('div'); t.className='event1-tree'; t.style.left=x+'px'; t.style.top=y+'px'; event1World.appendChild(t);
     });
+    [[84,105,'event1-deco'],[286,155,'event1-flower'],[68,302,'event1-flower'],[304,382,'event1-deco'],[92,520,'event1-deco'],[286,612,'event1-flower'],[66,728,'event1-flower'],[308,812,'event1-deco'],[100,928,'event1-flower']].forEach(([x,y,c])=>{
+      const d=document.createElement('div'); d.className=c; d.style.left=x+'px'; d.style.top=y+'px'; event1World.appendChild(d);
+    });
   }
-  function event1RenderScrolls(){ $('event1ScrollA').textContent = event1State.scrolls[0] || ''; $('event1ScrollB').textContent = event1State.scrolls[1] || ''; }
-  function event1UpdateHud(){ const f=$('event1Floor'); if(f) f.textContent=event1State.floor; }
+  function event1RenderScrolls(){
+    [$('event1ScrollA'), $('event1ScrollB')].forEach((slot,i)=>{
+      const val = event1State.scrolls[i] || '';
+      slot.className = 'event1-scroll-slot' + (!val ? ' empty' : val.includes('TIERRA') ? ' earth' : ' wind');
+      slot.innerHTML = '<span>' + (val || 'VACÍO') + '</span>';
+    });
+  }
+  function event1UpdateHud(){
+    const f=$('event1Floor'); if(f) f.textContent=event1State.floor + '/50';
+    const pairs = [['event1Gold',fmt(state.gold)],['event1Gem',fmt(state.gem)],['event1Power',fmt(computePower())],['event1Hp',fmt(effectiveStat('hpMax'))],['event1Atk',fmt(effectiveStat('atk'))],['event1Def',fmt(effectiveStat('def'))]];
+    pairs.forEach(([id,val])=>{ const el=$(id); if(el) el.textContent=val; });
+  }
   function event1Enter(){
     if (!event1View) return;
     state.paused = true; tiendaOv.classList.remove('show'); event1View.classList.add('show');
@@ -2057,8 +2105,8 @@
     const cd=(event1Cd.get(e)||0)-dt; if(cd>0){event1Cd.set(e,cd); return;} event1Cd.set(e, Math.max(220,420-(effectiveStat('agi')+effectiveStat('vel'))*3));
     const dmg=Math.round(Math.max(1,effectiveStat('atk')-(parseFloat(e.dataset.def)||0)*.5)*(0.9+Math.random()*.2));
     e.dataset.hp=Math.max(0,parseFloat(e.dataset.hp)-dmg); e.querySelector('.hpbar i').style.width=(e.dataset.hp/e.dataset.max*100)+'%'; event1DamageText(196,250,dmg,false);
-    const edmg=Math.max(1,Math.round(parseFloat(e.dataset.atk)*(0.9+Math.random()*.2)-effectiveStat('def')*.4)); stats.hp=Math.max(0,stats.hp-edmg); event1DamageText(184,330,edmg,true); syncStats();
-    if(parseFloat(e.dataset.hp)<=0){ const wasBoss=e.dataset.boss==='1'; e.remove(); event1State.enemy=null; event1State.fighting=false; stats.hp=effectiveStat('hpMax'); syncStats(); if(wasBoss){ event1BossWin(); } else { event1State.wave++; if(event1State.wave < 10) event1State.floor++; event1UpdateHud(); event1State.timer = event1State.wave>=10 ? 20000 : 10000; event1State.moving=true; } }
+    const edmg=Math.max(1,Math.round(parseFloat(e.dataset.atk)*(0.9+Math.random()*.2)-effectiveStat('def')*.4)); stats.hp=Math.max(0,stats.hp-edmg); event1DamageText(184,330,edmg,true); syncStats(); event1UpdateHud();
+    if(parseFloat(e.dataset.hp)<=0){ const wasBoss=e.dataset.boss==='1'; e.remove(); event1State.enemy=null; event1State.fighting=false; stats.hp=effectiveStat('hpMax'); syncStats(); event1UpdateHud(); if(wasBoss){ event1BossWin(); } else { event1State.wave++; if(event1State.wave < 10) event1State.floor++; event1UpdateHud(); event1State.timer = event1State.wave>=10 ? 20000 : 10000; event1State.moving=true; } }
     else if(stats.hp<=0){ event1BossLose(e.dataset.boss==='1'); }
   }
   function event1BossWin(){
@@ -2067,7 +2115,7 @@
     if(event1State.floor>=50){ event1Finish(event1State.scrolls.length>=2); return; }
     event1State.wave=0; event1State.floor++; event1UpdateHud(); event1State.timer=10000; event1State.moving=true;
   }
-  function event1BossLose(isBoss){ if(isBoss) event1State.scrolls=[]; event1RenderScrolls(); stats.hp=effectiveStat('hpMax'); syncStats(); event1Finish(false); }
+  function event1BossLose(isBoss){ if(isBoss) event1State.scrolls=[]; event1RenderScrolls(); stats.hp=effectiveStat('hpMax'); syncStats(); event1UpdateHud(); event1Finish(false); }
   function event1Finish(win){ event1State.active=false; event1Msg.innerHTML=win?'EVENTO COMPLETADO<br>PERGAMINOS REUNIDOS':'EVENTO FALLIDO'; event1Msg.classList.add('show'); setTimeout(()=>{event1View.classList.remove('show'); state.paused=false;},1600); }
   function event1Loop(now){
     if(!event1State.active) return; const dt=Math.min(40,now-event1State.last); event1State.last=now;
