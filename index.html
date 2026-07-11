@@ -617,6 +617,31 @@
   .cryptas-warn-box{max-width:300px;padding:16px 20px;border-radius:14px;text-align:center;font-weight:900;font-size:14px;line-height:1.35;
     background:rgba(20,24,51,.86);border:2px solid #ffd76b;box-shadow:0 10px 28px rgba(0,0,0,.55);color:#fff} /* NUEVO */
   .cryptas-warn-box small{display:block;margin-top:8px;color:#c9d3ff;font-size:10px;font-weight:700} /* NUEVO */
+
+
+  /* NUEVO - EVENTO: bosque sombrío aislado en el cuadro superior */
+  .top.event-open > .stars, .top.event-open > .moon, .top.event-open > .scene,
+  .top.event-open > #hero, .top.event-open > #enemies, .top.event-open > #fx,
+  .top.event-open > #avanzar, .top.event-open > #mazmOv, .top.event-open > #heroView,
+  .top.event-open > #nextWorldOv, .top.event-open > #fracasoOv, .top.event-open > #cryptasView,
+  .top.event-open > .hud{display:none}
+  .event-view{position:absolute;inset:0;z-index:110;display:none;overflow:hidden;pointer-events:auto;background:#050707}
+  .event-view.show{display:block}
+  .event-countdown{position:absolute;left:50%;top:50%;width:300px;min-height:130px;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;text-align:center;padding:22px 34px;z-index:8;font-family:Georgia,serif;font-weight:900;font-size:18px;letter-spacing:1px;color:#4a240b;text-shadow:0 1px 0 rgba(255,244,190,.6);background:linear-gradient(180deg,#f7d99a,#c58a42 54%,#774018);border:2px solid #5a2d10;border-radius:18px;box-shadow:0 12px 30px rgba(0,0,0,.65),inset 0 2px 0 rgba(255,244,190,.65)}
+  .event-countdown::before,.event-countdown::after{content:"";position:absolute;top:12px;bottom:12px;width:22px;border-radius:14px;background:linear-gradient(180deg,#5a2d10,#9b5a25,#3a1a08);box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+  .event-countdown::before{left:-12px}.event-countdown::after{right:-12px}
+  .event-forest{position:absolute;inset:-620px 0 0;display:none;will-change:transform;background:linear-gradient(180deg,#050707,#07110c 45%,#020303)}
+  .event-forest.show{display:block}
+  .event-forest::before{content:"";position:absolute;inset:0;background-image:radial-gradient(ellipse at 50% 18%,rgba(80,120,90,.18),transparent 22%),repeating-linear-gradient(90deg,transparent 0 28px,rgba(6,20,11,.75) 29px 36px,transparent 37px 74px),radial-gradient(ellipse at 18% 28%,#0b2b17 0 34px,transparent 35px),radial-gradient(ellipse at 78% 34%,#082212 0 46px,transparent 47px),radial-gradient(ellipse at 30% 54%,#06180e 0 38px,transparent 39px),radial-gradient(ellipse at 65% 72%,#092414 0 52px,transparent 53px);background-size:393px 620px;filter:brightness(.72)}
+  .event-path{position:absolute;left:138px;top:0;width:118px;height:1200px;background:linear-gradient(90deg,transparent,#152015 18%,#252018 50%,#152015 82%,transparent);opacity:.85}
+  .event-path::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(180deg,rgba(130,120,80,.08) 0 5px,transparent 6px 34px)}
+  .event-vignette{position:absolute;inset:0;z-index:7;pointer-events:none;background:radial-gradient(ellipse at 50% 58%,transparent 0 40%,rgba(0,0,0,.55) 75%,rgba(0,0,0,.9))}
+  .event-hero{position:absolute;left:50%;bottom:72px;z-index:9;transform:translateX(-50%)}
+  .event-hero .char{position:relative;left:auto;bottom:auto}
+  .event-enemies{position:absolute;inset:0;z-index:10;pointer-events:none}.event-fx{position:absolute;inset:0;z-index:12;pointer-events:none}
+  .event-scrolls{position:absolute;right:8px;bottom:8px;z-index:14;display:flex;gap:6px}.event-scroll-slot{width:48px;height:58px;border-radius:9px;border:2px solid #7a421b;background:linear-gradient(180deg,#d9aa5f,#8a4a20);box-shadow:0 4px 10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,240,180,.5);display:flex;align-items:center;justify-content:center;font-size:24px}.event-scroll-slot.empty{filter:brightness(.55)}
+  .event-status{position:absolute;left:8px;bottom:8px;z-index:14;padding:5px 8px;border-radius:9px;background:rgba(0,0,0,.55);border:1px solid rgba(255,215,107,.45);color:#ffd76b;font-size:10px;font-weight:900}
+
 </style>
 </head>
 <body>
@@ -748,6 +773,20 @@
     <!-- NUEVO - CRIPTAS KUNAI: aviso visual de oro insuficiente -->
     <div id="cryptasWarn" class="cryptas-warn"><div class="cryptas-warn-box">Oro insuficiente para entrar a CRIPTAS KUNAI.<small>Toca para cerrar.</small></div></div>
 
+
+
+    <!-- NUEVO - EVENTO: cuenta regresiva y bosque sombrío -->
+    <div id="eventView" class="event-view">
+      <div id="eventCountdown" class="event-countdown">Próximo evento dentro de <span id="eventTime">1:00</span></div>
+      <div id="eventForest" class="event-forest"><div class="event-path"></div></div>
+      <div class="event-vignette"></div>
+      <div id="eventHero" class="event-hero"></div>
+      <div id="eventEnemies" class="event-enemies"></div>
+      <div id="eventFx" class="event-fx"></div>
+      <div id="eventStatus" class="event-status">Piso 1 / 50</div>
+      <div class="event-scrolls"><div id="eventScrollA" class="event-scroll-slot empty"></div><div id="eventScrollB" class="event-scroll-slot empty"></div></div>
+    </div>
+
     <!-- HUD -->
     <div class="hud">
       <div class="hud-row">
@@ -877,6 +916,7 @@
     transitioning: false,
     heroViewOpen: false, // NUEVO - HÉROE: pausa aislada del cuadro superior
     cryptasOpen: false, // NUEVO - CRIPTAS KUNAI: pausa aislada del cuadro superior
+    eventOpen: false, // NUEVO - EVENTO: pausa aislada del cuadro superior
     // NUEVO - Puntos 4/5: modo retroceso y control de progreso
     retreat: false,        // true = fue devuelto al mundo anterior
     retreatFrom: 0,        // mundo original antes de perder
@@ -1347,7 +1387,7 @@
   function loop(now){
     const dt = Math.min(40, now-last); last = now;
     // NUEVO - Pausa total cuando la ventana de MAZMORRAS está abierta
-    if (state.paused || state.heroViewOpen || state.cryptasOpen){ requestAnimationFrame(loop); return; } // MODIFICADO - CRIPTAS KUNAI: pausa solo procesos del cuadro superior
+    if (state.paused || state.heroViewOpen || state.cryptasOpen || state.eventOpen){ requestAnimationFrame(loop); return; } // MODIFICADO - CRIPTAS KUNAI: pausa solo procesos del cuadro superior
 
     // NUEVO - Punto 7: REGEN por segundo (siempre activa, no altera otras mecánicas)
     if (stats.hp > 0 && stats.hp < effectiveStat('hpMax')){ // MODIFICADO - HÉROE
@@ -1810,6 +1850,29 @@
     autoStateEl.textContent = 'ON';
     autoTick();
   });
+
+
+
+  // ================= NUEVO - EVENTO: bosque sombrío de 50 pisos =================
+  const eventBtn = document.querySelector('.btn.evento');
+  const eventState = {active:false, countdown:false, floor:1, kills:0, scrolls:[], forestY:0, heroY:0, enemy:null, raf:null, timers:[], battleCd:0, travelStart:0, bossPending:false};
+  const SCROLLS = {earth:{em:'📜', name:'Tierra'}, wind:{em:'🌀', name:'Viento'}};
+  function eventClearTimers(){ eventState.timers.forEach(clearTimeout); eventState.timers=[]; }
+  function eventResetLayers(){ const e=$('eventEnemies'); if(e)e.innerHTML=''; const f=$('eventFx'); if(f)f.innerHTML=''; eventState.enemy=null; }
+  function updateEventScrolls(){ const a=$('eventScrollA'), b=$('eventScrollB'); if(!a||!b)return; [a,b].forEach((el,i)=>{ const k=eventState.scrolls[i]; el.className='event-scroll-slot'+(k?'':' empty'); el.textContent=k?SCROLLS[k].em:''; el.title=k?('Pergamino de '+SCROLLS[k].name):''; }); }
+  function updateEventStatus(txt){ const el=$('eventStatus'); if(el) el.textContent = txt || `Piso ${eventState.floor} / 50 · Enemigos ${eventState.kills}/10`; }
+  function startEvent(){ if(state.eventOpen || state.cryptasOpen) return; state.paused=false; state.heroViewOpen=false; state.eventOpen=true; eventState.active=false; eventState.countdown=true; eventState.floor=1; eventState.kills=0; eventState.scrolls=[Math.random()<.5?'earth':'wind']; eventState.forestY=0; eventState.heroY=0; eventState.bossPending=false; eventResetLayers(); updateEventScrolls(); updateEventStatus('Preparando evento'); $('top').classList.add('event-open'); $('eventView').classList.add('show'); $('eventCountdown').style.display='flex'; $('eventForest').classList.remove('show'); setupEventHero(); let left=60; const tick=()=>{ if(!state.eventOpen) return; $('eventTime').textContent = '0:' + String(left).padStart(2,'0'); if(left<=0){ beginEventRun(); return; } left--; eventState.timers.push(setTimeout(tick,1000)); }; tick(); }
+  function setupEventHero(){ const h=$('eventHero'); if(!h) return; if(!h.firstElementChild){ const sp=hero.cloneNode(true); sp.removeAttribute('id'); sp.removeAttribute('style'); const fill=sp.querySelector('.hpbar i'); if(fill) fill.removeAttribute('id'); sp.classList.add('walking'); h.appendChild(sp); } h.style.bottom='72px'; h.style.transform='translateX(-50%)'; }
+  function beginEventRun(){ eventState.countdown=false; eventState.active=true; $('eventCountdown').style.display='none'; $('eventForest').classList.add('show'); stats.hp=effectiveStat('hpMax'); syncStats(); eventState.travelStart=performance.now(); updateEventStatus(); if(!eventState.raf) eventState.raf=requestAnimationFrame(eventLoop); }
+  function makeEventEnemy(boss=false){ const layer=$('eventEnemies'); const e=document.createElement('div'); e.className='char enemy walking '+(boss?'v3':'v2'); e.style.left='50%'; e.style.bottom='390px'; e.style.transform='translateX(-50%) scaleX(-1)'+(boss?' scale(1.35)':''); const mult=1+eventState.floor*.08+(boss?2.4:0); const hp=Math.round((boss?180:55)*mult), atk=Math.round((boss?18:8)*mult*10)/10, def=Math.round((boss?9:4)*mult*10)/10; e.dataset.hp=hp; e.dataset.max=hp; e.dataset.atk=atk; e.dataset.def=def; e.dataset.boss=boss?'1':'0'; e.innerHTML='<div class="hpbar"><i></i></div><div class="shadow"></div><div class="body"><div class="head"></div><div class="eye l"></div><div class="eye r"></div><div class="fang"></div><div class="torso"></div><div class="arm l"></div><div class="arm r"></div><div class="leg l"></div><div class="leg r"></div><div class="club"></div></div>'; layer.appendChild(e); eventState.enemy=e; }
+  function eventFxText(x,y,val,received=false){ const d=document.createElement('div'); d.className='dmg'+(received?' received':''); d.textContent=fmt(val); d.style.left=x+'px'; d.style.top=y+'px'; $('eventFx').appendChild(d); setTimeout(()=>d.remove(),800); }
+  function eventLoop(now){ if(!state.eventOpen || !eventState.active){ eventState.raf=null; return; } const last=eventLoop.last||now, dt=Math.min(40,now-last); eventLoop.last=now; const forest=$('eventForest'); if(!eventState.enemy){ if(eventState.heroY<140){ eventState.heroY+=0.035*dt; $('eventHero').style.bottom=(72+eventState.heroY)+'px'; } else { eventState.forestY+=0.07*dt; forest.style.transform=`translateY(${eventState.forestY%620}px)`; } const wait=eventState.bossPending?20000:10000; if(now-eventState.travelStart>=wait) makeEventEnemy(eventState.bossPending); } else { const e=eventState.enemy; const bottom=parseFloat(e.style.bottom); if(bottom>210){ e.style.bottom=(bottom-0.07*dt)+'px'; } else eventBattle(e,dt); } eventState.raf=requestAnimationFrame(eventLoop); }
+  function eventBattle(e,dt){ eventState.battleCd-=dt; if(eventState.battleCd>0) return; eventState.battleCd=Math.max(230,460-(effectiveStat('agi')+effectiveStat('vel'))*3); const dmg=Math.round(Math.max(1,effectiveStat('atk')-(+e.dataset.def)*.5)*(0.9+Math.random()*.2)); e.dataset.hp=Math.max(0,(+e.dataset.hp)-dmg); const bar=e.querySelector('.hpbar i'); if(bar) bar.style.width=(+e.dataset.hp/+e.dataset.max*100)+'%'; eventFxText(205,245,dmg,false); const edmg=Math.max(1,Math.round((+e.dataset.atk)*(0.9+Math.random()*.2)-effectiveStat('def')*.35)); stats.hp=Math.max(0,stats.hp-edmg); eventFxText(175,315,edmg,true); syncStats(); if(+e.dataset.hp<=0) eventWinEnemy(e.dataset.boss==='1'); if(stats.hp<=0) eventLose(false); }
+  function eventWinEnemy(boss){ eventState.enemy.remove(); eventState.enemy=null; stats.hp=effectiveStat('hpMax'); syncStats(); if(boss){ const missing=eventState.scrolls.includes('earth')?'wind':'earth'; if(!eventState.scrolls.includes(missing)) eventState.scrolls.push(missing); updateEventScrolls(); eventState.floor+=10; eventState.kills=0; eventState.bossPending=false; if(eventState.scrolls.length>=2){ updateEventStatus('EVENTO COMPLETADO · Tierra y Viento obtenidos'); eventState.timers.push(setTimeout(endEvent,2500)); return; } if(eventState.floor>50){ eventLose(true); return; } } else { eventState.kills++; if(eventState.kills>=10) eventState.bossPending=true; } eventState.travelStart=performance.now(); updateEventStatus(boss?`Boss vencido · Pergamino ${SCROLLS[eventState.scrolls.at(-1)].name}`:null); }
+  function eventLose(timeout){ if(eventState.enemy){eventState.enemy.remove();eventState.enemy=null;} if(!timeout && eventState.scrolls.length) eventState.scrolls=[]; updateEventScrolls(); updateEventStatus(timeout?'EVENTO FALLIDO · faltaron pergaminos':'DERROTA · perdiste el pergamino'); eventState.timers.push(setTimeout(endEvent,2500)); }
+  function endEvent(){ eventClearTimers(); if(eventState.raf){cancelAnimationFrame(eventState.raf); eventState.raf=null;} eventResetLayers(); eventState.active=false; state.eventOpen=false; $('top').classList.remove('event-open'); $('eventView').classList.remove('show'); resetSceneForNewWorld(); updHUD(); }
+  if (eventBtn) eventBtn.addEventListener('click', startEvent);
+  // ================= FIN EVENTO =================
 
   // NUEVO - Botón MAZMORRAS: pausa/reanuda el juego y muestra/oculta la ventana
   const mazmOv = document.getElementById('mazmOv');
