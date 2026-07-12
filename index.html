@@ -9,23 +9,7 @@
   .app{width:393px;height:817px;position:relative;overflow:hidden;background:#0b0d17;box-shadow:0 20px 60px rgba(0,0,0,.6);border-radius:6px}
 
   /* ============ TOP 480 ============ */
-  .top{position:relative;width:100%;height:480px;overflow:hidden;
-    background:
-      radial-gradient(ellipse at 50% 0%, #2a3560 0%, #141833 40%, #0b0d17 100%);
-  }
-  /* stars */
-  .stars{position:absolute;inset:0;background-image:
-    radial-gradient(1px 1px at 20px 30px,#fff,transparent),
-    radial-gradient(1px 1px at 70px 80px,#cfd8ff,transparent),
-    radial-gradient(1px 1px at 130px 20px,#fff,transparent),
-    radial-gradient(1px 1px at 200px 60px,#fff,transparent),
-    radial-gradient(1px 1px at 260px 40px,#b7c2ff,transparent),
-    radial-gradient(1px 1px at 330px 90px,#fff,transparent),
-    radial-gradient(1px 1px at 360px 15px,#fff,transparent);
-    opacity:.7}
-  .moon{position:absolute;top:26px;right:36px;width:46px;height:46px;border-radius:50%;
-    background:radial-gradient(circle at 35% 35%,#fdf6d8,#e2d29a 60%,#a89660);
-    box-shadow:0 0 30px rgba(253,246,216,.4),inset -6px -4px 0 rgba(0,0,0,.15)}
+  .top{position:relative;width:100%;height:480px;overflow:hidden;background:#0b0d17}
 
   /* HUD */
   .hud{position:absolute;top:8px;left:8px;right:8px;display:flex;flex-direction:column;gap:6px;z-index:20;font-size:11px}
@@ -40,6 +24,10 @@
   .hero-name{background:linear-gradient(180deg,#2a1f4a,#150c2e);border:1px solid #7a5cff;color:#e6d7ff;
     padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-shadow:0 1px 2px #000;
     box-shadow:0 0 10px rgba(122,92,255,.4)}
+  .fps-counter{position:absolute;top:58px;left:8px;z-index:10001;
+    background:linear-gradient(180deg,#10172d,#090d1f);border:1px solid #7ce9ff;color:#7ce9ff;
+    padding:2px 8px;border-radius:10px;font-size:10px;font-weight:900;letter-spacing:.8px;
+    text-shadow:0 1px 2px #000;box-shadow:0 0 10px rgba(124,233,255,.35);pointer-events:none}
 
   /* World progress window */
   .world{margin-left:auto;background:linear-gradient(180deg,#22284a,#0e112a);
@@ -69,85 +57,15 @@
   .wave-stats .ws.def {color:#7ce9ff;border-color:#1a5a7a}
 
   /* Scene */
-  .scene{position:absolute;inset:0;top:0;overflow:hidden}
-  .parallax{position:absolute;inset:0;will-change:transform}
-
-  /* Distant mountains */
-  .mountains{position:absolute;bottom:180px;left:0;width:300%;height:120px;
-    background-image:
-      radial-gradient(ellipse at 10% 100%, #1e2547 0 60px, transparent 61px),
-      radial-gradient(ellipse at 25% 100%, #232b52 0 80px, transparent 81px),
-      radial-gradient(ellipse at 45% 100%, #1a2044 0 70px, transparent 71px),
-      radial-gradient(ellipse at 65% 100%, #262e5a 0 85px, transparent 86px),
-      radial-gradient(ellipse at 85% 100%, #1c2349 0 65px, transparent 66px);
-    background-size:786px 120px;background-repeat:repeat-x;
-    filter:blur(.3px);opacity:.85}
-
-  /* Ground with grass + dirt path */
-  .ground{position:absolute;left:0;bottom:0;width:300%;height:210px;
-    background:
-      linear-gradient(180deg,#1e5c2a 0,#164a20 40%,#0f3418 100%);
-  }
-  .ground::before{ /* grass tufts */
-    content:"";position:absolute;inset:0;
-    background-image:
-      radial-gradient(circle at 20px 30px,#2a7a3a 2px,transparent 3px),
-      radial-gradient(circle at 60px 70px,#3a9048 2px,transparent 3px),
-      radial-gradient(circle at 120px 40px,#2a7a3a 2px,transparent 3px),
-      radial-gradient(circle at 180px 90px,#3a9048 2px,transparent 3px),
-      radial-gradient(circle at 240px 50px,#2a7a3a 2px,transparent 3px),
-      radial-gradient(circle at 320px 80px,#3a9048 2px,transparent 3px),
-      radial-gradient(circle at 420px 30px,#2a7a3a 2px,transparent 3px),
-      radial-gradient(circle at 500px 70px,#3a9048 2px,transparent 3px),
-      radial-gradient(circle at 580px 50px,#2a7a3a 2px,transparent 3px),
-      radial-gradient(circle at 660px 90px,#3a9048 2px,transparent 3px),
-      radial-gradient(circle at 740px 40px,#2a7a3a 2px,transparent 3px);
-    background-size:786px 210px;background-repeat:repeat-x;opacity:.9}
-  .path{position:absolute;left:0;bottom:60px;width:300%;height:70px;
-    background:
-      linear-gradient(180deg,#8a6a3d 0%,#6b4f28 45%,#4d3717 100%);
-    border-top:2px solid #a68450;border-bottom:2px solid #2a1c08;
-    box-shadow:inset 0 6px 12px rgba(0,0,0,.3),inset 0 -6px 12px rgba(0,0,0,.4)}
-  .path::before{content:"";position:absolute;inset:0;
-    background-image:
-      radial-gradient(circle at 30px 20px,#5a3f1a 3px,transparent 4px),
-      radial-gradient(circle at 90px 45px,#3d2a10 2px,transparent 3px),
-      radial-gradient(circle at 160px 15px,#a37a44 2px,transparent 3px),
-      radial-gradient(circle at 220px 50px,#5a3f1a 3px,transparent 4px),
-      radial-gradient(circle at 300px 25px,#3d2a10 2px,transparent 3px),
-      radial-gradient(circle at 380px 40px,#a37a44 2px,transparent 3px),
-      radial-gradient(circle at 460px 20px,#5a3f1a 3px,transparent 4px),
-      radial-gradient(circle at 540px 50px,#3d2a10 2px,transparent 3px),
-      radial-gradient(circle at 620px 30px,#a37a44 2px,transparent 3px),
-      radial-gradient(circle at 700px 15px,#5a3f1a 3px,transparent 4px);
-    background-size:786px 70px;background-repeat:repeat-x;opacity:.9}
-
-  /* Trees */
-  .trees{position:absolute;left:0;bottom:130px;width:300%;height:220px;pointer-events:none}
-  .tree{position:absolute;bottom:0;transform-origin:bottom center}
-  .tree .trunk{width:10px;height:32px;background:linear-gradient(90deg,#3a2410,#5a3820,#3a2410);
-    border-radius:2px;margin:0 auto;box-shadow:inset -2px 0 3px rgba(0,0,0,.5)}
-  .tree .foliage{width:60px;height:70px;border-radius:50% 50% 45% 45%;
-    background:radial-gradient(circle at 30% 30%,#3aa050,#1e6a2d 60%,#0f3a18);
-    box-shadow:inset -6px -8px 10px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.4);
-    position:relative;margin-bottom:-8px}
-  .tree.small .foliage{width:38px;height:44px}
-  .tree.small .trunk{width:7px;height:22px}
-  .tree.big .foliage{width:80px;height:96px}
-  .tree.big .trunk{width:13px;height:44px}
-  .tree.pine .foliage{border-radius:50% 50% 20% 20%;
-    background:radial-gradient(circle at 30% 20%,#2f8a48,#144e22 70%,#0a2d13)}
-
-  /* Rocks & bushes */
-  .rock{position:absolute;bottom:8px;width:22px;height:14px;border-radius:50%;
-    background:radial-gradient(circle at 30% 30%,#8a8f9a,#4a4f5a 70%,#2a2e38);
-    box-shadow:0 2px 3px rgba(0,0,0,.5)}
-  .bush{position:absolute;bottom:6px;width:28px;height:18px;border-radius:50%;
-    background:radial-gradient(circle at 30% 30%,#3a9048,#1e6a2d);
-    box-shadow:0 2px 4px rgba(0,0,0,.5)}
+  .scene{position:absolute;left:0;top:0;width:1802px;height:480px;overflow:hidden;
+    background-image:url('assets/images/a1.webp');
+    background-position:0 0;
+    background-size:2048px 2048px;
+    background-repeat:no-repeat;
+    will-change:transform}
 
   /* Characters */
-  .char{position:absolute;bottom:80px;width:36px;height:52px;z-index:10;transition:transform .15s}
+  .char{position:absolute;bottom:128px;width:36px;height:52px;z-index:10;transition:transform .15s}
   .char .shadow{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
     width:28px;height:6px;border-radius:50%;background:rgba(0,0,0,.5);filter:blur(2px)}
   .char .body{position:absolute;inset:0}
@@ -680,17 +598,7 @@
 <div class="app">
   <!-- ============ TOP ============ -->
   <div class="top" id="top">
-    <div class="stars"></div>
-    <div class="moon"></div>
-
-    <div class="scene">
-      <div class="parallax" id="parallax">
-        <div class="mountains"></div>
-        <div class="ground"></div>
-        <div class="path"></div>
-        <div class="trees" id="trees"></div>
-      </div>
-    </div>
+    <div class="scene" id="parallax"></div>
 
     <!-- Hero -->
     <div class="char hero walking" id="hero">
@@ -828,6 +736,7 @@
         <div class="hero-name">🥷 <span id="hname">Kaito el Errante</span></div>
       </div>
     </div>
+    <div class="fps-counter" id="fpsCounter">FPS: 60</div>
   </div>
 
   <!-- ============ BOTTOM ============ -->
@@ -913,31 +822,7 @@
 
 <script>
 (() => {
-  // Populate trees & decorations across a single tile, then duplicate for seamless scroll
-  const treesEl = document.getElementById('trees');
   const rand = (a,b) => a + Math.random()*(b-a);
-  const TILE = 786;
-  function buildTile(offset){
-    for (let i=0;i<26;i++){
-      const type = Math.random();
-      const t = document.createElement('div');
-      t.className = 'tree' + (type<.3?' small':type>.75?' big':'') + (Math.random()<.4?' pine':'');
-      t.style.left = (offset + i*30 + rand(-6,6)) + 'px';
-      t.style.bottom = rand(0, 40) + 'px';
-      t.style.zIndex = Math.floor(rand(1,5));
-      t.innerHTML = '<div class="foliage"></div><div class="trunk"></div>';
-      treesEl.appendChild(t);
-    }
-    for (let i=0;i<14;i++){
-      const r = document.createElement('div');
-      r.className = Math.random()<.5?'rock':'bush';
-      r.style.left = (offset + i*56 + rand(-10,10)) + 'px';
-      treesEl.appendChild(r);
-    }
-  }
-  buildTile(0);
-  buildTile(TILE);
-  buildTile(TILE*2);
 
   // State
   const state = {
@@ -1414,9 +1299,16 @@
   }
 
   // Main loop
+  const fpsCounter = $('fpsCounter');
+  let fpsLastPaint = 0;
   let last = performance.now();
   function loop(now){
-    const dt = Math.min(40, now-last); last = now;
+    const rawDt = now - last;
+    const dt = Math.min(40, rawDt); last = now;
+    if (fpsCounter && now - fpsLastPaint >= 250){
+      fpsCounter.textContent = 'FPS: ' + Math.max(0, Math.round(1000 / Math.max(1, rawDt)));
+      fpsLastPaint = now;
+    }
     // NUEVO - Pausa total cuando la ventana de MAZMORRAS está abierta
     if (state.paused || state.heroViewOpen || state.cryptasOpen){ requestAnimationFrame(loop); return; } // MODIFICADO - CRIPTAS KUNAI: pausa solo procesos del cuadro superior
 
