@@ -24,6 +24,10 @@
   .hero-name{background:linear-gradient(180deg,#2a1f4a,#150c2e);border:1px solid #7a5cff;color:#e6d7ff;
     padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-shadow:0 1px 2px #000;
     box-shadow:0 0 10px rgba(122,92,255,.4)}
+  .fps-counter{position:absolute;top:58px;left:8px;z-index:10001;
+    background:linear-gradient(180deg,#10172d,#090d1f);border:1px solid #7ce9ff;color:#7ce9ff;
+    padding:2px 8px;border-radius:10px;font-size:10px;font-weight:900;letter-spacing:.8px;
+    text-shadow:0 1px 2px #000;box-shadow:0 0 10px rgba(124,233,255,.35);pointer-events:none}
 
   /* World progress window */
   .world{margin-left:auto;background:linear-gradient(180deg,#22284a,#0e112a);
@@ -61,7 +65,7 @@
     will-change:transform}
 
   /* Characters */
-  .char{position:absolute;bottom:136px;width:36px;height:52px;z-index:10;transition:transform .15s}
+  .char{position:absolute;bottom:128px;width:36px;height:52px;z-index:10;transition:transform .15s}
   .char .shadow{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
     width:28px;height:6px;border-radius:50%;background:rgba(0,0,0,.5);filter:blur(2px)}
   .char .body{position:absolute;inset:0}
@@ -732,6 +736,7 @@
         <div class="hero-name">🥷 <span id="hname">Kaito el Errante</span></div>
       </div>
     </div>
+    <div class="fps-counter" id="fpsCounter">FPS: 60</div>
   </div>
 
   <!-- ============ BOTTOM ============ -->
@@ -1294,9 +1299,16 @@
   }
 
   // Main loop
+  const fpsCounter = $('fpsCounter');
+  let fpsLastPaint = 0;
   let last = performance.now();
   function loop(now){
-    const dt = Math.min(40, now-last); last = now;
+    const rawDt = now - last;
+    const dt = Math.min(40, rawDt); last = now;
+    if (fpsCounter && now - fpsLastPaint >= 250){
+      fpsCounter.textContent = 'FPS: ' + Math.max(0, Math.round(1000 / Math.max(1, rawDt)));
+      fpsLastPaint = now;
+    }
     // NUEVO - Pausa total cuando la ventana de MAZMORRAS está abierta
     if (state.paused || state.heroViewOpen || state.cryptasOpen){ requestAnimationFrame(loop); return; } // MODIFICADO - CRIPTAS KUNAI: pausa solo procesos del cuadro superior
 
