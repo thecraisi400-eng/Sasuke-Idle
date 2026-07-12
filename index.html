@@ -396,7 +396,7 @@
   .mazm-ov.show .mazm-card{transform:scale(1)}
   .mazm-title{display:none} /* ELIMINADO - MAZMORRAS: título HTML del escenario anterior */
   .mazm-grid{position:absolute;inset:0;margin:0;width:100%;height:100%;max-width:none;display:block} /* NUEVO - MAZMORRAS: capa de zonas sobre el spritesheet */
-  .mazm-currency{display:none} /* ELIMINADO - MAZMORRAS: monedas HTML del escenario anterior */
+  .mazm-currency{position:absolute;left:0;right:0;bottom:13px;z-index:3;display:flex;justify-content:center;gap:14px;margin-top:0} /* MODIFICADO - MAZMORRAS: vuelve a mostrar oro y diamantes sobre el nuevo fondo */
   .mazm-cur{display:flex;align-items:center;gap:6px;font-weight:800;font-size:15px;color:#4a3a7a;
     background:linear-gradient(180deg,#fff5db,#ffe6a8);border:2px solid #e0b567;border-radius:12px;padding:6px 14px;
     box-shadow:0 3px 8px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.7)}
@@ -414,7 +414,7 @@
   .mazm-scroll > *{position:relative;z-index:1}
   .mazm-icon{display:none} /* ELIMINADO - MAZMORRAS: iconos HTML del escenario anterior */
   .mazm-name{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} /* ELIMINADO - MAZMORRAS: nombres visibles ahora provienen del fondo */
-  .mazm-entry-cost{margin-top:2px;padding:3px 9px;border-radius:10px;background:rgba(20,10,5,.45);border:1px solid rgba(255,215,107,.48);color:#ffd76b;font-size:10px;font-weight:900;letter-spacing:.5px;text-shadow:0 1px 2px #000} /* NUEVO - CRIPTAS KUNAI: coste visible antes de entrar */
+  .mazm-entry-cost{margin-top:2px;padding:3px 9px;border-radius:10px;background:rgba(20,10,5,.45);border:1px solid rgba(255,215,107,.48);color:#ffd76b;font-size:10px;font-weight:900;letter-spacing:.5px;text-shadow:0 1px 2px #000;transform:translate(15px,-7px)} /* MODIFICADO - CRIPTAS KUNAI: coste sin texto ENTRADA, 7px arriba y 15px derecha */
   .mazm-entry-cost.insufficient{color:#ff9a9a;border-color:rgba(255,90,90,.65);background:rgba(70,10,10,.45)} /* NUEVO - CRIPTAS KUNAI */
   .mazm-badge{display:none} /* ELIMINADO - MAZMORRAS: etiqueta HTML anterior */
   .mazm-lock{display:none} /* ELIMINADO - MAZMORRAS: candado HTML anterior */
@@ -590,7 +590,7 @@
             <!-- ELIMINADO - MAZMORRAS: número romano del scroll -->
             <span class="mazm-icon">🗡️</span>
             <span class="mazm-name">CRIPTA KUNAI</span>
-            <span class="mazm-entry-cost" id="cryptaKunaiCost">Entrada: 40 💰</span><!-- NUEVO - CRIPTAS KUNAI: muestra el oro requerido -->
+            <span class="mazm-entry-cost" id="cryptaKunaiCost">40 💰</span><!-- MODIFICADO - CRIPTAS KUNAI: elimina texto ENTRADA -->
           </div>
           <div class="mazm-scroll t2" data-mazm="2">
             <!-- ELIMINADO - MAZMORRAS: número romano del scroll -->
@@ -925,7 +925,7 @@
     const entryCost = cryptasEntryCost(); // NUEVO - CRIPTAS KUNAI
     if (refs.cost) refs.cost.textContent = fmt(entryCost); // MODIFICADO - CRIPTAS KUNAI: el texto de entrada pagada fue eliminado
     if (refs.entryCost){
-      refs.entryCost.textContent = 'Entrada: ' + fmt(entryCost) + ' 💰'; // NUEVO - CRIPTAS KUNAI
+      refs.entryCost.textContent = fmt(entryCost) + ' 💰'; // MODIFICADO - CRIPTAS KUNAI: elimina texto ENTRADA
       refs.entryCost.classList.toggle('insufficient', state.gold < entryCost); // NUEVO - CRIPTAS KUNAI
     }
     if (refs.name && $('hname')) refs.name.textContent = $('hname').textContent;
