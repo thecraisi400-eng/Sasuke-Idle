@@ -384,17 +384,21 @@
   .forge-result .fr-close:active{transform:translateY(1px)}
 
   /* NUEVO - Ventana de MAZMORRAS (pastel, combina con la paleta del juego) */
+  .top.mazm-open > .stars, .top.mazm-open > .moon, .top.mazm-open > .scene,
+  .top.mazm-open > #hero, .top.mazm-open > #enemies, .top.mazm-open > #fx,
+  .top.mazm-open > #avanzar, .top.mazm-open > #heroView,
+  .top.mazm-open > #nextWorldOv, .top.mazm-open > #fracasoOv, .top.mazm-open > .hud{display:none} /* NUEVO - MAZMORRAS: retira el escenario principal en vez de montar encima */
   .mazm-ov{position:absolute;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;
-    opacity:0;pointer-events:none;transition:opacity .25s ease;background:transparent;backdrop-filter:none}
+    opacity:0;pointer-events:none;transition:opacity .25s ease;background:#050507;backdrop-filter:none;overflow:hidden}
   .mazm-ov.show{opacity:1;pointer-events:auto}
-  .mazm-card{width:100%;height:100%;display:flex;flex-direction:column;padding:20px 18px 18px;border-radius:0;
+  .mazm-ov::before{content:"";position:absolute;left:50%;top:50%;width:392px;height:478px;transform:translate(-50%,-50%);
     background-image:url('assets/images/a1.webp');
     background-position:0 -482px;
     background-size:auto;
-    background-repeat:no-repeat;
-    border:none;box-shadow:inset 0 0 0 1px rgba(255,215,107,.22),inset 0 -120px 130px rgba(0,0,0,.42);
-    transform:scale(.9);transition:transform .25s ease}
-  .mazm-ov.show .mazm-card{transform:scale(1)}
+    background-repeat:no-repeat;z-index:0} /* NUEVO - MAZMORRAS: único escenario visible, recorte X0-Y482 a X392-Y960 */
+  .mazm-card{position:relative;z-index:1;width:100%;height:100%;display:flex;flex-direction:column;padding:20px 18px 18px;border-radius:0;
+    background:transparent;border:none;box-shadow:none;transform:none;transition:none}
+  .mazm-ov.show .mazm-card{transform:none}
   .mazm-title{text-align:center;color:#ffd76b;font-weight:900;letter-spacing:2px;font-size:16px;margin-bottom:16px;
     text-shadow:0 2px 4px #000,0 0 10px rgba(255,215,107,.45)}
   .mazm-grid{display:grid;grid-template-columns:1fr;gap:12px;max-width:318px;margin:0 auto;width:100%} /* MODIFICADO - MAZMORRAS: scrolls un poco más grandes */
@@ -952,6 +956,7 @@
     state.heroViewOpen = false;
     state.cryptasOpen = true;
     if (mazmOv) mazmOv.classList.remove('show');
+    $('top').classList.remove('mazm-open'); // NUEVO - MAZMORRAS: limpia el modo de escenario al entrar a CRIPTA KUNAI
     if (heroViewEl) heroViewEl.classList.remove('show');
     $('top').classList.add('cryptas-open');
     const view = $('cryptasView');
@@ -1743,6 +1748,7 @@
     mazmBtn.addEventListener('click', ()=>{
       if (state.cryptasOpen) return; // NUEVO - CRIPTAS KUNAI: no reemplaza la cripta activa desde el menú inferior
       const isOpen = mazmOv.classList.toggle('show');
+      const top = mazmOv.closest('.top'); if (top) top.classList.toggle('mazm-open', isOpen); // NUEVO - MAZMORRAS: elimina visualmente el escenario anterior
       state.paused = isOpen; // pausa total del loop principal
     });
     // MODIFICADO - CRIPTAS KUNAI: el primer scroll entra al escenario si hay oro suficiente.
