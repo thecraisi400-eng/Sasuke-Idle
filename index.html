@@ -67,7 +67,7 @@
   .scene-tile:nth-child(2){left:1198px}
 
   /* Characters */
-  .char{position:absolute;bottom:98px;width:36px;height:52px;z-index:10;transition:transform .15s}
+  .char{position:absolute;bottom:104px;width:36px;height:52px;z-index:10;transition:transform .15s}
   .char .shadow{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
     width:28px;height:6px;border-radius:50%;background:rgba(0,0,0,.5);filter:blur(2px)}
   .char .body{position:absolute;inset:0}
@@ -472,10 +472,10 @@
     background:radial-gradient(circle at 35% 30%,#6c6557,#24211d 72%);border:2px solid #b69658;
     box-shadow:0 0 28px rgba(255,200,110,.28),inset 0 2px 8px rgba(255,255,255,.12),inset 0 -10px 20px rgba(0,0,0,.5);
     text-shadow:0 2px 3px #000;cursor:pointer;pointer-events:auto} /* MODIFICADO - CRIPTAS KUNAI: EMPEZAR ahora inicia la secuencia */
-  .cryptas-hero{position:absolute;left:50%;bottom:89px;transform:translateX(-50%);z-index:8;will-change:left,transform} /* MODIFICADO - CRIPTAS KUNAI: personaje alineado al suelo del nuevo escenario */
+  .cryptas-hero{position:absolute;left:50%;bottom:109px;transform:translateX(-50%);z-index:8;will-change:left,transform} /* MODIFICADO - CRIPTAS KUNAI: personaje alineado al suelo del nuevo escenario */
   .cryptas-hero .char{position:relative;left:auto;bottom:auto;transform:scale(1);transform-origin:center bottom} /* MODIFICADO - CRIPTAS KUNAI: mismo tamaño que el personaje principal */
   .cryptas-enemies{position:absolute;inset:0;z-index:8;pointer-events:none} /* NUEVO - CRIPTAS KUNAI: capa local de enemigos por ronda */
-  .cryptas-enemies .enemy{bottom:89px} /* NUEVO - CRIPTAS KUNAI: enemigos alineados al suelo de la cripta */
+  .cryptas-enemies .enemy{bottom:109px} /* NUEVO - CRIPTAS KUNAI: enemigos alineados al suelo de la cripta */
   .cryptas-fx{position:absolute;inset:0;z-index:9;pointer-events:none} /* NUEVO - CRIPTAS KUNAI: efectos locales visibles en la cripta */
   .cryptas-stop{position:absolute;left:10px;bottom:10px;z-index:12;padding:5px 9px;border-radius:9px;border:1px solid rgba(255,215,107,.65);background:rgba(20,10,5,.72);color:#ffd76b;font-size:10px;font-weight:900;letter-spacing:.6px;box-shadow:0 3px 8px rgba(0,0,0,.42);cursor:pointer} /* NUEVO - CRIPTAS KUNAI: botón pequeño DETENER/SALIR */
   .cryptas-hud-right .world-title{text-align:center;justify-content:center} /* MODIFICADO - CRIPTAS KUNAI: centra horizontalmente NINJA dentro del scroll */
@@ -483,7 +483,7 @@
   .cryptas-result.show{display:flex} /* NUEVO - CRIPTAS KUNAI */
   .cryptas-result-box{min-width:170px;padding:14px 18px;border-radius:14px;border:2px solid rgba(255,215,107,.72);background:rgba(8,8,10,.34);color:#fff;text-align:center;font-weight:900;text-shadow:0 2px 3px #000;box-shadow:0 8px 22px rgba(0,0,0,.35);backdrop-filter:blur(1px)} /* NUEVO - CRIPTAS KUNAI */
   .cryptas-result-box b{display:block;color:#ffd76b;font-size:18px;margin-bottom:5px;letter-spacing:1px} /* NUEVO - CRIPTAS KUNAI */
-  .cryptas-hud-left,.cryptas-hud-right{position:absolute;top:8px;z-index:6;display:flex;flex-direction:column;gap:5px;font-size:11px;pointer-events:none} /* NUEVO */
+  .cryptas-hud-left,.cryptas-hud-right{position:absolute;top:8px;z-index:6;display:flex;flex-direction:column;gap:6px;font-size:11px;pointer-events:none} /* NUEVO */
   .cryptas-hud-left{left:8px}.cryptas-hud-right{right:8px;align-items:flex-end} /* NUEVO */
   .cryptas-cost{position:absolute;left:50%;top:124px;transform:translateX(-50%);z-index:6;font-size:11px;font-weight:800;color:#ffd76b;
     background:rgba(10,9,8,.55);border:1px solid rgba(255,215,107,.45);border-radius:12px;padding:4px 10px;pointer-events:none} /* NUEVO */
@@ -641,10 +641,14 @@
       <div class="cryptas-cave"></div>
       <div class="cryptas-light"></div>
       <div class="cryptas-hud-left">
-        <div class="chip gold"><span class="emj">💰</span><span id="ckGold">0</span></div>
-        <div class="chip gem"><span class="emj">💎</span><span id="ckGem">0</span></div>
-        <div class="chip power"><span class="emj">⚡</span><span id="ckPower">0</span></div>
-        <div class="hero-name">🥷 <span id="ckName">Kaito el Errante</span></div>
+        <div class="hud-row">
+          <div class="chip gold"><span class="emj">💰</span><span id="ckGold">0</span></div>
+          <div class="chip gem"><span class="emj">💎</span><span id="ckGem">0</span></div>
+          <div class="chip power"><span class="emj">⚡</span><span id="ckPower">0</span></div>
+        </div>
+        <div class="hud-row">
+          <div class="hero-name">🥷 <span id="ckName">Kaito el Errante</span></div>
+        </div>
       </div>
       <div class="cryptas-hud-right">
         <div class="world">
