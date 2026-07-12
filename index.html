@@ -24,7 +24,7 @@
   .hero-name{background:linear-gradient(180deg,#2a1f4a,#150c2e);border:1px solid #7a5cff;color:#e6d7ff;
     padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-shadow:0 1px 2px #000;
     box-shadow:0 0 10px rgba(122,92,255,.4)}
-  .fps-counter{position:absolute;top:58px;left:8px;z-index:10001;
+  .fps-counter{position:absolute;top:90px;left:8px;z-index:10001;
     background:linear-gradient(180deg,#10172d,#090d1f);border:1px solid #7ce9ff;color:#7ce9ff;
     padding:2px 8px;border-radius:10px;font-size:10px;font-weight:900;letter-spacing:.8px;
     text-shadow:0 1px 2px #000;box-shadow:0 0 10px rgba(124,233,255,.35);pointer-events:none}
@@ -57,15 +57,17 @@
   .wave-stats .ws.def {color:#7ce9ff;border-color:#1a5a7a}
 
   /* Scene */
-  .scene{position:absolute;left:0;top:0;width:1802px;height:480px;overflow:hidden;
+  .scene{position:absolute;left:0;top:0;width:2396px;height:481px;overflow:hidden;will-change:transform}
+  .scene-tile{position:absolute;top:0;width:1198px;height:481px;overflow:hidden;
     background-image:url('assets/images/a1.webp');
     background-position:0 0;
     background-size:2048px 2048px;
-    background-repeat:no-repeat;
-    will-change:transform}
+    background-repeat:no-repeat}
+  .scene-tile:nth-child(1){left:0}
+  .scene-tile:nth-child(2){left:1198px}
 
   /* Characters */
-  .char{position:absolute;bottom:128px;width:36px;height:52px;z-index:10;transition:transform .15s}
+  .char{position:absolute;bottom:113px;width:36px;height:52px;z-index:10;transition:transform .15s}
   .char .shadow{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
     width:28px;height:6px;border-radius:50%;background:rgba(0,0,0,.5);filter:blur(2px)}
   .char .body{position:absolute;inset:0}
@@ -598,7 +600,7 @@
 <div class="app">
   <!-- ============ TOP ============ -->
   <div class="top" id="top">
-    <div class="scene" id="parallax"></div>
+    <div class="scene" id="parallax"><div class="scene-tile"></div><div class="scene-tile"></div></div>
 
     <!-- Hero -->
     <div class="char hero walking" id="hero">
@@ -1326,7 +1328,7 @@
       } else {
         if ((state.scrolling || enemies.length===0) && !state.retreatWave3Hold){ // MODIFICADO
           state.scrollX -= 0.05*dt;
-          const shift = state.scrollX % 786;
+          const shift = state.scrollX % 1198;
           parallax.style.transform = `translateX(${shift}px)`;
         }
         if (enemies.length===0 && !state.transitioning){
