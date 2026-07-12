@@ -24,7 +24,7 @@
   .hero-name{background:linear-gradient(180deg,#2a1f4a,#150c2e);border:1px solid #7a5cff;color:#e6d7ff;
     padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-shadow:0 1px 2px #000;
     box-shadow:0 0 10px rgba(122,92,255,.4)}
-  .fps-counter{position:absolute;top:120px;left:8px;z-index:10001;
+  .fps-counter{position:absolute;top:130px;left:8px;z-index:10001;
     background:linear-gradient(180deg,#10172d,#090d1f);border:1px solid #7ce9ff;color:#7ce9ff;
     padding:2px 8px;border-radius:10px;font-size:10px;font-weight:900;letter-spacing:.8px;
     text-shadow:0 1px 2px #000;box-shadow:0 0 10px rgba(124,233,255,.35);pointer-events:none}
@@ -67,7 +67,7 @@
   .scene-tile:nth-child(2){left:1198px}
 
   /* Characters */
-  .char{position:absolute;bottom:104px;width:36px;height:52px;z-index:10;transition:transform .15s}
+  .char{position:absolute;bottom:96px;width:36px;height:52px;z-index:10;transition:transform .15s}
   .char .shadow{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
     width:28px;height:6px;border-radius:50%;background:rgba(0,0,0,.5);filter:blur(2px)}
   .char .body{position:absolute;inset:0}
@@ -461,21 +461,20 @@
   .top.cryptas-open > #nextWorldOv, .top.cryptas-open > #fracasoOv, .top.cryptas-open > .hud{display:none} /* NUEVO */
   .cryptas-view{position:absolute;inset:0;z-index:95;display:none;overflow:hidden;pointer-events:auto;background:#060606} /* MODIFICADO - CRIPTAS KUNAI: el escenario HTML fue retirado; la vista usa el recorte del spritesheet */
   .cryptas-view.show{display:block} /* NUEVO */
-  .cryptas-cave{position:absolute;left:50%;bottom:0;width:530px;height:480px;overflow:hidden;transform:translateX(-50%);
+  .cryptas-cave{position:absolute;left:50%;bottom:0;width:605px;height:458px;overflow:hidden;transform:translateX(-50%);
     background-image:url('assets/images/a1.webp');
-    background-position:-1201px 0;
+    background-position:-1192px 0;
     background-size:2048px 2048px;
-    background-repeat:no-repeat} /* MODIFICADO - CRIPTAS KUNAI: Cueva del spritesheet X 1201-1709, Y 0-480 */
-  .cryptas-light{position:absolute;inset:0;z-index:6;background:radial-gradient(ellipse at 50% 58%,rgba(255,218,140,.08),rgba(0,0,0,.12) 62%,rgba(0,0,0,.42));pointer-events:none} /* MODIFICADO - CRIPTAS KUNAI */
+    background-repeat:no-repeat} /* MODIFICADO - CRIPTAS KUNAI: Cueva del spritesheet X 1192-1797, Y 0-458 */
   .cryptas-start{position:absolute;left:50%;top:calc(48% - 10px);transform:translate(-50%,-50%);width:106px;height:106px;border-radius:50%;z-index:7; /* MODIFICADO - CRIPTAS KUNAI: círculo 10px menor y 10px más arriba */
     display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;letter-spacing:1.8px;color:#f8e7b0;
     background:radial-gradient(circle at 35% 30%,#6c6557,#24211d 72%);border:2px solid #b69658;
     box-shadow:0 0 28px rgba(255,200,110,.28),inset 0 2px 8px rgba(255,255,255,.12),inset 0 -10px 20px rgba(0,0,0,.5);
     text-shadow:0 2px 3px #000;cursor:pointer;pointer-events:auto} /* MODIFICADO - CRIPTAS KUNAI: EMPEZAR ahora inicia la secuencia */
-  .cryptas-hero{position:absolute;left:50%;bottom:109px;transform:translateX(-50%);z-index:8;will-change:left,transform} /* MODIFICADO - CRIPTAS KUNAI: personaje alineado al suelo del nuevo escenario */
+  .cryptas-hero{position:absolute;left:50%;bottom:124px;transform:translateX(-50%);z-index:8;will-change:left,transform} /* MODIFICADO - CRIPTAS KUNAI: personaje alineado al suelo del nuevo escenario */
   .cryptas-hero .char{position:relative;left:auto;bottom:auto;transform:scale(1);transform-origin:center bottom} /* MODIFICADO - CRIPTAS KUNAI: mismo tamaño que el personaje principal */
   .cryptas-enemies{position:absolute;inset:0;z-index:8;pointer-events:none} /* NUEVO - CRIPTAS KUNAI: capa local de enemigos por ronda */
-  .cryptas-enemies .enemy{bottom:109px} /* NUEVO - CRIPTAS KUNAI: enemigos alineados al suelo de la cripta */
+  .cryptas-enemies .enemy{bottom:124px} /* NUEVO - CRIPTAS KUNAI: enemigos alineados al suelo de la cripta */
   .cryptas-fx{position:absolute;inset:0;z-index:9;pointer-events:none} /* NUEVO - CRIPTAS KUNAI: efectos locales visibles en la cripta */
   .cryptas-stop{position:absolute;left:10px;bottom:10px;z-index:12;padding:5px 9px;border-radius:9px;border:1px solid rgba(255,215,107,.65);background:rgba(20,10,5,.72);color:#ffd76b;font-size:10px;font-weight:900;letter-spacing:.6px;box-shadow:0 3px 8px rgba(0,0,0,.42);cursor:pointer} /* NUEVO - CRIPTAS KUNAI: botón pequeño DETENER/SALIR */
   .cryptas-hud-right .world-title{text-align:center;justify-content:center} /* MODIFICADO - CRIPTAS KUNAI: centra horizontalmente NINJA dentro del scroll */
@@ -484,7 +483,8 @@
   .cryptas-result-box{min-width:170px;padding:14px 18px;border-radius:14px;border:2px solid rgba(255,215,107,.72);background:rgba(8,8,10,.34);color:#fff;text-align:center;font-weight:900;text-shadow:0 2px 3px #000;box-shadow:0 8px 22px rgba(0,0,0,.35);backdrop-filter:blur(1px)} /* NUEVO - CRIPTAS KUNAI */
   .cryptas-result-box b{display:block;color:#ffd76b;font-size:18px;margin-bottom:5px;letter-spacing:1px} /* NUEVO - CRIPTAS KUNAI */
   .cryptas-hud-left,.cryptas-hud-right{position:absolute;top:8px;z-index:6;display:flex;flex-direction:column;gap:6px;font-size:11px;pointer-events:none} /* NUEVO */
-  .cryptas-hud-left{left:8px}.cryptas-hud-right{right:8px;align-items:flex-end} /* NUEVO */
+  .cryptas-hud-left{left:8px}.cryptas-hud-right{right:8px;align-items:flex-end}
+  .main-hud-world{position:absolute;top:0;right:0} /* NUEVO */
   .cryptas-cost{position:absolute;left:50%;top:124px;transform:translateX(-50%);z-index:6;font-size:11px;font-weight:800;color:#ffd76b;
     background:rgba(10,9,8,.55);border:1px solid rgba(255,215,107,.45);border-radius:12px;padding:4px 10px;pointer-events:none} /* NUEVO */
   .cryptas-warn{position:absolute;inset:0;z-index:220;display:none;align-items:center;justify-content:center;
@@ -639,7 +639,6 @@
     <!-- NUEVO - CRIPTAS KUNAI: escenario aislado dentro del área superior -->
     <div id="cryptasView" class="cryptas-view">
       <div class="cryptas-cave"></div>
-      <div class="cryptas-light"></div>
       <div class="cryptas-hud-left">
         <div class="hud-row">
           <div class="chip gold"><span class="emj">💰</span><span id="ckGold">0</span></div>
@@ -677,6 +676,11 @@
         <div class="chip gold"><span class="emj">💰</span><span id="gold">0</span></div>
         <div class="chip gem"><span class="emj">💎</span><span id="gem">0</span></div>
         <div class="chip power"><span class="emj">⚡</span><span id="power">120</span></div>
+      </div>
+      <div class="hud-row">
+        <div class="hero-name">🥷 <span id="hname">Kaito el Errante</span></div>
+      </div>
+      <div class="main-hud-world">
         <div class="world">
           <div class="world-title">Mundo <span id="world">1</span></div>
           <div class="stages" id="stages">
@@ -689,9 +693,6 @@
             <div class="ws def"><span class="we">🛡️</span><span id="wsDef">0</span></div>
           </div>
         </div>
-      </div>
-      <div class="hud-row">
-        <div class="hero-name">🥷 <span id="hname">Kaito el Errante</span></div>
       </div>
     </div>
     <div class="fps-counter" id="fpsCounter">FPS: 60</div>
@@ -1092,7 +1093,7 @@
     const startBtn=$('cryptasStart'); if (startBtn) startBtn.style.display='none'; // NUEVO
     const holder=$('cryptasHero'); if (!holder) return;
     cryptasBattleCd=0; cryptasState.active=true; cryptasState.heroX=Math.round(393*.45); cryptasState.paidRound=true; cryptasState.consumedRound=false; stats.hp=effectiveStat('hpMax'); syncStats(); // MODIFICADO - CRIPTAS KUNAI: al pulsar INICIAR recarga y muestra HP al 100%
-    holder.style.transition='left 2.4s ease, transform 2.4s ease'; holder.style.left='14%'; holder.style.transform='translate(-50%, 8px)'; // MODIFICADO - CRIPTAS KUNAI: izquierda más lenta y 8px abajo solo en este tramo
+    holder.style.transition='left 2.4s ease, transform 2.4s ease'; holder.style.left='14%'; holder.style.transform='translate(-50%, 0)'; // MODIFICADO - CRIPTAS KUNAI: izquierda más lenta y mantiene la misma altura
     cryptasState.sequenceTimers.push(setTimeout(()=>{ holder.style.left='45%'; holder.style.transition='left 2.07s linear, transform .2s'; holder.style.transform='translateX(-50%)'; },2400)); // MODIFICADO - CRIPTAS KUNAI: derecha con velocidad equivalente y vuelve a Y normal
     cryptasState.sequenceTimers.push(setTimeout(()=>{ cryptasState.heroX=Math.round(393*.45); spawnCryptasRound(); if (!cryptasState.raf) cryptasState.raf=requestAnimationFrame(cryptasLoop); },4470)); // MODIFICADO - CRIPTAS KUNAI: espera acorde a caminatas reducidas
     setCryptasStopMode();
