@@ -402,16 +402,18 @@
     box-shadow:0 3px 8px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.7)}
   .mazm-cur .emj{font-size:17px}
   /* MODIFICADO - MAZMORRAS: nuevo sistema visual tipo pergamino premium */
-  .mazm-scroll{position:absolute;border-radius:18px;cursor:pointer;user-select:none;overflow:visible;
+  .mazm-scroll{position:absolute;border-radius:18px;cursor:pointer;user-select:none;overflow:visible;touch-action:manipulation; /* MODIFICADO - MAZMORRAS: toda el área del scroll responde al toque */
     display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:7px;padding:0; /* NUEVO - MAZMORRAS: hotspot ligero sobre fondo recortado */
     border:none;background:transparent;
     box-shadow:none;
     transition:filter .18s ease} /* NUEVO - MAZMORRAS: conserva clicks sin reconstruir escenario HTML */
   .mazm-scroll:hover{filter:saturate(1.08) brightness(1.06)} /* NUEVO - MAZMORRAS: feedback mínimo del hotspot */
   .mazm-scroll:active{filter:brightness(.92)} /* NUEVO - MAZMORRAS: feedback mínimo del hotspot */
-  .mazm-scroll::before{content:none} /* ELIMINADO - MAZMORRAS: pergamino HTML anterior */
+  .mazm-scroll::before{content:"";position:absolute;inset:0;border-radius:18px;opacity:0;pointer-events:none;background:rgba(255,231,139,.24);border:2px solid rgba(255,215,107,.88);box-shadow:0 0 18px rgba(255,215,107,.75),inset 0 0 20px rgba(255,255,255,.18);z-index:0} /* NUEVO - MAZMORRAS: resalta el tamaño completo del scroll al hacer clic */
+  .mazm-scroll:active::before,.mazm-scroll.clicked::before{animation:mazmClickFlash .36s ease-out} /* NUEVO - MAZMORRAS: efecto visible de selección */
   .mazm-scroll::after{content:none} /* ELIMINADO - MAZMORRAS: textura HTML anterior */
-  .mazm-scroll > *{position:relative;z-index:1}
+  @keyframes mazmClickFlash{0%{opacity:.95;transform:scale(.98)}70%{opacity:.55;transform:scale(1.035)}100%{opacity:0;transform:scale(1.07)}} /* NUEVO - MAZMORRAS: pulso del hotspot completo */
+  .mazm-scroll > *{position:relative;z-index:1;pointer-events:none} /* MODIFICADO - MAZMORRAS: hijos no reducen el área clicable */
   .mazm-icon{display:none} /* ELIMINADO - MAZMORRAS: iconos HTML del escenario anterior */
   .mazm-name{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} /* ELIMINADO - MAZMORRAS: nombres visibles ahora provienen del fondo */
   .mazm-entry-cost{margin-top:2px;padding:3px 9px;border-radius:10px;background:rgba(20,10,5,.45);border:1px solid rgba(255,215,107,.48);color:#ffd76b;font-size:10px;font-weight:900;letter-spacing:.5px;text-shadow:0 1px 2px #000;transform:translate(15px,-7px)} /* MODIFICADO - CRIPTAS KUNAI: coste sin texto ENTRADA, 7px arriba y 15px derecha */
@@ -1745,6 +1747,7 @@
     });
     // MODIFICADO - CRIPTAS KUNAI: el primer scroll entra al escenario si hay oro suficiente.
     mazmOv.querySelectorAll('.mazm-scroll').forEach(el=>{
+      el.addEventListener('pointerdown', ()=>{ el.classList.remove('clicked'); void el.offsetWidth; el.classList.add('clicked'); setTimeout(()=>el.classList.remove('clicked'), 380); }); // NUEVO - MAZMORRAS: efecto perceptible en todo el scroll
       el.addEventListener('click', ()=>{
         if (el.dataset.mazm === '1') enterCryptasKunai(); // NUEVO
         else { const w = $('mazmWarn'); if (w){ w.classList.add('show'); setTimeout(()=>w.classList.remove('show'), 1200); } } // NUEVO
