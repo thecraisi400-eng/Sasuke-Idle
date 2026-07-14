@@ -437,6 +437,9 @@
     border:1px solid rgba(106,255,192,.22);padding:10px;pointer-events:auto}
   .hero-view.show{display:flex;flex-direction:column}
   .hero-view-title{text-align:center;color:#ffd76b;font-weight:900;font-size:15px;letter-spacing:2px;margin-bottom:8px;text-shadow:0 2px 5px #000} /* NUEVO - HÉROE */
+  .hero-points{position:absolute;left:12px;top:12px;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2;
+    background:radial-gradient(circle at 35% 30%,#7ce9ff,#1d4f78 70%);border:2px solid #d8fff0;color:#fff;font-weight:900;font-size:16px;
+    box-shadow:0 0 14px rgba(124,233,255,.55),inset 0 1px 0 rgba(255,255,255,.38);text-shadow:0 2px 3px #000} /* NUEVO - HÉROE */
   .hero-view-top{flex:0 0 44%;display:grid;grid-template-columns:1fr 1fr;gap:8px;min-height:0} /* MODIFICADO - HÉROE */
   .hero-preview{position:relative;border:1px solid #3a4680;border-radius:12px;background:radial-gradient(ellipse at center,#2a3560,#0b0d17 72%);overflow:hidden}
   .hero-preview .char{position:absolute;left:50%;bottom:54px;transform:translateX(-50%) scale(2.2);transform-origin:bottom center}
@@ -519,6 +522,7 @@
   .bosque-hero .char{position:relative;left:auto;bottom:auto;transform:scale(1);transform-origin:center bottom}
   .bosque-enemies{position:absolute;inset:0;z-index:8;pointer-events:none}
   .bosque-enemies .enemy{bottom:104px;left:57%;transform:translateX(-50%) scaleX(-1)}
+  .bosque-fx{position:absolute;inset:0;z-index:9;pointer-events:none} /* NUEVO - BOSQUE SOMBRÍO */
   .bosque-stop{position:absolute;left:10px;bottom:10px;z-index:12;padding:5px 9px;border-radius:9px;border:1px solid rgba(124,233,255,.65);background:rgba(5,18,12,.72);color:#d8fff0;font-size:10px;font-weight:900;letter-spacing:.6px;box-shadow:0 3px 8px rgba(0,0,0,.42);cursor:pointer}
 
   /* INICIO: Modificación Evento */
@@ -622,6 +626,7 @@
             <!-- ELIMINADO - MAZMORRAS: número romano del scroll -->
             <span class="mazm-icon">🌲</span><!-- NUEVO -->
             <span class="mazm-name">BOSQUE SOMBRÍO</span><!-- NUEVO -->
+            <span class="mazm-entry-cost" id="bosqueCost">Entrada: 3 💎</span><!-- NUEVO - BOSQUE SOMBRÍO -->
           </div>
           <div class="mazm-scroll t3" data-mazm="3">
             <!-- ELIMINADO - MAZMORRAS: número romano del scroll -->
@@ -644,6 +649,7 @@
 
     <!-- NUEVO - Vista HÉROE (solo ocupa el cuadro superior) -->
     <div id="heroView" class="hero-view">
+      <div class="hero-points" id="heroPointsBadge">0</div><!-- NUEVO - HÉROE -->
       <div class="hero-view-title">HÉROE</div><!-- NUEVO - HÉROE -->
       <div class="hero-view-top">
         <div class="hero-preview"><div id="heroViewSprite" class="char hero walking"></div></div>
@@ -721,6 +727,7 @@
         </div>
       </div>
       <div id="bosqueEnemies" class="bosque-enemies"></div>
+      <div id="bosqueFx" class="bosque-fx"></div><!-- NUEVO - BOSQUE SOMBRÍO -->
       <div id="bosqueHero" class="bosque-hero"></div>
       <button id="bosqueStop" class="bosque-stop" type="button">SALIR</button>
     </div>
@@ -866,11 +873,13 @@
   const $ = id => document.getElementById(id);
   // NUEVO - HÉROE: mejoras propias de los 6 slots (50% del valor inicial del panel principal)
   const heroEquipState = {
+    points: 0, // NUEVO - HÉROE: puntos disponibles ganados en Bosque Sombrío
     levels: [0,0,0,0,0,0],
     maxLevel: 200,
     stats: {hpMax:50, atk:7.5, def:2.5, agi:2, vel:3.5, regen:0.005}
   };
   // NUEVO - HÉROE: lectura efectiva = panel principal + bonus de la vista HÉROE
+  const BOSQUE_ENTRY_GEMS = 3; // NUEVO - BOSQUE SOMBRÍO
   function heroBonus(key){ return heroEquipState.stats[key] || 0; }
   function effectiveStat(key){ return (stats[key] || 0) + heroBonus(key); }
   const parallax = $('parallax');
@@ -962,9 +971,11 @@
     return 40 * Math.pow(1.20, Math.max(0, state.world - 1));
   }
 
-  // NUEVO - BOSQUE SOMBRÍO: sincroniza HUD superior izquierdo/derecho y clona sprites al suelo del nuevo escenario
+  // NUEVO - BOSQUE SOMBRÍO: sincroniza HUD superior izquierdo/derecho y prepara combate aislado
+  const bosqueState = {active:false, fighting:false, enemy:null, raf:null, cd:0, timers:[]}; // NUEVO - BOSQUE SOMBRÍO
   function updateBosquePanels(){
-    const refs = {gold:$('bsGold'), gem:$('bsGem'), power:$('bsPower'), name:$('bsName'), hp:$('bsHp'), atk:$('bsAtk'), def:$('bsDef')};
+    const refs = {gold:$('bsGold'), gem:$('bsGem'), power:$('bsPower'), name:$('bsName'), hp:$('bsHp'), atk:$('bsAtk'), def:$('bsDef'), cost:$('bosqueCost')};
+    if (refs.cost){ refs.cost.textContent = 'Entrada: ' + BOSQUE_ENTRY_GEMS + ' 💎'; refs.cost.classList.toggle('insufficient', state.gem < BOSQUE_ENTRY_GEMS); } // NUEVO - BOSQUE SOMBRÍO
     if (!refs.gold) return;
     refs.gold.textContent = fmt(state.gold);
     refs.gem.textContent = fmt(state.gem);
@@ -975,38 +986,75 @@
     refs.atk.textContent = fmt(st.atk);
     refs.def.textContent = fmt(st.def);
   }
-  function ensureBosqueActors(){
+  function showBosqueWarning(){ // NUEVO - BOSQUE SOMBRÍO
+    const w = $('mazmWarn'); if (!w) return;
+    const box = w.querySelector('.mazm-warn-box'); if (box) box.textContent = 'No posees los diamantes necesarios para ingresar.';
+    w.classList.add('show'); clearTimeout(showBosqueWarning._t); showBosqueWarning._t=setTimeout(()=>w.classList.remove('show'),1400);
+  }
+  function ensureBosqueHero(){
     const heroHolder = $('bosqueHero');
     if (heroHolder && !heroHolder.firstElementChild){
       const sprite = hero.cloneNode(true);
-      sprite.removeAttribute('id');
-      sprite.removeAttribute('style');
+      sprite.removeAttribute('id'); sprite.removeAttribute('style');
       const hp = sprite.querySelector('.hpbar i'); if (hp) hp.removeAttribute('id');
-      sprite.classList.add('walking');
-      heroHolder.appendChild(sprite);
+      sprite.classList.add('walking'); heroHolder.appendChild(sprite);
     }
-    const enemyLayer = $('bosqueEnemies');
-    if (enemyLayer && !enemyLayer.firstElementChild){
-      const e = makeEnemy(0);
-      e.remove();
-      e.style.left = '';
-      e.style.transform = '';
-      enemyLayer.appendChild(e);
+  }
+  function makeBosqueEnemy(){ // NUEVO - BOSQUE SOMBRÍO
+    const layer = $('bosqueEnemies'); if (!layer) return null; layer.innerHTML = '';
+    const e = document.createElement('div');
+    const variant = ['','v2','v3'][Math.floor(Math.random()*3)];
+    e.className = 'char enemy walking ' + variant;
+    e.style.left = '430px'; e.style.transform = 'scaleX(-1)';
+    const st = enemyStatsFor(state.world, state.stage);
+    e.dataset.hp = st.hp; e.dataset.max = st.hp; e.dataset.atk = st.atk; e.dataset.def = st.def;
+    e.innerHTML = `<div class="hpbar"><i></i></div><div class="shadow"></div><div class="body"><div class="head"></div><div class="eye l"></div><div class="eye r"></div><div class="fang"></div><div class="torso"></div><div class="arm l"></div><div class="arm r"></div><div class="leg l"></div><div class="leg r"></div><div class="club"></div></div>`;
+    layer.appendChild(e); return e;
+  }
+  function bosqueFx(x,y,val,crit=false,received=false){ // NUEVO - BOSQUE SOMBRÍO
+    const layer=$('bosqueFx'); if (!layer) return;
+    const d=document.createElement('div'); d.className='dmg'+(received?' received':'')+(crit?' crit':'');
+    d.textContent=(crit?'¡':'')+fmt(val)+(crit?'!':''); d.style.left=x+'px'; d.style.top=y+'px'; layer.appendChild(d);
+    setTimeout(()=>d.remove(),800);
+  }
+  function startBosqueRound(){ // NUEVO - BOSQUE SOMBRÍO
+    bosqueState.timers.forEach(clearTimeout); bosqueState.timers=[]; bosqueState.active=false; bosqueState.fighting=false; bosqueState.cd=0;
+    const heroHolder=$('bosqueHero'), enemyLayer=$('bosqueEnemies'), fx=$('bosqueFx'); if (!heroHolder || !enemyLayer) return;
+    enemyLayer.innerHTML=''; if (fx) fx.innerHTML=''; ensureBosqueHero(); stats.hp=effectiveStat('hpMax'); syncStats();
+    heroHolder.style.transition='none'; heroHolder.style.left='-38px'; heroHolder.style.transform='translateX(0)';
+    bosqueState.timers.push(setTimeout(()=>{ heroHolder.style.transition='left 3.2s linear'; heroHolder.style.left='44%'; },30));
+    bosqueState.timers.push(setTimeout(()=>{ const e=makeBosqueEnemy(); bosqueState.enemy=e; if (e){ e.style.transition='left 2.4s linear'; requestAnimationFrame(()=>{ e.style.left='57%'; }); } },830));
+    bosqueState.timers.push(setTimeout(()=>{ bosqueState.active=true; bosqueState.fighting=true; if (!bosqueState.raf) bosqueState.raf=requestAnimationFrame(bosqueLoop); },3260));
+  }
+  function bosqueLoop(now){ // NUEVO - BOSQUE SOMBRÍO
+    if (!state.bosqueOpen || !bosqueState.active){ bosqueState.raf=null; return; }
+    const last=bosqueLoop.last||now, dt=Math.min(40,now-last); bosqueLoop.last=now; bosqueState.cd-=dt;
+    const e=bosqueState.enemy;
+    if (e && bosqueState.cd<=0){
+      bosqueState.cd=Math.max(220,420-(effectiveStat('agi')+effectiveStat('vel'))*3);
+      const enemyDef=parseFloat(e.dataset.def)||0; const critHit=stats.crit > 95 ? (Math.random()*100 < stats.crit) : (Math.random()*100 < Math.max(0, stats.crit - 95));
+      const dmg=Math.round(Math.max(1,effectiveStat('atk')-enemyDef*.5)*(critHit?2:1)*(0.9+Math.random()*0.2));
+      e.dataset.hp=Math.max(0,parseFloat(e.dataset.hp)-dmg); const bar=e.querySelector('.hpbar i'); if (bar) bar.style.width=(e.dataset.hp/e.dataset.max*100)+'%'; bosqueFx(215,330,dmg,critHit,false);
+      const evaHit=stats.eva > 95 ? (Math.random()*100 < stats.eva) : (Math.random()*100 < Math.max(0, stats.eva - 95));
+      if (!evaHit){ const edmg=Math.max(1,Math.round(parseFloat(e.dataset.atk)*(0.9+Math.random()*0.2)-effectiveStat('def')*.4)); stats.hp=Math.max(0,stats.hp-edmg); bosqueFx(168,330,edmg,false,true); syncStats(); }
+      if (parseFloat(e.dataset.hp)<=0){ e.remove(); bosqueState.enemy=null; bosqueState.active=false; heroEquipState.points++; updateHeroView(); updHUD(); if (state.gem >= BOSQUE_ENTRY_GEMS){ state.gem-=BOSQUE_ENTRY_GEMS; updHUD(); startBosqueRound(); } else exitBosqueSombrio(); return; }
+      if (stats.hp<=0){ exitBosqueSombrio(); return; }
     }
+    bosqueState.raf=requestAnimationFrame(bosqueLoop);
   }
   function enterBosqueSombrio(){
-    state.paused = false;
-    state.heroViewOpen = false;
-    state.bosqueOpen = true;
-    if (mazmOv) mazmOv.classList.remove('show');
-    if (heroViewEl) heroViewEl.classList.remove('show');
+    if (state.gem < BOSQUE_ENTRY_GEMS){ updateBosquePanels(); showBosqueWarning(); return; } // NUEVO - BOSQUE SOMBRÍO
+    state.gem -= BOSQUE_ENTRY_GEMS; // NUEVO - BOSQUE SOMBRÍO
+    state.paused = false; state.heroViewOpen = false; state.bosqueOpen = true;
+    if (mazmOv) mazmOv.classList.remove('show'); if (heroViewEl) heroViewEl.classList.remove('show');
     const top = $('top'); if (top) top.classList.add('bosque-open');
     const view = $('bosqueView'); if (view) view.classList.add('show');
-    ensureBosqueActors();
-    updateBosquePanels();
-    updHUD();
+    ensureBosqueHero(); updateBosquePanels(); updHUD(); startBosqueRound();
   }
   function exitBosqueSombrio(){
+    bosqueState.timers.forEach(clearTimeout); bosqueState.timers=[]; bosqueState.active=false; bosqueState.fighting=false;
+    if (bosqueState.raf){ cancelAnimationFrame(bosqueState.raf); bosqueState.raf=null; }
+    const en=$('bosqueEnemies'); if (en) en.innerHTML=''; const fx=$('bosqueFx'); if (fx) fx.innerHTML='';
     state.bosqueOpen = false;
     const top = $('top'); if (top) top.classList.remove('bosque-open');
     const view = $('bosqueView'); if (view) view.classList.remove('show');
@@ -1244,6 +1292,7 @@
       const slot = document.createElement('div');
       slot.className = 'hero-eq-slot';
       slot.innerHTML = `<span class="he-name">${meta.label}</span><span class="he-em">${meta.em}</span><span class="he-plus" id="hePlus${i}">+${heroEquipState.levels[i]}</span>`;
+      slot.addEventListener('click', ()=>improveHeroSlot(i)); // NUEVO - HÉROE
       heroEquipViewEl.appendChild(slot);
     });
   }
@@ -1253,10 +1302,12 @@
     if ($('hvDef')) $('hvDef').textContent = fmt(effectiveStat('def'));
     if ($('hvRegen')) $('hvRegen').textContent = effectiveStat('regen').toFixed(3);
     heroEquipState.levels.forEach((lv,i)=>{ const el = $('hePlus'+i); if (el) el.textContent = '+' + lv; });
+    const badge = $('heroPointsBadge'); if (badge) badge.textContent = fmt(heroEquipState.points); // NUEVO - HÉROE
   }
   function improveHeroSlot(slotIdx){
-    if (slotIdx < 0 || slotIdx >= heroPanelStats.length || heroEquipState.levels[slotIdx] >= heroEquipState.maxLevel) return false;
+    if (slotIdx < 0 || slotIdx >= heroPanelStats.length || heroEquipState.levels[slotIdx] >= heroEquipState.maxLevel || heroEquipState.points <= 0) return false; // MODIFICADO - HÉROE
     const key = heroPanelStats[slotIdx].key;
+    heroEquipState.points--; // NUEVO - HÉROE
     heroEquipState.stats[key] = Math.round((heroEquipState.stats[key] * 1.03) * 100000) / 100000;
     heroEquipState.levels[slotIdx]++;
     stats.hp = Math.min(effectiveStat('hpMax'), stats.hp);
@@ -1785,8 +1836,6 @@
     const newLv = Math.min(100, prevLv + desiredInc);
     const realInc = newLv - prevLv;
     for (let k=0; k<realInc; k++) applyLevelBonus(pick);            // [MODIFICADO] aplica el bonus tantas veces como niveles subidos
-    const heroPickMap = {0:0,1:1,2:2,3:3,5:4,7:5};                 // NUEVO - HÉROE: excluye CRÍTICO y EVASIÓN
-    if (heroPickMap[pick] !== undefined){ for (let k=0; k<realInc; k++) improveHeroSlot(heroPickMap[pick]); } // NUEVO - HÉROE
     rankState.slotLv[pick] = newLv;
     rankState.kunai -= 1;
     kunaiCountEl.textContent = fmt(rankState.kunai); // MODIFICADO - Punto 2
