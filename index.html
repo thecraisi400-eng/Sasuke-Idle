@@ -784,7 +784,7 @@
         <div class="kunai"><div class="blade"></div><div class="handle"></div><div class="ring"></div></div>
         <div class="k-info" style="flex:1;align-items:center;justify-content:center;text-align:center">
           <span><b style="color:#ffd76b;font-size:11px">KUNAI</b></span><!-- MODIFICADO: renombrado -->
-          <span class="k-count">x<b id="kunaiCount">10</b></span><!-- MODIFICADO: contador inicial -->
+          <span class="k-count">x<b id="kunaiCount">1000000</b></span><!-- CORREGIDO: contador inicial -->
         </div>
         <div id="forgeProgress" class="forge-progress"><div class="fp-fill"></div><div class="fp-label">FORJANDO...</div></div>
       </div>
@@ -852,7 +852,7 @@
 
   // State
   const state = {
-    gold: 0, gem: 0, power: 120, world: 1, lv: 1, stage: 0,
+    gold: 1000000, gem: 1000000, power: 120, world: 1, lv: 1, stage: 0, // CORREGIDO
     scrollX: 0, scrolling: true,
     inBattle: false,
     waveTimer: 3000,
@@ -885,6 +885,7 @@
   };
   // NUEVO - HÉROE: lectura efectiva = panel principal + bonus de la vista HÉROE
   const BOSQUE_ENTRY_GEMS = 3; // NUEVO - BOSQUE SOMBRÍO
+  const BOSQUE_ENEMY_STATS = {hp:120, atk:9, def:5}; // CORREGIDO - BOSQUE SOMBRÍO
   function heroBonus(key){ return heroEquipState.stats[key] || 0; }
   function effectiveStat(key){ return (stats[key] || 0) + heroBonus(key); }
   const parallax = $('parallax');
@@ -986,7 +987,7 @@
     refs.gem.textContent = fmt(state.gem);
     refs.power.textContent = fmt(computePower());
     if (refs.name && $('hname')) refs.name.textContent = $('hname').textContent;
-    const st = enemyStatsFor(state.world, state.stage);
+    const st = BOSQUE_ENEMY_STATS; // CORREGIDO - BOSQUE SOMBRÍO
     refs.hp.textContent = fmt(st.hp);
     refs.atk.textContent = fmt(st.atk);
     refs.def.textContent = fmt(st.def);
@@ -1011,7 +1012,7 @@
     const variant = ['','v2','v3'][Math.floor(Math.random()*3)];
     e.className = 'char enemy walking ' + variant;
     e.style.left = '430px'; e.style.transform = 'scaleX(-1)';
-    const st = enemyStatsFor(state.world, state.stage);
+    const st = BOSQUE_ENEMY_STATS; // CORREGIDO - BOSQUE SOMBRÍO
     e.dataset.hp = st.hp; e.dataset.max = st.hp; e.dataset.atk = st.atk; e.dataset.def = st.def;
     e.innerHTML = `<div class="hpbar"><i></i></div><div class="shadow"></div><div class="body"><div class="head"></div><div class="eye l"></div><div class="eye r"></div><div class="fang"></div><div class="torso"></div><div class="arm l"></div><div class="arm r"></div><div class="leg l"></div><div class="leg r"></div><div class="club"></div></div>`;
     layer.appendChild(e); return e;
@@ -1026,6 +1027,16 @@
     const r=$('bosqueResult'), b=$('bosqueResultBox'); if (!r || !b) return; // NUEVO - BOSQUE SOMBRÍO
     b.innerHTML=html; r.classList.add('show'); clearTimeout(showBosqueResult._t); // NUEVO - BOSQUE SOMBRÍO
     showBosqueResult._t=setTimeout(()=>r.classList.remove('show'),ms); // NUEVO - BOSQUE SOMBRÍO
+  }
+  function scheduleBosqueNextRound(){ // NUEVO - BOSQUE SOMBRÍO
+    const heroHolder=$('bosqueHero'); // NUEVO - BOSQUE SOMBRÍO
+    if (heroHolder){ heroHolder.style.transition='left 2.8s ease-in-out'; heroHolder.style.left='-38px'; } // NUEVO - BOSQUE SOMBRÍO
+    bosqueState.timers.push(setTimeout(()=>{ // NUEVO - BOSQUE SOMBRÍO
+      if (!state.bosqueOpen) return; // NUEVO - BOSQUE SOMBRÍO
+      state.gem-=BOSQUE_ENTRY_GEMS; updHUD(); // CORREGIDO - BOSQUE SOMBRÍO
+      showBosqueResult('<b>-' + fmt(BOSQUE_ENTRY_GEMS) + ' 💎</b>PRÓXIMA RONDA', 1400); // CORREGIDO - BOSQUE SOMBRÍO
+      bosqueState.timers.push(setTimeout(()=>{ if (state.bosqueOpen) startBosqueRound(); },1400)); // CORREGIDO - BOSQUE SOMBRÍO
+    },2600)); // NUEVO - BOSQUE SOMBRÍO
   }
   function startBosqueRound(){ // NUEVO - BOSQUE SOMBRÍO
     bosqueState.timers.forEach(clearTimeout); bosqueState.timers=[]; bosqueState.active=false; bosqueState.fighting=false; bosqueState.cd=0;
@@ -1047,7 +1058,7 @@
       e.dataset.hp=Math.max(0,parseFloat(e.dataset.hp)-dmg); const bar=e.querySelector('.hpbar i'); if (bar) bar.style.width=(e.dataset.hp/e.dataset.max*100)+'%'; bosqueFx(215,330,dmg,critHit,false);
       const evaHit=stats.eva > 95 ? (Math.random()*100 < stats.eva) : (Math.random()*100 < Math.max(0, stats.eva - 95));
       if (!evaHit){ const edmg=Math.max(1,Math.round(parseFloat(e.dataset.atk)*(0.9+Math.random()*0.2)-effectiveStat('def')*.4)); stats.hp=Math.max(0,stats.hp-edmg); bosqueFx(168,330,edmg,false,true); syncStats(); }
-      if (parseFloat(e.dataset.hp)<=0){ e.remove(); bosqueState.enemy=null; bosqueState.active=false; bosqueState.raf=null; heroEquipState.points++; updateHeroView(); updHUD(); showBosqueResult('<b>GANASTE</b>+1 PUNTO', 1200); if (state.gem >= BOSQUE_ENTRY_GEMS){ bosqueState.timers.push(setTimeout(()=>{ if (!state.bosqueOpen) return; state.gem-=BOSQUE_ENTRY_GEMS; updHUD(); showBosqueResult('<b>-' + fmt(BOSQUE_ENTRY_GEMS) + ' 💎</b>Siguiente combate', 900); bosqueState.timers.push(setTimeout(()=>{ if (state.bosqueOpen) startBosqueRound(); },900)); },1200)); } else bosqueState.timers.push(setTimeout(()=>{ if (state.bosqueOpen) exitBosqueSombrio(); },1200)); return; } // CORREGIDO - BOSQUE SOMBRÍO
+      if (parseFloat(e.dataset.hp)<=0){ e.remove(); bosqueState.enemy=null; bosqueState.active=false; bosqueState.raf=null; heroEquipState.points++; updateHeroView(); updHUD(); showBosqueResult('<b>GANASTE</b>+1 PUNTO', 1400); if (state.gem >= BOSQUE_ENTRY_GEMS) scheduleBosqueNextRound(); else bosqueState.timers.push(setTimeout(()=>{ if (state.bosqueOpen) exitBosqueSombrio(); },1400)); return; } // CORREGIDO - BOSQUE SOMBRÍO
       if (stats.hp<=0){ exitBosqueSombrio(); return; }
     }
     bosqueState.raf=requestAnimationFrame(bosqueLoop);
@@ -1531,9 +1542,7 @@
     if (e.dataset.hp <= 0){
       e.remove();
       enemies = enemies.filter(x=>x!==e);
-      // [MODIFICADO] El oro se otorga al completar la oleada, no por enemigo.
-      const gm = Math.random()<0.35 ? 1 : 0;
-      state.gem += gm;
+      // [CORREGIDO] La pantalla principal ya no otorga diamantes por enemigo.
       state.power += 2;
       updHUD();
       if (enemies.length === 0){
@@ -1698,7 +1707,7 @@
   const rankState = {
     idx: 0,                                          // rango activo (0=Común)
     slotLv: [1,1,1,1,1,1,1,1],                       // nivel 1-100 por slot
-    kunai: 10,                                       // MODIFICADO - unidades iniciales
+    kunai: 1000000,                                  // CORREGIDO - unidades iniciales
   };
   // Mapeo slot index -> tipo estadística (según orden del DOM)
   // 0=HP, 1=ATK, 2=DEF, 3=AGI, 4=CRIT, 5=VEL, 6=EVA, 7=REGEN
