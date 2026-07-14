@@ -502,6 +502,25 @@
     background:rgba(20,24,51,.86);border:2px solid #ffd76b;box-shadow:0 10px 28px rgba(0,0,0,.55);color:#fff} /* NUEVO */
   .cryptas-warn-box small{display:block;margin-top:8px;color:#c9d3ff;font-size:10px;font-weight:700} /* NUEVO */
 
+  /* NUEVO - BOSQUE SOMBRÍO: vista aislada con recorte exacto X 1675-2047, Y 0-478 del spritesheet */
+  .top.bosque-open > .stars, .top.bosque-open > .moon, .top.bosque-open > .scene,
+  .top.bosque-open > #hero, .top.bosque-open > #enemies, .top.bosque-open > #fx,
+  .top.bosque-open > #avanzar, .top.bosque-open > #mazmOv, .top.bosque-open > #heroView,
+  .top.bosque-open > #nextWorldOv, .top.bosque-open > #fracasoOv, .top.bosque-open > .hud{display:none}
+  .bosque-view{position:absolute;inset:0;z-index:94;display:none;overflow:hidden;pointer-events:auto;background:#050806}
+  .bosque-view.show{display:block}
+  .bosque-bg{position:absolute;left:50%;bottom:0;width:373px;height:479px;overflow:hidden;transform:translateX(-50%) scale(1.055);transform-origin:bottom center;
+    background-image:url('assets/images/a1.webp');background-position:-1675px 0;background-size:2048px 2048px;background-repeat:no-repeat}
+  .bosque-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06),transparent 42%,rgba(0,0,0,.16));pointer-events:none}
+  .bosque-hud-left,.bosque-hud-right{position:absolute;top:8px;z-index:6;display:flex;flex-direction:column;gap:6px;font-size:11px;pointer-events:none}
+  .bosque-hud-left{left:8px}.bosque-hud-right{right:8px;align-items:flex-end}
+  .bosque-hud-right .world-title{text-align:center;justify-content:center}
+  .bosque-hero{position:absolute;left:44%;bottom:104px;transform:translateX(-50%);z-index:8}
+  .bosque-hero .char{position:relative;left:auto;bottom:auto;transform:scale(1);transform-origin:center bottom}
+  .bosque-enemies{position:absolute;inset:0;z-index:8;pointer-events:none}
+  .bosque-enemies .enemy{bottom:104px;left:57%;transform:translateX(-50%) scaleX(-1)}
+  .bosque-stop{position:absolute;left:10px;bottom:10px;z-index:12;padding:5px 9px;border-radius:9px;border:1px solid rgba(124,233,255,.65);background:rgba(5,18,12,.72);color:#d8fff0;font-size:10px;font-weight:900;letter-spacing:.6px;box-shadow:0 3px 8px rgba(0,0,0,.42);cursor:pointer}
+
   /* INICIO: Modificación Evento */
   /* Overlay limitado al cuadro superior (.top: 480px). No cubre la barra de acciones inferior. */
   .evento-ov{position:absolute;top:0;left:0;right:0;height:480px;z-index:9999;display:none;
@@ -678,6 +697,34 @@
     <!-- NUEVO - CRIPTAS KUNAI: aviso visual de oro insuficiente -->
     <div id="cryptasWarn" class="cryptas-warn"><div class="cryptas-warn-box">Oro insuficiente para entrar a CRIPTAS KUNAI.<small>Toca para cerrar.</small></div></div>
 
+    <!-- NUEVO - BOSQUE SOMBRÍO: escenario del spritesheet a1.webp (X 1675-2047, Y 0-478) -->
+    <div id="bosqueView" class="bosque-view">
+      <div class="bosque-bg"></div>
+      <div class="bosque-hud-left">
+        <div class="hud-row">
+          <div class="chip gold"><span class="emj">💰</span><span id="bsGold">0</span></div>
+          <div class="chip gem"><span class="emj">💎</span><span id="bsGem">0</span></div>
+          <div class="chip power"><span class="emj">⚡</span><span id="bsPower">0</span></div>
+        </div>
+        <div class="hud-row">
+          <div class="hero-name">🥷 <span id="bsName">Kaito el Errante</span></div>
+        </div>
+      </div>
+      <div class="bosque-hud-right">
+        <div class="world">
+          <div class="world-title">BOSQUE SOMBRÍO</div>
+          <div class="wave-stats">
+            <div class="ws hp"><span class="we">❤️</span><span id="bsHp">0</span></div>
+            <div class="ws atk"><span class="we">⚔️</span><span id="bsAtk">0</span></div>
+            <div class="ws def"><span class="we">🛡️</span><span id="bsDef">0</span></div>
+          </div>
+        </div>
+      </div>
+      <div id="bosqueEnemies" class="bosque-enemies"></div>
+      <div id="bosqueHero" class="bosque-hero"></div>
+      <button id="bosqueStop" class="bosque-stop" type="button">SALIR</button>
+    </div>
+
     <!-- HUD -->
     <div class="hud">
       <div class="hud-row">
@@ -800,6 +847,7 @@
     transitioning: false,
     heroViewOpen: false, // NUEVO - HÉROE: pausa aislada del cuadro superior
     cryptasOpen: false, // NUEVO - CRIPTAS KUNAI: pausa aislada del cuadro superior
+    bosqueOpen: false, // NUEVO - BOSQUE SOMBRÍO: pausa aislada del cuadro superior
     // NUEVO - Puntos 4/5: modo retroceso y control de progreso
     retreat: false,        // true = fue devuelto al mundo anterior
     retreatFrom: 0,        // mundo original antes de perder
@@ -912,6 +960,57 @@
   // NUEVO - CRIPTAS KUNAI: costo escalable por mundo (M1=40, +20% acumulativo)
   function cryptasEntryCost(){
     return 40 * Math.pow(1.20, Math.max(0, state.world - 1));
+  }
+
+  // NUEVO - BOSQUE SOMBRÍO: sincroniza HUD superior izquierdo/derecho y clona sprites al suelo del nuevo escenario
+  function updateBosquePanels(){
+    const refs = {gold:$('bsGold'), gem:$('bsGem'), power:$('bsPower'), name:$('bsName'), hp:$('bsHp'), atk:$('bsAtk'), def:$('bsDef')};
+    if (!refs.gold) return;
+    refs.gold.textContent = fmt(state.gold);
+    refs.gem.textContent = fmt(state.gem);
+    refs.power.textContent = fmt(computePower());
+    if (refs.name && $('hname')) refs.name.textContent = $('hname').textContent;
+    const st = enemyStatsFor(state.world, state.stage);
+    refs.hp.textContent = fmt(st.hp);
+    refs.atk.textContent = fmt(st.atk);
+    refs.def.textContent = fmt(st.def);
+  }
+  function ensureBosqueActors(){
+    const heroHolder = $('bosqueHero');
+    if (heroHolder && !heroHolder.firstElementChild){
+      const sprite = hero.cloneNode(true);
+      sprite.removeAttribute('id');
+      sprite.removeAttribute('style');
+      const hp = sprite.querySelector('.hpbar i'); if (hp) hp.removeAttribute('id');
+      sprite.classList.add('walking');
+      heroHolder.appendChild(sprite);
+    }
+    const enemyLayer = $('bosqueEnemies');
+    if (enemyLayer && !enemyLayer.firstElementChild){
+      const e = makeEnemy(0);
+      e.remove();
+      e.style.left = '';
+      e.style.transform = '';
+      enemyLayer.appendChild(e);
+    }
+  }
+  function enterBosqueSombrio(){
+    state.paused = false;
+    state.heroViewOpen = false;
+    state.bosqueOpen = true;
+    if (mazmOv) mazmOv.classList.remove('show');
+    if (heroViewEl) heroViewEl.classList.remove('show');
+    const top = $('top'); if (top) top.classList.add('bosque-open');
+    const view = $('bosqueView'); if (view) view.classList.add('show');
+    ensureBosqueActors();
+    updateBosquePanels();
+    updHUD();
+  }
+  function exitBosqueSombrio(){
+    state.bosqueOpen = false;
+    const top = $('top'); if (top) top.classList.remove('bosque-open');
+    const view = $('bosqueView'); if (view) view.classList.remove('show');
+    updHUD();
   }
 
   // NUEVO - CRIPTAS KUNAI: sincroniza paneles visuales sin heredar interactividad del HUD principal
@@ -1115,6 +1214,7 @@
     $('power').textContent = fmt(computePower());     // MODIFICADO - Puntos 1 y 2: poder total real
     $('world').textContent = state.world;
     updateCryptasPanels(); // NUEVO - CRIPTAS KUNAI: paneles visuales sincronizados
+    updateBosquePanels(); // NUEVO - BOSQUE SOMBRÍO: paneles visuales sincronizados
     [...stagesEl.children].forEach((el,i)=>{
       el.className = 'stage' + (i<state.stage?' done':i===state.stage?' active':'');
     });
@@ -1277,7 +1377,7 @@
       fpsLastPaint = now;
     }
     // NUEVO - Pausa total cuando la ventana de MAZMORRAS está abierta
-    if (state.paused || state.heroViewOpen || state.cryptasOpen){ requestAnimationFrame(loop); return; } // MODIFICADO - CRIPTAS KUNAI: pausa solo procesos del cuadro superior
+    if (state.paused || state.heroViewOpen || state.cryptasOpen || state.bosqueOpen){ requestAnimationFrame(loop); return; } // MODIFICADO - CRIPTAS KUNAI: pausa solo procesos del cuadro superior
 
     // NUEVO - Punto 7: REGEN por segundo (siempre activa, no altera otras mecánicas)
     if (stats.hp > 0 && stats.hp < effectiveStat('hpMax')){ // MODIFICADO - HÉROE
@@ -1746,7 +1846,7 @@
   const mazmBtn = document.querySelector('.btn.mazm');
   if (mazmBtn && mazmOv){
     mazmBtn.addEventListener('click', ()=>{
-      if (state.cryptasOpen) return; // NUEVO - CRIPTAS KUNAI: no reemplaza la cripta activa desde el menú inferior
+      if (state.cryptasOpen || state.bosqueOpen) return; // NUEVO - no reemplaza una mazmorra activa desde el menú inferior
       const isOpen = mazmOv.classList.toggle('show');
       state.paused = isOpen; // pausa total del loop principal
     });
@@ -1754,6 +1854,7 @@
     mazmOv.querySelectorAll('.mazm-scroll').forEach(el=>{
       el.addEventListener('click', ()=>{
         if (el.dataset.mazm === '1') enterCryptasKunai(); // NUEVO
+        else if (el.dataset.mazm === '2') enterBosqueSombrio(); // NUEVO - BOSQUE SOMBRÍO
         else { const w = $('mazmWarn'); if (w){ w.classList.add('show'); setTimeout(()=>w.classList.remove('show'), 1200); } } // NUEVO
       });
     });
@@ -1811,7 +1912,7 @@
   const heroBtn = document.querySelector('.btn.heroe');
   if (heroBtn && heroViewEl){
     heroBtn.addEventListener('click', ()=>{
-      if (state.cryptasOpen) return; // NUEVO - CRIPTAS KUNAI: conserva intacta la vista superior activa
+      if (state.cryptasOpen || state.bosqueOpen) return; // NUEVO - conserva intacta la vista superior activa
       state.heroViewOpen = !state.heroViewOpen;
       heroViewEl.classList.toggle('show', state.heroViewOpen);
       if (state.heroViewOpen) updateHeroView();
@@ -1825,6 +1926,8 @@
   if (cryptasStartEl) cryptasStartEl.addEventListener('click', startCryptasSequence); // NUEVO - CRIPTAS KUNAI
   const cryptasStopEl = document.getElementById('cryptasStop'); // NUEVO - CRIPTAS KUNAI
   if (cryptasStopEl) cryptasStopEl.addEventListener('click', ()=>{ if (cryptasState.active) stopCryptasFight(); else exitCryptasKunai(false); }); // MODIFICADO - CRIPTAS KUNAI: DETENER no sale; SALIR solo aparece tras detener
+  const bosqueStopEl = document.getElementById('bosqueStop'); // NUEVO - BOSQUE SOMBRÍO
+  if (bosqueStopEl) bosqueStopEl.addEventListener('click', exitBosqueSombrio); // NUEVO - BOSQUE SOMBRÍO
 
   // Inicialización visual
   applyRankColor();
