@@ -523,6 +523,10 @@
   .bosque-enemies{position:absolute;inset:0;z-index:8;pointer-events:none}
   .bosque-enemies .enemy{bottom:104px;left:57%;transform:translateX(-50%) scaleX(-1)}
   .bosque-fx{position:absolute;inset:0;z-index:9;pointer-events:none} /* NUEVO - BOSQUE SOMBRÍO */
+  .bosque-result{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;pointer-events:none;background:transparent} /* NUEVO - BOSQUE SOMBRÍO */
+  .bosque-result.show{display:flex} /* NUEVO - BOSQUE SOMBRÍO */
+  .bosque-result-box{min-width:170px;padding:14px 18px;border-radius:14px;border:2px solid rgba(124,233,255,.72);background:rgba(8,8,10,.34);color:#fff;text-align:center;font-weight:900;text-shadow:0 2px 3px #000;box-shadow:0 8px 22px rgba(0,0,0,.35);backdrop-filter:blur(1px)} /* NUEVO - BOSQUE SOMBRÍO */
+  .bosque-result-box b{display:block;color:#7ce9ff;font-size:18px;margin-bottom:5px;letter-spacing:1px} /* NUEVO - BOSQUE SOMBRÍO */
   .bosque-stop{position:absolute;left:10px;bottom:10px;z-index:12;padding:5px 9px;border-radius:9px;border:1px solid rgba(124,233,255,.65);background:rgba(5,18,12,.72);color:#d8fff0;font-size:10px;font-weight:900;letter-spacing:.6px;box-shadow:0 3px 8px rgba(0,0,0,.42);cursor:pointer}
 
   /* INICIO: Modificación Evento */
@@ -728,6 +732,7 @@
       </div>
       <div id="bosqueEnemies" class="bosque-enemies"></div>
       <div id="bosqueFx" class="bosque-fx"></div><!-- NUEVO - BOSQUE SOMBRÍO -->
+      <div id="bosqueResult" class="bosque-result"><div class="bosque-result-box" id="bosqueResultBox"></div></div><!-- NUEVO - BOSQUE SOMBRÍO -->
       <div id="bosqueHero" class="bosque-hero"></div>
       <button id="bosqueStop" class="bosque-stop" type="button">SALIR</button>
     </div>
@@ -1017,6 +1022,11 @@
     d.textContent=(crit?'¡':'')+fmt(val)+(crit?'!':''); d.style.left=x+'px'; d.style.top=y+'px'; layer.appendChild(d);
     setTimeout(()=>d.remove(),800);
   }
+  function showBosqueResult(html, ms=1000){ // NUEVO - BOSQUE SOMBRÍO
+    const r=$('bosqueResult'), b=$('bosqueResultBox'); if (!r || !b) return; // NUEVO - BOSQUE SOMBRÍO
+    b.innerHTML=html; r.classList.add('show'); clearTimeout(showBosqueResult._t); // NUEVO - BOSQUE SOMBRÍO
+    showBosqueResult._t=setTimeout(()=>r.classList.remove('show'),ms); // NUEVO - BOSQUE SOMBRÍO
+  }
   function startBosqueRound(){ // NUEVO - BOSQUE SOMBRÍO
     bosqueState.timers.forEach(clearTimeout); bosqueState.timers=[]; bosqueState.active=false; bosqueState.fighting=false; bosqueState.cd=0;
     const heroHolder=$('bosqueHero'), enemyLayer=$('bosqueEnemies'), fx=$('bosqueFx'); if (!heroHolder || !enemyLayer) return;
@@ -1037,7 +1047,7 @@
       e.dataset.hp=Math.max(0,parseFloat(e.dataset.hp)-dmg); const bar=e.querySelector('.hpbar i'); if (bar) bar.style.width=(e.dataset.hp/e.dataset.max*100)+'%'; bosqueFx(215,330,dmg,critHit,false);
       const evaHit=stats.eva > 95 ? (Math.random()*100 < stats.eva) : (Math.random()*100 < Math.max(0, stats.eva - 95));
       if (!evaHit){ const edmg=Math.max(1,Math.round(parseFloat(e.dataset.atk)*(0.9+Math.random()*0.2)-effectiveStat('def')*.4)); stats.hp=Math.max(0,stats.hp-edmg); bosqueFx(168,330,edmg,false,true); syncStats(); }
-      if (parseFloat(e.dataset.hp)<=0){ e.remove(); bosqueState.enemy=null; bosqueState.active=false; heroEquipState.points++; updateHeroView(); updHUD(); if (state.gem >= BOSQUE_ENTRY_GEMS){ state.gem-=BOSQUE_ENTRY_GEMS; updHUD(); startBosqueRound(); } else exitBosqueSombrio(); return; }
+      if (parseFloat(e.dataset.hp)<=0){ e.remove(); bosqueState.enemy=null; bosqueState.active=false; bosqueState.raf=null; heroEquipState.points++; updateHeroView(); updHUD(); showBosqueResult('<b>GANASTE</b>+1 PUNTO', 1200); if (state.gem >= BOSQUE_ENTRY_GEMS){ bosqueState.timers.push(setTimeout(()=>{ if (!state.bosqueOpen) return; state.gem-=BOSQUE_ENTRY_GEMS; updHUD(); showBosqueResult('<b>-' + fmt(BOSQUE_ENTRY_GEMS) + ' 💎</b>Siguiente combate', 900); bosqueState.timers.push(setTimeout(()=>{ if (state.bosqueOpen) startBosqueRound(); },900)); },1200)); } else bosqueState.timers.push(setTimeout(()=>{ if (state.bosqueOpen) exitBosqueSombrio(); },1200)); return; } // CORREGIDO - BOSQUE SOMBRÍO
       if (stats.hp<=0){ exitBosqueSombrio(); return; }
     }
     bosqueState.raf=requestAnimationFrame(bosqueLoop);
@@ -1045,6 +1055,7 @@
   function enterBosqueSombrio(){
     if (state.gem < BOSQUE_ENTRY_GEMS){ updateBosquePanels(); showBosqueWarning(); return; } // NUEVO - BOSQUE SOMBRÍO
     state.gem -= BOSQUE_ENTRY_GEMS; // NUEVO - BOSQUE SOMBRÍO
+    stats.hp = effectiveStat('hpMax'); syncStats(); // CORREGIDO - BOSQUE SOMBRÍO
     state.paused = false; state.heroViewOpen = false; state.bosqueOpen = true;
     if (mazmOv) mazmOv.classList.remove('show'); if (heroViewEl) heroViewEl.classList.remove('show');
     const top = $('top'); if (top) top.classList.add('bosque-open');
@@ -1055,6 +1066,7 @@
     bosqueState.timers.forEach(clearTimeout); bosqueState.timers=[]; bosqueState.active=false; bosqueState.fighting=false;
     if (bosqueState.raf){ cancelAnimationFrame(bosqueState.raf); bosqueState.raf=null; }
     const en=$('bosqueEnemies'); if (en) en.innerHTML=''; const fx=$('bosqueFx'); if (fx) fx.innerHTML='';
+    const br=$('bosqueResult'); if (br) br.classList.remove('show'); clearTimeout(showBosqueResult._t); // NUEVO - BOSQUE SOMBRÍO
     state.bosqueOpen = false;
     const top = $('top'); if (top) top.classList.remove('bosque-open');
     const view = $('bosqueView'); if (view) view.classList.remove('show');
