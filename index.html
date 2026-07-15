@@ -14,6 +14,7 @@
   /* HUD */
   .hud{position:absolute;top:8px;left:8px;right:8px;display:flex;flex-direction:column;gap:6px;z-index:20;font-size:11px}
   .hud-row{display:flex;gap:6px;flex-wrap:wrap}
+  .hud-row.resources{flex-direction:column;align-items:flex-start} /* MODIFICADO */
   .chip{background:linear-gradient(180deg,#1a1f38,#0f1226);border:1px solid #3a4680;
     border-radius:10px;padding:4px 8px;display:flex;align-items:center;gap:4px;
     box-shadow:0 2px 4px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08);font-weight:600;letter-spacing:.3px}
@@ -677,7 +678,7 @@
     <div id="cryptasView" class="cryptas-view">
       <div class="cryptas-cave"></div>
       <div class="cryptas-hud-left">
-        <div class="hud-row">
+        <div class="hud-row resources"><!-- MODIFICADO -->
           <div class="chip gold"><span class="emj">💰</span><span id="ckGold">0</span></div>
           <div class="chip gem"><span class="emj">💎</span><span id="ckGem">0</span></div>
           <div class="chip power"><span class="emj">⚡</span><span id="ckPower">0</span></div>
@@ -711,7 +712,7 @@
     <div id="bosqueView" class="bosque-view">
       <div class="bosque-bg"></div>
       <div class="bosque-hud-left">
-        <div class="hud-row">
+        <div class="hud-row resources"><!-- MODIFICADO -->
           <div class="chip gold"><span class="emj">💰</span><span id="bsGold">0</span></div>
           <div class="chip gem"><span class="emj">💎</span><span id="bsGem">0</span></div>
           <div class="chip power"><span class="emj">⚡</span><span id="bsPower">0</span></div>
@@ -739,7 +740,7 @@
 
     <!-- HUD -->
     <div class="hud">
-      <div class="hud-row">
+      <div class="hud-row resources"><!-- MODIFICADO -->
         <div class="chip gold"><span class="emj">💰</span><span id="gold">0</span></div>
         <div class="chip gem"><span class="emj">💎</span><span id="gem">0</span></div>
         <div class="chip power"><span class="emj">⚡</span><span id="power">120</span></div>
@@ -840,7 +841,7 @@
     <h3>⭐ RANGOS</h3>
     <div class="rank-list" id="rankList"></div>
     <div class="rank-unlock" id="rankUnlock">
-      Para desbloquear el siguiente rango necesitas <b>10.000 💰</b> y tener los <b>8 equipos</b> del rango actual al <b>nivel 100</b>.
+      Para desbloquear el siguiente rango necesitas <b id="rankCostText">10.000 💰</b> y tener los <b>8 equipos</b> del rango actual al <b>nivel 100</b>.<!-- MODIFICADO -->
       <br><button class="pay-btn" id="rankPay" disabled>Pagar 10.000 💰</button>
     </div>
   </div>
@@ -1708,17 +1709,22 @@
     idx: 0,                                          // rango activo (0=Común)
     slotLv: [1,1,1,1,1,1,1,1],                       // nivel 1-100 por slot
     kunai: 1000000,                                  // CORREGIDO - unidades iniciales
+    slotRank: [0,0,0,0,0,0,0,0],                       // NUEVO
   };
   // Mapeo slot index -> tipo estadística (según orden del DOM)
   // 0=HP, 1=ATK, 2=DEF, 3=AGI, 4=CRIT, 5=VEL, 6=EVA, 7=REGEN
   function applyRankColor(){
-    const r = RANKS[rankState.idx];
-    const grid = document.getElementById('equipGrid');
-    grid.style.setProperty('--rank-bg', `linear-gradient(180deg, ${r.bg}, ${shade(r.bg,-8)})`);
-    grid.style.setProperty('--rank-bd', r.bd);
-    grid.style.setProperty('--rank-tx', r.tx);
+    const grid = document.getElementById('equipGrid'); // MODIFICADO
+    rankState.slotRank.forEach((rankIdx,i)=>{ // NUEVO
+      const r = RANKS[rankIdx] || RANKS[0]; // NUEVO
+      const slot = grid && grid.children[i]; // NUEVO
+      if (!slot) return; // NUEVO
+      slot.style.setProperty('--rank-bg', `linear-gradient(180deg, ${r.bg}, ${shade(r.bg,-8)})`); // NUEVO
+      slot.style.setProperty('--rank-bd', r.bd); // NUEVO
+      slot.style.setProperty('--rank-tx', r.tx); // NUEVO
+    }); // NUEVO
     const chip = document.getElementById('rankChipName');
-    if (chip) chip.textContent = r.name;
+    if (chip) chip.textContent = RANKS[rankState.idx].name; // MODIFICADO
   }
   function shade(hex, pct){
     const c = hex.replace('#',''); const n = parseInt(c,16);
@@ -1731,6 +1737,9 @@
   }
   // Actualiza los "lv" visibles en los 8 slots
   const slotLvEls = document.querySelectorAll('.equip .slot .lv');
+  const RANK_COST_MULT = 1.75; // NUEVO
+  const rankCostTextEl = document.getElementById('rankCostText'); // NUEVO
+  function getRankCost(){ return Math.round(10000 * Math.pow(RANK_COST_MULT, rankState.idx)); } // NUEVO
   function refreshSlotLevels(){
     rankState.slotLv.forEach((lv,i)=>{ if(slotLvEls[i]) slotLvEls[i].textContent = lv; });
   }
@@ -1768,9 +1777,11 @@
       div.innerHTML = `<span class="rn">${r.name}</span><span class="rp">${k===0?'100%':'0%'}</span>`;
       rankListEl.appendChild(div);
     }
-    const canPay = allMaxed() && state.gold >= 10000 && rankState.idx < RANKS.length-1;
+    const rankCost = getRankCost(); // NUEVO
+    if (rankCostTextEl) rankCostTextEl.textContent = fmt(rankCost) + ' 💰'; // NUEVO
+    const canPay = allMaxed() && state.gold >= rankCost && rankState.idx < RANKS.length-1; // MODIFICADO
     rankPayBtn.disabled = !canPay;
-    rankPayBtn.textContent = allMaxed() ? 'Pagar 10.000 💰' : 'Maximiza los 8 equipos (Nv 100)';
+    rankPayBtn.textContent = allMaxed() ? 'Pagar ' + fmt(rankCost) + ' 💰' : 'Maximiza los 8 equipos (Nv 100)'; // MODIFICADO
   }
   document.getElementById('rankChip').addEventListener('click', ()=>{
     renderRankOverlay(); rankOv.classList.add('show');
@@ -1778,11 +1789,11 @@
   document.getElementById('rankClose').addEventListener('click', ()=> rankOv.classList.remove('show'));
   rankOv.addEventListener('click', (e)=>{ if(e.target===rankOv) rankOv.classList.remove('show'); });
   rankPayBtn.addEventListener('click', ()=>{
-    if (!allMaxed() || state.gold < 10000 || rankState.idx >= RANKS.length-1) return;
-    state.gold -= 10000;
+    const rankCost = getRankCost(); // NUEVO
+    if (!allMaxed() || state.gold < rankCost || rankState.idx >= RANKS.length-1) return; // MODIFICADO
+    state.gold -= rankCost; // MODIFICADO
     rankState.idx++;
-    rankState.slotLv = [1,1,1,1,1,1,1,1]; // reinicio de niveles, stats acumulados se mantienen
-    applyRankColor();
+    applyRankColor(); // MODIFICADO
     refreshSlotLevels();
     syncStats();
     updHUD();
@@ -1848,18 +1859,21 @@
     if (rankState.kunai <= 0) return;
     // Elegir slot aleatorio que no esté al máximo
     const available = [];
-    for (let i=0;i<8;i++) if (rankState.slotLv[i] < 100) available.push(i);
+    for (let i=0;i<8;i++) if (rankState.slotRank[i] < rankState.idx || rankState.slotLv[i] < 100) available.push(i); // MODIFICADO
     if (available.length === 0) return; // todos maxeados: requiere pagar rango
     const pick = available[Math.floor(Math.random()*available.length)];
-    const prevLv = rankState.slotLv[pick];                          // [NUEVO]
+    const isNewRankForge = rankState.slotRank[pick] < rankState.idx; // NUEVO
+    const prevLv = isNewRankForge ? 0 : rankState.slotLv[pick];      // MODIFICADO
+    if (isNewRankForge) rankState.slotRank[pick] = rankState.idx;    // NUEVO
     // [MODIFICADO] incremento aleatorio 1..3 niveles (respetando cap 100)
-    const desiredInc = 1 + Math.floor(Math.random()*3);
+    const desiredInc = isNewRankForge ? 1 : 1 + Math.floor(Math.random()*3); // MODIFICADO
     const newLv = Math.min(100, prevLv + desiredInc);
     const realInc = newLv - prevLv;
     for (let k=0; k<realInc; k++) applyLevelBonus(pick);            // [MODIFICADO] aplica el bonus tantas veces como niveles subidos
     rankState.slotLv[pick] = newLv;
     rankState.kunai -= 1;
     kunaiCountEl.textContent = fmt(rankState.kunai); // MODIFICADO - Punto 2
+    applyRankColor(); // NUEVO
     refreshSlotLevels();
     syncStats();
     // MODIFICADO - se eliminó la sacudida del HUD/app al forjar (se conserva el destello del botón KUNAI)
