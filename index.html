@@ -1761,7 +1761,7 @@
   const rankOv = document.getElementById('rankOv');
   const rankListEl = document.getElementById('rankList');
   const rankPayBtn = document.getElementById('rankPay');
-  function allMaxed(){ return rankState.slotLv.every(v=>v>=100); }
+  function allCurrentRankMaxed(){ return rankState.slotLv.every((v,i)=>rankState.slotRank[i] === rankState.idx && v>=100); } // MODIFICADO - exige rango actual + Nv 100
   function renderRankOverlay(){
     rankListEl.innerHTML = '';
     // Mostrar 3 rangos: activo + 2 siguientes bloqueados
@@ -1779,9 +1779,12 @@
     }
     const rankCost = getRankCost(); // NUEVO
     if (rankCostTextEl) rankCostTextEl.textContent = fmt(rankCost) + ' 💰'; // NUEVO
-    const canPay = allMaxed() && state.gold >= rankCost && rankState.idx < RANKS.length-1; // MODIFICADO
+    const slotsReady = allCurrentRankMaxed(); // MODIFICADO
+    const canPay = slotsReady && state.gold >= rankCost && rankState.idx < RANKS.length-1; // MODIFICADO
     rankPayBtn.disabled = !canPay;
-    rankPayBtn.textContent = allMaxed() ? 'Pagar ' + fmt(rankCost) + ' 💰' : 'Maximiza los 8 equipos (Nv 100)'; // MODIFICADO
+    if (!slotsReady) rankPayBtn.textContent = 'Sube los 8 equipos del rango actual a Nv 100'; // MODIFICADO
+    else if (state.gold < rankCost) rankPayBtn.textContent = 'Necesitas ' + fmt(rankCost) + ' 💰'; // NUEVO
+    else rankPayBtn.textContent = 'Pagar ' + fmt(rankCost) + ' 💰'; // MODIFICADO
   }
   document.getElementById('rankChip').addEventListener('click', ()=>{
     renderRankOverlay(); rankOv.classList.add('show');
@@ -1790,7 +1793,7 @@
   rankOv.addEventListener('click', (e)=>{ if(e.target===rankOv) rankOv.classList.remove('show'); });
   rankPayBtn.addEventListener('click', ()=>{
     const rankCost = getRankCost(); // NUEVO
-    if (!allMaxed() || state.gold < rankCost || rankState.idx >= RANKS.length-1) return; // MODIFICADO
+    if (!allCurrentRankMaxed() || state.gold < rankCost || rankState.idx >= RANKS.length-1) return; // MODIFICADO
     state.gold -= rankCost; // MODIFICADO
     rankState.idx++;
     applyRankColor(); // MODIFICADO
