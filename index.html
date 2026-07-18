@@ -73,25 +73,9 @@
     width:28px;height:6px;border-radius:50%;background:rgba(0,0,0,.5);filter:blur(2px)}
   .char .body{position:absolute;inset:0}
 
-  /* Hero sprite */
-  .hero{left:60px}
-  .hero .head{position:absolute;top:0;left:8px;width:20px;height:20px;border-radius:50%;
-    background:radial-gradient(circle at 30% 30%,#ffdfb0,#d9a56e);border:1px solid #6b4321}
-  .hero .hair{position:absolute;top:-2px;left:6px;width:24px;height:12px;border-radius:12px 12px 4px 4px;
-    background:linear-gradient(180deg,#3a2410,#1a0f06)}
-  .hero .eye{position:absolute;top:8px;width:3px;height:3px;background:#0a0a0a;border-radius:50%}
-  .hero .eye.l{left:12px}.hero .eye.r{left:20px}
-  .hero .torso{position:absolute;top:18px;left:6px;width:24px;height:22px;border-radius:6px 6px 4px 4px;
-    background:linear-gradient(180deg,#3d6bd6,#1e3f9a);border:1px solid #0e2266;
-    box-shadow:inset -2px -2px 4px rgba(0,0,0,.3)}
-  .hero .belt{position:absolute;top:36px;left:6px;width:24px;height:4px;background:#3a2410;border-top:1px solid #6b4321}
-  .hero .arm{position:absolute;top:20px;width:6px;height:16px;background:#d9a56e;border:1px solid #6b4321;border-radius:3px;transform-origin:top center}
-  .hero .arm.l{left:2px}.hero .arm.r{left:28px}
-  .hero .leg{position:absolute;top:38px;width:7px;height:14px;background:#2a1a08;border:1px solid #0a0500;border-radius:2px;transform-origin:top center}
-  .hero .leg.l{left:8px}.hero .leg.r{left:21px}
-  .hero .sword{position:absolute;top:14px;left:30px;width:3px;height:22px;
-    background:linear-gradient(180deg,#e8ecf5,#8a94a8);border:1px solid #2a2e38;transform:rotate(20deg);transform-origin:top}
-  .hero .sword::before{content:"";position:absolute;top:-4px;left:-3px;width:9px;height:3px;background:#a37a44;border-radius:2px}
+  /* Hero asset: exact crop from b1.webp — X 22..142, Y 14..263 (121 × 250 px). */
+  .hero{left:60px;width:121px;height:250px}
+  .hero .hero-image{display:block;width:121px;height:250px;background:url('assets/images/b1.webp') -22px -14px / 2052px 2053px no-repeat}
 
   /* Enemy sprites - variants */
   .enemy{right:auto}
@@ -116,7 +100,7 @@
   .enemy .hpbar i{display:block;height:100%;background:linear-gradient(90deg,#ff3a3a,#ff8a3a);width:100%;transition:width .2s}
 
   /* NUEVO - Punto 3: barra de HP sobre el héroe (profesional y compacta) */
-  .hero .hpbar{position:absolute;top:-12px;left:-2px;width:40px;height:5px;
+  .hero .hpbar{position:absolute;top:-12px;left:0;width:121px;height:5px;
     background:linear-gradient(180deg,#0a0d1c,#1a1030);
     border:1px solid #000;border-radius:3px;overflow:hidden;
     box-shadow:0 0 4px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.15);z-index:5}
@@ -133,7 +117,7 @@
   .walking .leg.l,.walking .arm.r{animation:walkL .35s infinite ease-in-out}
   .walking .leg.r,.walking .arm.l{animation:walkR .35s infinite ease-in-out}
   @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1px)}}
-  .walking .body{animation:bob .35s infinite}
+  .walking .hero-image{animation:bob .35s infinite}
 
   /* Attack impact */
   .impact{position:absolute;width:40px;height:40px;pointer-events:none;z-index:15;
@@ -443,7 +427,7 @@
     box-shadow:0 0 14px rgba(124,233,255,.55),inset 0 1px 0 rgba(255,255,255,.38);text-shadow:0 2px 3px #000} /* NUEVO - HÉROE */
   .hero-view-top{flex:0 0 44%;display:grid;grid-template-columns:1fr 1fr;gap:8px;min-height:0} /* MODIFICADO - HÉROE */
   .hero-preview{position:relative;border:1px solid #3a4680;border-radius:12px;background:radial-gradient(ellipse at center,#2a3560,#0b0d17 72%);overflow:hidden}
-  .hero-preview .char{position:absolute;left:50%;bottom:54px;transform:translateX(-50%) scale(2.2);transform-origin:bottom center}
+  .hero-preview .char{position:absolute;left:50%;bottom:10px;transform:translateX(-50%) scale(.55);transform-origin:bottom center}
   .hero-preview .char .hpbar{display:none}
   .hero-live-stats{display:grid;grid-template-rows:repeat(4,1fr);gap:6px}
   .hero-stat{display:flex;align-items:center;justify-content:space-between;border:1px solid #3a4680;border-radius:10px;
@@ -484,7 +468,7 @@
     box-shadow:0 0 28px rgba(255,200,110,.28),inset 0 2px 8px rgba(255,255,255,.12),inset 0 -10px 20px rgba(0,0,0,.5);
     text-shadow:0 2px 3px #000;cursor:pointer;pointer-events:auto} /* MODIFICADO - CRIPTAS KUNAI: EMPEZAR ahora inicia la secuencia */
   .cryptas-hero{position:absolute;left:50%;bottom:124px;transform:translateX(-50%);z-index:8;will-change:left,transform} /* MODIFICADO - CRIPTAS KUNAI: personaje alineado al suelo del nuevo escenario */
-  .cryptas-hero .char{position:relative;left:auto;bottom:auto;transform:scale(1);transform-origin:center bottom} /* MODIFICADO - CRIPTAS KUNAI: mismo tamaño que el personaje principal */
+  .cryptas-hero .char{position:relative;left:auto;bottom:auto;transform:scale(.45);transform-origin:center bottom} /* Character asset scaled for the crypt scene. */
   .cryptas-enemies{position:absolute;inset:0;z-index:8;pointer-events:none} /* NUEVO - CRIPTAS KUNAI: capa local de enemigos por ronda */
   .cryptas-enemies .enemy{bottom:124px} /* NUEVO - CRIPTAS KUNAI: enemigos alineados al suelo de la cripta */
   .cryptas-fx{position:absolute;inset:0;z-index:9;pointer-events:none} /* NUEVO - CRIPTAS KUNAI: efectos locales visibles en la cripta */
@@ -520,7 +504,7 @@
   .bosque-hud-left{left:8px}.bosque-hud-right{right:8px;align-items:flex-end}
   .bosque-hud-right .world-title{text-align:center;justify-content:center}
   .bosque-hero{position:absolute;left:44%;bottom:104px;transform:translateX(-50%);z-index:8}
-  .bosque-hero .char{position:relative;left:auto;bottom:auto;transform:scale(1);transform-origin:center bottom}
+  .bosque-hero .char{position:relative;left:auto;bottom:auto;transform:scale(.45);transform-origin:center bottom}
   .bosque-enemies{position:absolute;inset:0;z-index:8;pointer-events:none}
   .bosque-enemies .enemy{bottom:104px;left:57%;transform:translateX(-50%) scaleX(-1)}
   .bosque-fx{position:absolute;inset:0;z-index:9;pointer-events:none} /* NUEVO - BOSQUE SOMBRÍO */
@@ -598,16 +582,7 @@
     <div class="char hero walking" id="hero">
       <div class="hpbar"><i id="heroHpFill"></i></div><!-- NUEVO - Punto 3 -->
       <div class="shadow"></div>
-      <div class="body">
-        <div class="hair"></div>
-        <div class="head"></div>
-        <div class="eye l"></div><div class="eye r"></div>
-        <div class="torso"></div>
-        <div class="belt"></div>
-        <div class="arm l"></div><div class="arm r"></div>
-        <div class="leg l"></div><div class="leg r"></div>
-        <div class="sword"></div>
-      </div>
+      <div class="hero-image" role="img" aria-label="Personaje principal"></div>
     </div>
 
     <div id="enemies"></div>
@@ -1154,7 +1129,7 @@
       sprite.classList.add('walking');
       holder.appendChild(sprite);
     }
-    sprite.style.transform = 'scale(1)'; // MODIFICADO - CRIPTAS KUNAI: mismo tamaño que el personaje principal, sin giros bruscos
+    sprite.style.transform = 'scale(.45)'; // Keep the supplied character asset within the crypt scene.
     const bounds = {x:108, yMin:-10, yMax:18}; // MODIFICADO - CRIPTAS KUNAI: límite superior desde la zona central de las antorchas
     let x = 0, y = 0, startX = 0, startY = 0, targetX = 0, targetY = 0, moveStart = 0, moveDuration = 0, pauseUntil = 0;
     const easeInOut = t => t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2; // NUEVO - CRIPTAS KUNAI
