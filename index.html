@@ -73,9 +73,9 @@
     width:28px;height:6px;border-radius:50%;background:rgba(0,0,0,.5);filter:blur(2px)}
   .char .body{position:absolute;inset:0}
 
-  /* Hero asset: exact crop from b1.webp — X 22..142, Y 14..263 (121 × 250 px). */
-  .hero{left:60px;width:121px;height:250px}
-  .hero .hero-image{display:block;width:121px;height:250px;background:url('assets/images/b1.webp') -22px -14px / 2052px 2053px no-repeat}
+  /* Hero asset: exact Sasuke crop from b1.webp — X 13..35, Y 5..91 (22 × 86 px). */
+  .hero{left:60px;width:22px;height:86px}
+  .hero .hero-image{display:block;width:22px;height:86px;background:url('assets/images/b1.webp') -13px -5px / 2052px 2053px no-repeat}
 
   /* Enemy sprites - variants */
   .enemy{right:auto}
@@ -100,7 +100,7 @@
   .enemy .hpbar i{display:block;height:100%;background:linear-gradient(90deg,#ff3a3a,#ff8a3a);width:100%;transition:width .2s}
 
   /* NUEVO - Punto 3: barra de HP sobre el héroe (profesional y compacta) */
-  .hero .hpbar{position:absolute;top:-12px;left:0;width:121px;height:5px;
+  .hero .hpbar{position:absolute;top:-12px;left:0;width:22px;height:5px;
     background:linear-gradient(180deg,#0a0d1c,#1a1030);
     border:1px solid #000;border-radius:3px;overflow:hidden;
     box-shadow:0 0 4px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.15);z-index:5}
@@ -427,7 +427,7 @@
     box-shadow:0 0 14px rgba(124,233,255,.55),inset 0 1px 0 rgba(255,255,255,.38);text-shadow:0 2px 3px #000} /* NUEVO - HÉROE */
   .hero-view-top{flex:0 0 44%;display:grid;grid-template-columns:1fr 1fr;gap:8px;min-height:0} /* MODIFICADO - HÉROE */
   .hero-preview{position:relative;border:1px solid #3a4680;border-radius:12px;background:radial-gradient(ellipse at center,#2a3560,#0b0d17 72%);overflow:hidden}
-  .hero-preview .char{position:absolute;left:50%;bottom:10px;transform:translateX(-50%) scale(.55);transform-origin:bottom center}
+  .hero-preview .char{position:absolute;left:50%;bottom:10px;transform:translateX(-50%) scale(1.25);transform-origin:bottom center}
   .hero-preview .char .hpbar{display:none}
   .hero-live-stats{display:grid;grid-template-rows:repeat(4,1fr);gap:6px}
   .hero-stat{display:flex;align-items:center;justify-content:space-between;border:1px solid #3a4680;border-radius:10px;
@@ -468,7 +468,7 @@
     box-shadow:0 0 28px rgba(255,200,110,.28),inset 0 2px 8px rgba(255,255,255,.12),inset 0 -10px 20px rgba(0,0,0,.5);
     text-shadow:0 2px 3px #000;cursor:pointer;pointer-events:auto} /* MODIFICADO - CRIPTAS KUNAI: EMPEZAR ahora inicia la secuencia */
   .cryptas-hero{position:absolute;left:50%;bottom:124px;transform:translateX(-50%);z-index:8;will-change:left,transform} /* MODIFICADO - CRIPTAS KUNAI: personaje alineado al suelo del nuevo escenario */
-  .cryptas-hero .char{position:relative;left:auto;bottom:auto;transform:scale(.45);transform-origin:center bottom} /* Character asset scaled for the crypt scene. */
+  .cryptas-hero .char{position:relative;left:auto;bottom:auto;transform:scale(1);transform-origin:center bottom} /* Character asset at game scale for the crypt scene. */
   .cryptas-enemies{position:absolute;inset:0;z-index:8;pointer-events:none} /* NUEVO - CRIPTAS KUNAI: capa local de enemigos por ronda */
   .cryptas-enemies .enemy{bottom:124px} /* NUEVO - CRIPTAS KUNAI: enemigos alineados al suelo de la cripta */
   .cryptas-fx{position:absolute;inset:0;z-index:9;pointer-events:none} /* NUEVO - CRIPTAS KUNAI: efectos locales visibles en la cripta */
@@ -1129,7 +1129,7 @@
       sprite.classList.add('walking');
       holder.appendChild(sprite);
     }
-    sprite.style.transform = 'scale(.45)'; // Keep the supplied character asset within the crypt scene.
+    sprite.style.transform = 'scale(1)'; // Keep the supplied character asset at game scale in the crypt scene.
     const bounds = {x:108, yMin:-10, yMax:18}; // MODIFICADO - CRIPTAS KUNAI: límite superior desde la zona central de las antorchas
     let x = 0, y = 0, startX = 0, startY = 0, targetX = 0, targetY = 0, moveStart = 0, moveDuration = 0, pauseUntil = 0;
     const easeInOut = t => t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2; // NUEVO - CRIPTAS KUNAI
