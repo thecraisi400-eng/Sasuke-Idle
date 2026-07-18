@@ -73,9 +73,9 @@
     width:28px;height:6px;border-radius:50%;background:rgba(0,0,0,.5);filter:blur(2px)}
   .char .body{position:absolute;inset:0}
 
-  /* Hero asset: crop the supplied sheet to its requested 122 × 251 px (0.49:1) coordinates. */
-  .hero{left:60px;width:122px;height:251px}
-  .hero .hero-image{display:block;width:122px;height:251px;background:url('assets/images/b1.webp') 0 0 / 2052px 2053px no-repeat}
+  /* Hero asset: exact crop from b1.webp — X 22..142, Y 14..263 (121 × 250 px). */
+  .hero{left:60px;width:121px;height:250px}
+  .hero .hero-image{display:block;width:121px;height:250px;background:url('assets/images/b1.webp') -22px -14px / 2052px 2053px no-repeat}
 
   /* Enemy sprites - variants */
   .enemy{right:auto}
@@ -100,7 +100,7 @@
   .enemy .hpbar i{display:block;height:100%;background:linear-gradient(90deg,#ff3a3a,#ff8a3a);width:100%;transition:width .2s}
 
   /* NUEVO - Punto 3: barra de HP sobre el héroe (profesional y compacta) */
-  .hero .hpbar{position:absolute;top:-12px;left:0;width:122px;height:5px;
+  .hero .hpbar{position:absolute;top:-12px;left:0;width:121px;height:5px;
     background:linear-gradient(180deg,#0a0d1c,#1a1030);
     border:1px solid #000;border-radius:3px;overflow:hidden;
     box-shadow:0 0 4px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.15);z-index:5}
