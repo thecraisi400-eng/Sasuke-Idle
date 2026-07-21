@@ -6,20 +6,21 @@
   <title>El Gladiador de la Arena (Arena Idle RPG)</title>
   <style>
     :root {
-      --bg: #070914;
-      --app: #101528;
-      --panel: #17213b;
-      --panel-2: #202d50;
-      --ink: #eef6ff;
-      --muted: #9fb4d8;
-      --line: rgba(126, 231, 255, .22);
-      --cyan: #65e8ff;
-      --violet: #a987ff;
-      --pink: #ff6fb1;
-      --lime: #7dff9b;
-      --amber: #ffd166;
-      --danger: #ff5d73;
-      --shadow: rgba(0, 0, 0, .44);
+      --bg: #1a1009;
+      --app: #2b1b10;
+      --panel: #3b2a1b;
+      --panel-2: #51402b;
+      --stone: #71614c;
+      --sand: #caa66b;
+      --sand-light: #efd49b;
+      --gold: #f1c453;
+      --gold-dark: #8a5b19;
+      --red: #b13a2f;
+      --green: #4fa34d;
+      --ink: #fff4d8;
+      --muted: #d7bd87;
+      --line: rgba(241, 196, 83, .28);
+      --shadow: rgba(0, 0, 0, .45);
     }
 
     * { box-sizing: border-box; }
@@ -27,105 +28,104 @@
 
     body {
       margin: 0;
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: Georgia, Cambria, "Times New Roman", serif;
       color: var(--ink);
       background:
-        radial-gradient(circle at 12% 0%, rgba(101,232,255,.18), transparent 28%),
-        radial-gradient(circle at 92% 10%, rgba(255,111,177,.14), transparent 28%),
-        linear-gradient(145deg, #050711, #111936 58%, #070914);
+        radial-gradient(circle at 12% 5%, rgba(241,196,83,.16), transparent 28%),
+        radial-gradient(circle at 85% 0%, rgba(177,58,47,.13), transparent 30%),
+        linear-gradient(145deg, #160d06, #31200f 58%, #140c08);
     }
 
     .app-shell {
-      width: min(560px, 100vw);
+      width: min(620px, 100vw);
       height: 100svh;
       max-height: 100svh;
       margin: 0 auto;
       display: grid;
       grid-template-rows: auto auto minmax(0, 1fr) auto;
-      background: linear-gradient(180deg, rgba(16,21,40,.98), rgba(8,11,24,.99));
-      box-shadow: 0 0 44px rgba(0,0,0,.58);
+      background: linear-gradient(180deg, rgba(48,30,16,.98), rgba(24,14,8,.99));
+      box-shadow: 0 0 50px rgba(0,0,0,.7);
       overflow: hidden;
     }
 
     .topbar {
-      padding: calc(8px + env(safe-area-inset-top)) 10px 7px;
-      background: linear-gradient(135deg, #182345, #11182f 56%, #23183f);
-      border-bottom: 1px solid var(--line);
+      padding: calc(10px + env(safe-area-inset-top)) 12px 8px;
+      background: linear-gradient(135deg, #4b2912, #2d1b0e 55%, #5d4323);
+      border-bottom: 2px solid var(--gold-dark);
     }
 
     .title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    h1 { margin: 0; font-size: clamp(.88rem, 3.5vw, 1.05rem); line-height: 1.05; color: var(--cyan); letter-spacing: .01em; }
-    .subtitle { color: var(--muted); font-size: .68rem; font-weight: 700; }
-    .rank-chip { flex: none; border: 1px solid rgba(169,135,255,.45); border-radius: 999px; padding: 5px 8px; background: rgba(169,135,255,.12); color: #dacfff; font-size: .68rem; font-weight: 900; }
+    h1 { margin: 0; font-size: clamp(1rem, 3.6vw, 1.28rem); line-height: 1.05; color: var(--gold); letter-spacing: .02em; text-shadow: 0 2px 0 #4c260b; }
+    .tip { margin: 0; color: var(--muted); font-size: .72rem; line-height: 1.25; }
+    .rank-chip { flex: none; border: 1px solid rgba(241,196,83,.6); border-radius: 999px; padding: 6px 9px; background: rgba(83,55,25,.75); color: #ffe7a3; font-size: .72rem; font-weight: 900; }
 
-    .quick-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 7px; }
-    .quick-card { min-width: 0; padding: 6px 5px; border-radius: 12px; background: rgba(101,232,255,.07); border: 1px solid var(--line); text-align: center; }
-    .quick-card small { display: block; color: var(--muted); font-size: .58rem; text-transform: uppercase; letter-spacing: .08em; }
-    .quick-card strong { display: block; color: #fff; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .quick-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 8px; }
+    .quick-card { min-width: 0; padding: 7px 5px; border-radius: 12px; background: rgba(20,12,8,.32); border: 1px solid var(--line); text-align: center; box-shadow: inset 0 0 14px rgba(0,0,0,.25); }
+    .quick-card small { display: block; color: var(--muted); font-size: .6rem; text-transform: uppercase; letter-spacing: .08em; }
+    .quick-card strong { display: block; color: #fff9df; font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .hero-status { padding: 7px 10px; display: grid; gap: 6px; background: rgba(0,0,0,.14); }
-    .bar { height: 15px; border-radius: 999px; overflow: hidden; background: #050814; border: 1px solid rgba(238,246,255,.14); position: relative; }
+    .hero-status { padding: 8px 12px; display: grid; gap: 6px; background: rgba(0,0,0,.2); }
+    .bar { height: 16px; border-radius: 999px; overflow: hidden; background: #170d08; border: 1px solid rgba(255,244,216,.18); position: relative; }
     .fill { height: 100%; transition: width .18s ease; }
-    .hp { background: linear-gradient(90deg, #1edb73, var(--lime)); }
-    .xp { background: linear-gradient(90deg, #4c76ff, var(--cyan)); }
-    .bar span { position: absolute; inset: 0; display: grid; place-items: center; font-size: .62rem; font-weight: 900; color: #f7fbff; text-shadow: 0 1px 2px #000; }
+    .hp { background: linear-gradient(90deg, #2c7d31, #6fc85f); }
+    .xp { background: linear-gradient(90deg, #76542a, var(--gold)); }
+    .bar span { position: absolute; inset: 0; display: grid; place-items: center; font-size: .64rem; font-weight: 900; color: #fff7dc; text-shadow: 0 1px 2px #000; }
 
-    main { min-height: 0; overflow: hidden; padding: 8px 10px; }
+    main { min-height: 0; overflow: hidden; padding: 9px 12px; }
     .screen { display: none; height: 100%; min-height: 0; overflow: hidden; }
-    .screen.active { display: grid; gap: 8px; grid-template-rows: auto minmax(0, 1fr); }
+    .screen.active { display: grid; gap: 9px; grid-template-rows: auto minmax(0, 1fr); }
     .section-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    h2 { margin: 0; font-size: .9rem; color: #ffffff; }
+    h2 { margin: 0; font-size: .95rem; color: #fff3c4; }
 
-    .card { min-height: 0; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(180deg, rgba(32,45,80,.92), rgba(19,27,50,.94)); box-shadow: 0 8px 22px var(--shadow), inset 0 1px 0 rgba(255,255,255,.05); padding: 9px; overflow: hidden; }
-    .pill { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 5px 8px; color: #eafcff; background: rgba(101,232,255,.1); border: 1px solid var(--line); font-size: .68rem; font-weight: 900; white-space: nowrap; }
-    .tip { margin: 0; color: var(--muted); font-size: .68rem; line-height: 1.2; }
+    .card { min-height: 0; border: 2px solid rgba(103,76,43,.92); border-radius: 16px; background: linear-gradient(180deg, rgba(80,59,37,.94), rgba(49,34,22,.96)); box-shadow: 0 8px 22px var(--shadow), inset 0 1px 0 rgba(255,238,180,.08); padding: 10px; overflow: hidden; }
+    .pill { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 6px 8px; color: #fff0bd; background: rgba(81,48,18,.72); border: 1px solid var(--line); font-size: .7rem; font-weight: 900; white-space: nowrap; }
 
-    .arena-layout { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 8px; height: 100%; min-height: 0; }
-    .arena-card { padding: 7px; display: grid; place-items: center; }
-    canvas { display: block; width: min(100%, 48svh); max-width: 100%; aspect-ratio: 1; border-radius: 20px; background: #18223d; border: 3px solid rgba(101,232,255,.55); box-shadow: inset 0 0 40px rgba(101,232,255,.08), 0 0 22px rgba(101,232,255,.12); }
+    .arena-layout { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 9px; height: 100%; min-height: 0; }
+    .arena-card { padding: 8px; display: grid; place-items: center; }
+    canvas { display: block; width: min(100%, 48svh); max-width: 100%; aspect-ratio: 1; border-radius: 999px; background: #a9834d; border: 8px solid #6b5639; box-shadow: inset 0 0 35px rgba(76,38,11,.55), 0 0 22px rgba(0,0,0,.3); }
     .arena-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .status-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-    .mini-stat { background: rgba(0,0,0,.2); border: 1px solid rgba(238,246,255,.1); border-radius: 12px; padding: 6px; }
-    .mini-stat span { display: block; color: var(--muted); font-size: .58rem; }
-    .mini-stat strong { display: block; color: #fff; font-size: .8rem; margin-top: 1px; }
-    .log { height: 100%; max-height: 74px; overflow: hidden; font-size: .66rem; line-height: 1.18; color: #d7e7ff; }
+    .mini-stat { background: rgba(0,0,0,.22); border: 1px solid rgba(255,244,216,.13); border-radius: 12px; padding: 7px; }
+    .mini-stat span { display: block; color: var(--muted); font-size: .6rem; }
+    .mini-stat strong { display: block; color: #fff7df; font-size: .82rem; margin-top: 1px; }
+    .log { height: 100%; max-height: 78px; overflow: hidden; font-size: .68rem; line-height: 1.2; color: #ffedbf; }
 
-    .skills-layout, .shop-layout { display: grid; gap: 8px; height: 100%; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
-    .equipment-view { display: grid; grid-template-columns: 86px 1fr; gap: 8px; align-items: stretch; }
-    .glad-preview { display: grid; place-items: center; min-height: 104px; border-radius: 14px; background: radial-gradient(circle, rgba(169,135,255,.26), rgba(101,232,255,.07)); border: 1px solid rgba(169,135,255,.28); }
-    .pixel { font-size: 3rem; filter: drop-shadow(0 7px 0 rgba(0,0,0,.28)); }
-    .slots { display: grid; gap: 6px; }
-    .slot { display: flex; align-items: center; justify-content: space-between; gap: 5px; border-radius: 11px; padding: 7px 8px; background: rgba(0,0,0,.2); border: 1px dashed rgba(101,232,255,.24); font-size: .74rem; font-weight: 900; color: #e9faff; }
-    .slot small { color: var(--muted); font-size: .62rem; font-weight: 700; }
+    .skills-layout, .shop-layout { display: grid; gap: 9px; height: 100%; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
+    .equipment-view { display: grid; grid-template-columns: 96px 1fr; gap: 9px; align-items: stretch; }
+    .glad-preview { display: grid; place-items: center; min-height: 112px; border-radius: 14px; background: radial-gradient(circle, rgba(241,196,83,.28), rgba(65,36,14,.34)); border: 1px solid rgba(241,196,83,.35); }
+    .pixel { font-size: 3rem; filter: drop-shadow(0 7px 0 rgba(0,0,0,.32)); }
+    .slots { display: grid; gap: 7px; }
+    .slot { display: flex; align-items: center; justify-content: space-between; gap: 5px; border-radius: 11px; padding: 8px; background: rgba(0,0,0,.22); border: 1px dashed rgba(241,196,83,.32); font-size: .76rem; font-weight: 900; color: #fff1c8; }
+    .slot small { color: var(--muted); font-size: .63rem; font-weight: 700; }
 
-    .actions-list { display: grid; gap: 6px; min-height: 0; }
-    .upgrade { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 7px; background: rgba(0,0,0,.21); border: 1px solid rgba(238,246,255,.1); border-radius: 13px; min-height: 0; }
-    .upgrade strong { display: block; color: #fff; font-size: .78rem; }
-    .upgrade small { display: block; color: var(--muted); font-size: .62rem; line-height: 1.1; }
+    .actions-list { display: grid; gap: 7px; min-height: 0; }
+    .upgrade { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 8px; background: rgba(0,0,0,.23); border: 1px solid rgba(255,244,216,.12); border-radius: 13px; min-height: 0; }
+    .upgrade strong { display: block; color: #fff4d4; font-size: .8rem; }
+    .upgrade small { display: block; color: var(--muted); font-size: .64rem; line-height: 1.15; }
 
-    button { border: 0; border-radius: 12px; cursor: pointer; padding: 8px 10px; color: #06101e; font-weight: 950; font-family: inherit; font-size: .72rem; background: linear-gradient(135deg, var(--cyan), #7bd4ff); box-shadow: 0 3px 0 #2477a0, 0 7px 13px rgba(0,0,0,.28); transition: transform .08s ease, filter .12s ease; white-space: nowrap; }
-    button:active { transform: translateY(2px); box-shadow: 0 1px 0 #2477a0, 0 4px 8px rgba(0,0,0,.3); }
-    button.secondary { color: #0c1022; background: linear-gradient(135deg, #c9b8ff, var(--violet)); box-shadow: 0 3px 0 #6650b5, 0 7px 13px rgba(0,0,0,.28); }
-    button.danger { color: #fff; background: linear-gradient(135deg, var(--pink), var(--danger)); box-shadow: 0 3px 0 #963244, 0 7px 13px rgba(0,0,0,.28); }
-    button:disabled { opacity: .5; cursor: not-allowed; filter: grayscale(.2); }
+    button { border: 0; border-radius: 12px; cursor: pointer; padding: 8px 10px; color: #2d1a08; font-weight: 950; font-family: inherit; font-size: .74rem; background: linear-gradient(135deg, #ffe08a, var(--gold)); box-shadow: 0 3px 0 var(--gold-dark), 0 8px 13px rgba(0,0,0,.28); transition: transform .08s ease, filter .12s ease; white-space: nowrap; }
+    button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--gold-dark), 0 4px 8px rgba(0,0,0,.3); }
+    button.secondary { color: #fff5d1; background: linear-gradient(135deg, #8b6d3e, #5d4323); box-shadow: 0 3px 0 #35210f, 0 8px 13px rgba(0,0,0,.28); }
+    button.danger { color: #fff; background: linear-gradient(135deg, #d75544, var(--red)); box-shadow: 0 3px 0 #6f2019, 0 8px 13px rgba(0,0,0,.28); }
+    button:disabled { opacity: .5; cursor: not-allowed; filter: grayscale(.35); }
 
     .settings-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
     .pill-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-    .pill-list .pill { font-size: .62rem; padding: 6px; }
+    .pill-list .pill { font-size: .63rem; padding: 6px; }
 
-    .bottom-nav { padding: 7px 10px calc(7px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; background: rgba(5,8,20,.96); border-top: 1px solid var(--line); }
-    .nav-btn { display: grid; place-items: center; gap: 1px; min-height: 50px; padding: 6px 4px; border-radius: 15px; color: var(--muted); background: rgba(255,255,255,.05); box-shadow: none; border: 1px solid rgba(238,246,255,.09); }
+    .bottom-nav { padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; background: rgba(24,14,8,.97); border-top: 2px solid var(--gold-dark); }
+    .nav-btn { display: grid; place-items: center; gap: 1px; min-height: 52px; padding: 6px 4px; border-radius: 15px; color: var(--muted); background: rgba(255,255,255,.05); box-shadow: none; border: 1px solid rgba(255,244,216,.12); }
     .nav-btn .icon { font-size: 1rem; }
     .nav-btn .label { font-size: .62rem; }
-    .nav-btn.active { color: #06101e; background: linear-gradient(135deg, var(--cyan), var(--violet)); box-shadow: 0 3px 0 #3154a7; }
+    .nav-btn.active { color: #2d1a08; background: linear-gradient(135deg, #ffe08a, var(--gold)); box-shadow: 0 3px 0 var(--gold-dark); }
 
     @media (min-width: 800px) {
-      .app-shell { width: min(980px, 100vw); }
-      .arena-layout { grid-template-columns: minmax(0, 1fr) 330px; grid-template-rows: minmax(0, 1fr); }
+      .app-shell { width: min(1040px, 100vw); }
+      .arena-layout { grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: minmax(0, 1fr); }
       .arena-info { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
       canvas { width: min(100%, 68svh); }
-      .skills-layout { grid-template-columns: 310px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
-      .shop-layout { grid-template-columns: minmax(0, 1fr) 310px; grid-template-rows: minmax(0, 1fr); }
+      .skills-layout { grid-template-columns: 330px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+      .shop-layout { grid-template-columns: minmax(0, 1fr) 320px; grid-template-rows: minmax(0, 1fr); }
     }
 
     @media (max-height: 650px) {
@@ -148,7 +148,7 @@
         <div class="rank-chip" id="rankTop">Principiante</div>
       </div>
       <div class="quick-stats" aria-label="Resumen del progreso">
-        <div class="quick-card"><small>Oro</small><strong id="goldTop">0</strong></div>
+        <div class="quick-card"><small>Oro total</small><strong id="goldTop">0</strong></div>
         <div class="quick-card"><small>Ola</small><strong id="waveTop">1</strong></div>
         <div class="quick-card"><small>Bajas</small><strong id="killsTop">0</strong></div>
       </div>
@@ -163,11 +163,11 @@
       <section id="arena" class="screen active">
         <div class="section-title"><h2>🏟️ Arena</h2><span class="pill" id="arenaState">Combate automático</span></div>
         <div class="arena-layout">
-          <div class="card arena-card"><canvas id="game" width="640" height="640" aria-label="Arena de combate"></canvas></div>
+          <div class="card arena-card"><canvas id="game" width="640" height="640" aria-label="Arena circular de combate"></canvas></div>
           <div class="arena-info">
             <div class="card">
               <h2>Progreso de la ola</h2>
-              <p class="tip">Los enemigos aparecen poco a poco. El gladiador atacará solo cuando entren en su rango.</p>
+              <p class="tip">Goblins, esqueletos y slimes salen de los bordes. Tu gladiador lucha solo y conserva el oro si cae.</p>
               <div class="status-grid" style="margin-top:10px">
                 <div class="mini-stat"><span>Bajas para avanzar</span><strong id="kills">0 / 0</strong></div>
                 <div class="mini-stat"><span>Oro ganado en ola</span><strong id="waveGold">0</strong></div>
@@ -186,47 +186,47 @@
       <section id="skills" class="screen">
         <div class="section-title"><h2>🛡️ Equipo y habilidades</h2><span class="pill">Mejora con oro</span></div>
         <div class="skills-layout">
-        <div class="card equipment-view">
-          <div class="glad-preview"><div class="pixel">🛡️⚔️</div></div>
-          <div class="slots">
-            <div class="slot">Casco <small>Bronce curtido</small></div>
-            <div class="slot">Escudo <small>Roble reforzado</small></div>
-            <div class="slot">Espada <small>Hierro de arena</small></div>
+          <div class="card equipment-view">
+            <div class="glad-preview"><div class="pixel">🛡️⚔️</div></div>
+            <div class="slots">
+              <div class="slot">Casco <small>Bronce curtido</small></div>
+              <div class="slot">Escudo <small>Roble reforzado</small></div>
+              <div class="slot">Espada <small>Hierro de arena</small></div>
+            </div>
           </div>
-        </div>
-        <div class="card">
-          <h2>Habilidades pasivas</h2>
-          <p class="tip">Un menú idle simple: toca comprar, vuelve a la arena y deja que el combate avance.</p>
-          <div id="skillButtons" class="actions-list" style="margin-top:8px"></div>
-        </div>
+          <div class="card">
+            <h2>Habilidades pasivas</h2>
+            <p class="tip">Compra mejoras, vuelve a la arena y deja que el combate avance automáticamente.</p>
+            <div id="skillButtons" class="actions-list" style="margin-top:8px"></div>
+          </div>
         </div>
       </section>
 
       <section id="shop" class="screen">
         <div class="section-title"><h2>🪙 Tienda y ajustes</h2><span class="pill">Opciones</span></div>
         <div class="shop-layout">
-        <div class="card">
-          <h2>Mejoras generales</h2>
-          <div id="shopButtons" class="actions-list" style="margin-top:8px"></div>
-        </div>
-        <div class="card">
-          <h2>Ajustes</h2>
-          <div class="settings-buttons" style="margin-top:12px">
-            <button id="soundBtn" class="secondary">🔊 Sonido: Activado</button>
-            <button id="resetBtn" class="danger">🧨 Reiniciar Progreso</button>
+          <div class="card">
+            <h2>Mejoras generales</h2>
+            <div id="shopButtons" class="actions-list" style="margin-top:8px"></div>
           </div>
-        </div>
-        <div class="card">
-          <h2>Estadísticas</h2>
-          <div id="allStats" class="pill-list" style="margin-top:8px"></div>
-        </div>
+          <div class="card">
+            <h2>Ajustes</h2>
+            <div class="settings-buttons" style="margin-top:12px">
+              <button id="soundBtn" class="secondary">🔊 Sonido: Activado</button>
+              <button id="resetBtn" class="danger">🧨 Reiniciar Progreso</button>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Estadísticas</h2>
+            <div id="allStats" class="pill-list" style="margin-top:8px"></div>
+          </div>
         </div>
       </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Menú principal">
       <button class="nav-btn active" data-tab="arena"><span class="icon">🏟️</span><span class="label">Arena</span></button>
-      <button class="nav-btn" data-tab="skills"><span class="icon">🛡️</span><span class="label">Mejoras</span></button>
+      <button class="nav-btn" data-tab="skills"><span class="icon">🛡️</span><span class="label">Equipo</span></button>
       <button class="nav-btn" data-tab="shop"><span class="icon">🪙</span><span class="label">Tienda</span></button>
     </nav>
   </div>
@@ -247,7 +247,7 @@
     const ctx = canvas.getContext('2d');
     const C = canvas.width / 2;
     const ARENA_R = 292;
-    const SAVE_KEY = 'gladiadorArenaIdleSaveV2';
+    const SAVE_KEY = 'gladiadorArenaIdleSaveV3';
     const base = { hp: 140, damage: 14, range: 118, attackCooldown: 850, regen: .35 };
     const defaultUpgrades = { damage: 0, hp: 0, speed: 0, regen: 0, goldMult: 0, splash: 0 };
     const state = {
@@ -256,9 +256,9 @@
       upgrades: { ...defaultUpgrades }, log: []
     };
     const enemyTypes = [
-      { name: 'Goblin', color: '#7dff9b', hp: 28, speed: 27, damage: 5, gold: 7, xp: 8 },
-      { name: 'Esqueleto', color: '#c9b8ff', hp: 36, speed: 22, damage: 7, gold: 10, xp: 11 },
-      { name: 'Slime', color: '#65e8ff', hp: 44, speed: 18, damage: 4, gold: 12, xp: 10 }
+      { name: 'Goblin', color: '#69a84f', hp: 28, speed: 27, damage: 5, gold: 7, xp: 8, shape: 'goblin' },
+      { name: 'Esqueleto', color: '#d8d1bf', hp: 36, speed: 22, damage: 7, gold: 10, xp: 11, shape: 'skeleton' },
+      { name: 'Slime', color: '#76a95d', hp: 44, speed: 18, damage: 4, gold: 12, xp: 10, shape: 'slime' }
     ];
     let audioCtx;
     let lastTime = performance.now();
@@ -267,8 +267,9 @@
     let lastButtonGold = -1;
 
     function load() {
+      const raw = localStorage.getItem(SAVE_KEY) || localStorage.getItem('gladiadorArenaIdleSaveV2');
       try {
-        const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
+        const saved = JSON.parse(raw);
         if (saved) Object.assign(state, saved, { upgrades: { ...defaultUpgrades, ...(saved.upgrades || {}) } });
       } catch (error) {
         console.warn('No se pudo cargar la partida guardada.', error);
@@ -277,6 +278,7 @@
       state.texts = [];
       state.particles = [];
       state.hp = Math.min(stats().maxHp, state.hp || stats().maxHp);
+      uiRefs.soundBtn.textContent = state.sound ? '🔊 Sonido: Activado' : '🔇 Sonido: Desactivado';
     }
 
     function save() {
@@ -303,9 +305,9 @@
     function spawnDelay() { return Math.max(.95, 2.4 - state.wave * .055); }
 
     function rank() {
-      if (state.wave >= 25) return 'Leyenda';
+      if (state.wave >= 25) return 'Leyenda de la Arena';
       if (state.wave >= 15) return 'Campeón Imperial';
-      if (state.wave >= 8) return 'Veterano';
+      if (state.wave >= 8) return 'Gladiador Veterano';
       return 'Principiante';
     }
 
@@ -354,7 +356,7 @@
       state.kills++;
       state.totalKills++;
       state.xp += e.xp;
-      floating(e.x, e.y, '+' + gold + ' oro', '#ffd166');
+      floating(e.x, e.y, '+' + gold + ' oro', '#ffdf77');
       beep(520, .08, 'triangle');
       while (state.xp >= xpNeed()) {
         state.xp -= xpNeed();
@@ -389,13 +391,13 @@
       beep(180, .04, 'sawtooth');
       const dmg = s.damage;
       target.hp -= dmg;
-      floating(target.x, target.y - 12, '-' + dmg, '#eafcff');
+      floating(target.x, target.y - 12, '-' + dmg, '#fff7df');
       state.particles.push({ x1: C, y1: C, x2: target.x, y2: target.y, life: .16 });
       if (s.splash) {
         for (const e of state.enemies) {
           if (e !== target && Math.hypot(e.x - target.x, e.y - target.y) < 58) {
             e.hp -= Math.round(dmg * .42);
-            floating(e.x, e.y, 'área', '#ff6fb1');
+            floating(e.x, e.y, 'área', '#ff7666');
           }
         }
       }
@@ -426,7 +428,7 @@
           if (e.attackCd <= 0) {
             state.hp -= e.damage;
             e.attackCd = 1.25;
-            floating(C, C - 42, '-' + e.damage + ' vida', '#ff5d73');
+            floating(C, C - 42, '-' + e.damage + ' vida', '#ff6f5f');
             beep(90, .09, 'square');
           }
         }
@@ -451,78 +453,110 @@
       }
     }
 
+    function drawEnemy(e) {
+      ctx.fillStyle = 'rgba(0,0,0,.24)';
+      ctx.beginPath();
+      ctx.ellipse(e.x, e.y + 13, e.r * 1.25, e.r * .45, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = e.color;
+      if (e.shape === 'slime') {
+        ctx.beginPath();
+        ctx.ellipse(e.x, e.y + 2, e.r * 1.15, e.r * .9, 0, Math.PI, 0);
+        ctx.lineTo(e.x + e.r * 1.1, e.y + 8);
+        ctx.lineTo(e.x - e.r * 1.1, e.y + 8);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+        ctx.fill();
+        if (e.shape === 'goblin') {
+          ctx.fillStyle = '#355e2b';
+          ctx.beginPath();
+          ctx.moveTo(e.x - e.r, e.y - 3);
+          ctx.lineTo(e.x - e.r - 9, e.y - 10);
+          ctx.lineTo(e.x - e.r + 2, e.y + 5);
+          ctx.moveTo(e.x + e.r, e.y - 3);
+          ctx.lineTo(e.x + e.r + 9, e.y - 10);
+          ctx.lineTo(e.x + e.r - 2, e.y + 5);
+          ctx.fill();
+        }
+      }
+      ctx.fillStyle = '#160d08';
+      ctx.fillRect(e.x - e.r, e.y - e.r - 11, e.r * 2, 5);
+      ctx.fillStyle = '#6fc85f';
+      ctx.fillRect(e.x - e.r, e.y - e.r - 11, e.r * 2 * Math.max(0, e.hp / e.maxHp), 5);
+    }
+
     function drawGladiator() {
       ctx.save();
       ctx.translate(C, C);
-      ctx.fillStyle = 'rgba(0,0,0,.25)';
+      ctx.fillStyle = 'rgba(0,0,0,.26)';
       ctx.beginPath();
       ctx.ellipse(0, 28, 34, 12, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#a987ff';
-      ctx.fillRect(-12, -30, 24, 44);
-      ctx.fillStyle = '#ff6fb1';
-      ctx.fillRect(-18, -24, 36, 20);
-      ctx.fillStyle = '#eef6ff';
+      ctx.fillStyle = '#7c2f24';
+      ctx.fillRect(-13, -29, 26, 44);
+      ctx.fillStyle = '#b9853d';
+      ctx.fillRect(-20, -24, 40, 17);
+      ctx.fillStyle = '#f2c685';
       ctx.beginPath();
       ctx.arc(0, -42, 15, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#202d50';
+      ctx.fillStyle = '#5d4323';
       ctx.fillRect(-18, -56, 36, 10);
-      ctx.fillStyle = '#65e8ff';
-      ctx.fillRect(-46, -12, 22, 32);
-      ctx.strokeStyle = '#ffd166';
-      ctx.lineWidth = 6;
+      ctx.fillStyle = '#8f744f';
       ctx.beginPath();
-      ctx.moveTo(20, -20);
-      ctx.lineTo(48, -52);
+      ctx.arc(-36, -1, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#f0d389';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(20, -19);
+      ctx.lineTo(52, -53);
       ctx.stroke();
       ctx.restore();
     }
 
     function draw() {
       ctx.clearRect(0, 0, 640, 640);
-      ctx.fillStyle = '#18223d';
+      ctx.fillStyle = '#b98f52';
       ctx.beginPath();
       ctx.arc(C, C, ARENA_R, 0, Math.PI * 2);
       ctx.fill();
-      for (let r = 70; r < ARENA_R; r += 54) {
-        ctx.strokeStyle = 'rgba(101,232,255,.16)';
-        ctx.lineWidth = 3;
+      for (let r = 72; r < ARENA_R; r += 54) {
+        ctx.strokeStyle = 'rgba(83,55,25,.22)';
+        ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.arc(C, C, r, 0, Math.PI * 2);
         ctx.stroke();
       }
+      for (let i = 0; i < 18; i++) {
+        const a = i * Math.PI / 9;
+        ctx.strokeStyle = 'rgba(255,238,176,.13)';
+        ctx.beginPath();
+        ctx.moveTo(C + Math.cos(a) * 50, C + Math.sin(a) * 50);
+        ctx.lineTo(C + Math.cos(a) * ARENA_R, C + Math.sin(a) * ARENA_R);
+        ctx.stroke();
+      }
       const s = stats();
-      ctx.strokeStyle = 'rgba(169,135,255,.35)';
+      ctx.strokeStyle = 'rgba(255,244,216,.42)';
       ctx.setLineDash([8, 8]);
       ctx.beginPath();
       ctx.arc(C, C, s.range, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
-      for (const e of state.enemies) {
-        ctx.fillStyle = 'rgba(0,0,0,.22)';
-        ctx.beginPath();
-        ctx.ellipse(e.x, e.y + 12, e.r * 1.2, e.r * .45, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = e.color;
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#050814';
-        ctx.fillRect(e.x - e.r, e.y - e.r - 10, e.r * 2, 5);
-        ctx.fillStyle = '#7dff9b';
-        ctx.fillRect(e.x - e.r, e.y - e.r - 10, e.r * 2 * Math.max(0, e.hp / e.maxHp), 5);
-      }
+      state.enemies.forEach(drawEnemy);
       drawGladiator();
       for (const p of state.particles) {
-        ctx.strokeStyle = 'rgba(255,242,176,' + Math.max(0, p.life / .16) + ')';
+        ctx.strokeStyle = 'rgba(255,232,150,' + Math.max(0, p.life / .16) + ')';
         ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.moveTo(p.x1, p.y1);
         ctx.lineTo(p.x2, p.y2);
         ctx.stroke();
       }
-      ctx.font = 'bold 18px system-ui, sans-serif';
+      ctx.font = 'bold 18px Georgia, serif';
       ctx.textAlign = 'center';
       for (const t of state.texts) {
         ctx.globalAlpha = Math.max(0, t.life);
@@ -547,7 +581,7 @@
       uiRefs.damageRange.textContent = s.damage + ' / ' + s.range;
       uiRefs.attackSpeed.textContent = (1000 / s.cooldown).toFixed(2) + '/s';
       uiRefs.log.innerHTML = state.log.map((x) => '<div>' + x + '</div>').join('');
-      uiRefs.arenaState.textContent = state.enemies.length ? state.enemies.length + ' enemigos activos' : 'Respirando...';
+      uiRefs.arenaState.textContent = state.enemies.length ? state.enemies.length + ' enemigos activos' : 'Arena despejada...';
       uiRefs.allStats.innerHTML = [
         'Bajas totales: ' + state.totalKills,
         'Nivel: ' + state.level,
@@ -584,10 +618,10 @@
 
     function renderButtons() {
       const skills = [
-        ['damage', 'Ataque', 'Más daño por golpe'],
-        ['hp', 'Vida máxima', 'Mayor resistencia'],
-        ['speed', 'Velocidad', 'Ataques más frecuentes'],
-        ['regen', 'Regeneración', 'Recupera vida cada segundo']
+        ['damage', 'Aumentar Ataque/Daño', 'Más daño por golpe'],
+        ['hp', 'Aumentar Vida Máxima / Resistencia', 'Mayor aguante en la arena'],
+        ['speed', 'Aumentar Velocidad de Ataque', 'Ataques más frecuentes'],
+        ['regen', 'Regeneración de Vida por Segundo', 'Recupera vida constantemente']
       ];
       const shop = [
         ['goldMult', 'Multiplicador de oro', '+50% oro por baja'],
@@ -630,6 +664,7 @@
     uiRefs.resetBtn.onclick = () => {
       if (confirm('¿Reiniciar todo el progreso?')) {
         localStorage.removeItem(SAVE_KEY);
+        localStorage.removeItem('gladiadorArenaIdleSaveV2');
         location.reload();
       }
     };
