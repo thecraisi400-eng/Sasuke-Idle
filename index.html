@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>El Gladiador de la Arena (Arena Idle RPG)</title>
+  <style>
+    :root {
+      --bg: #070914;
+      --app: #101528;
+      --panel: #17213b;
+      --panel-2: #202d50;
+      --ink: #eef6ff;
+      --muted: #9fb4d8;
+      --line: rgba(126, 231, 255, .22);
+      --cyan: #65e8ff;
+      --violet: #a987ff;
+      --pink: #ff6fb1;
+      --lime: #7dff9b;
+      --amber: #ffd166;
+      --danger: #ff5d73;
+      --shadow: rgba(0, 0, 0, .44);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(101,232,255,.18), transparent 28%),
+        radial-gradient(circle at 92% 10%, rgba(255,111,177,.14), transparent 28%),
+        linear-gradient(145deg, #050711, #111936 58%, #070914);
+    }
+
+    .app-shell {
+      width: min(560px, 100vw);
+      height: 100svh;
+      max-height: 100svh;
+      margin: 0 auto;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      background: linear-gradient(180deg, rgba(16,21,40,.98), rgba(8,11,24,.99));
+      box-shadow: 0 0 44px rgba(0,0,0,.58);
+      overflow: hidden;
+    }
+
+    .topbar {
+      padding: calc(8px + env(safe-area-inset-top)) 10px 7px;
+      background: linear-gradient(135deg, #182345, #11182f 56%, #23183f);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    h1 { margin: 0; font-size: clamp(.88rem, 3.5vw, 1.05rem); line-height: 1.05; color: var(--cyan); letter-spacing: .01em; }
+    .subtitle { color: var(--muted); font-size: .68rem; font-weight: 700; }
+    .rank-chip { flex: none; border: 1px solid rgba(169,135,255,.45); border-radius: 999px; padding: 5px 8px; background: rgba(169,135,255,.12); color: #dacfff; font-size: .68rem; font-weight: 900; }
+
+    .quick-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 7px; }
+    .quick-card { min-width: 0; padding: 6px 5px; border-radius: 12px; background: rgba(101,232,255,.07); border: 1px solid var(--line); text-align: center; }
+    .quick-card small { display: block; color: var(--muted); font-size: .58rem; text-transform: uppercase; letter-spacing: .08em; }
+    .quick-card strong { display: block; color: #fff; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .hero-status { padding: 7px 10px; display: grid; gap: 6px; background: rgba(0,0,0,.14); }
+    .bar { height: 15px; border-radius: 999px; overflow: hidden; background: #050814; border: 1px solid rgba(238,246,255,.14); position: relative; }
+    .fill { height: 100%; transition: width .18s ease; }
+    .hp { background: linear-gradient(90deg, #1edb73, var(--lime)); }
+    .xp { background: linear-gradient(90deg, #4c76ff, var(--cyan)); }
+    .bar span { position: absolute; inset: 0; display: grid; place-items: center; font-size: .62rem; font-weight: 900; color: #f7fbff; text-shadow: 0 1px 2px #000; }
+
+    main { min-height: 0; overflow: hidden; padding: 8px 10px; }
+    .screen { display: none; height: 100%; min-height: 0; overflow: hidden; }
+    .screen.active { display: grid; gap: 8px; grid-template-rows: auto minmax(0, 1fr); }
+    .section-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    h2 { margin: 0; font-size: .9rem; color: #ffffff; }
+
+    .card { min-height: 0; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(180deg, rgba(32,45,80,.92), rgba(19,27,50,.94)); box-shadow: 0 8px 22px var(--shadow), inset 0 1px 0 rgba(255,255,255,.05); padding: 9px; overflow: hidden; }
+    .pill { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 5px 8px; color: #eafcff; background: rgba(101,232,255,.1); border: 1px solid var(--line); font-size: .68rem; font-weight: 900; white-space: nowrap; }
+    .tip { margin: 0; color: var(--muted); font-size: .68rem; line-height: 1.2; }
+
+    .arena-layout { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 8px; height: 100%; min-height: 0; }
+    .arena-card { padding: 7px; display: grid; place-items: center; }
+    canvas { display: block; width: min(100%, 48svh); max-width: 100%; aspect-ratio: 1; border-radius: 20px; background: #18223d; border: 3px solid rgba(101,232,255,.55); box-shadow: inset 0 0 40px rgba(101,232,255,.08), 0 0 22px rgba(101,232,255,.12); }
+    .arena-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .status-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .mini-stat { background: rgba(0,0,0,.2); border: 1px solid rgba(238,246,255,.1); border-radius: 12px; padding: 6px; }
+    .mini-stat span { display: block; color: var(--muted); font-size: .58rem; }
+    .mini-stat strong { display: block; color: #fff; font-size: .8rem; margin-top: 1px; }
+    .log { height: 100%; max-height: 74px; overflow: hidden; font-size: .66rem; line-height: 1.18; color: #d7e7ff; }
+
+    .skills-layout, .shop-layout { display: grid; gap: 8px; height: 100%; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
+    .equipment-view { display: grid; grid-template-columns: 86px 1fr; gap: 8px; align-items: stretch; }
+    .glad-preview { display: grid; place-items: center; min-height: 104px; border-radius: 14px; background: radial-gradient(circle, rgba(169,135,255,.26), rgba(101,232,255,.07)); border: 1px solid rgba(169,135,255,.28); }
+    .pixel { font-size: 3rem; filter: drop-shadow(0 7px 0 rgba(0,0,0,.28)); }
+    .slots { display: grid; gap: 6px; }
+    .slot { display: flex; align-items: center; justify-content: space-between; gap: 5px; border-radius: 11px; padding: 7px 8px; background: rgba(0,0,0,.2); border: 1px dashed rgba(101,232,255,.24); font-size: .74rem; font-weight: 900; color: #e9faff; }
+    .slot small { color: var(--muted); font-size: .62rem; font-weight: 700; }
+
+    .actions-list { display: grid; gap: 6px; min-height: 0; }
+    .upgrade { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 7px; background: rgba(0,0,0,.21); border: 1px solid rgba(238,246,255,.1); border-radius: 13px; min-height: 0; }
+    .upgrade strong { display: block; color: #fff; font-size: .78rem; }
+    .upgrade small { display: block; color: var(--muted); font-size: .62rem; line-height: 1.1; }
+
+    button { border: 0; border-radius: 12px; cursor: pointer; padding: 8px 10px; color: #06101e; font-weight: 950; font-family: inherit; font-size: .72rem; background: linear-gradient(135deg, var(--cyan), #7bd4ff); box-shadow: 0 3px 0 #2477a0, 0 7px 13px rgba(0,0,0,.28); transition: transform .08s ease, filter .12s ease; white-space: nowrap; }
+    button:active { transform: translateY(2px); box-shadow: 0 1px 0 #2477a0, 0 4px 8px rgba(0,0,0,.3); }
+    button.secondary { color: #0c1022; background: linear-gradient(135deg, #c9b8ff, var(--violet)); box-shadow: 0 3px 0 #6650b5, 0 7px 13px rgba(0,0,0,.28); }
+    button.danger { color: #fff; background: linear-gradient(135deg, var(--pink), var(--danger)); box-shadow: 0 3px 0 #963244, 0 7px 13px rgba(0,0,0,.28); }
+    button:disabled { opacity: .5; cursor: not-allowed; filter: grayscale(.2); }
+
+    .settings-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .pill-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .pill-list .pill { font-size: .62rem; padding: 6px; }
+
+    .bottom-nav { padding: 7px 10px calc(7px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; background: rgba(5,8,20,.96); border-top: 1px solid var(--line); }
+    .nav-btn { display: grid; place-items: center; gap: 1px; min-height: 50px; padding: 6px 4px; border-radius: 15px; color: var(--muted); background: rgba(255,255,255,.05); box-shadow: none; border: 1px solid rgba(238,246,255,.09); }
+    .nav-btn .icon { font-size: 1rem; }
+    .nav-btn .label { font-size: .62rem; }
+    .nav-btn.active { color: #06101e; background: linear-gradient(135deg, var(--cyan), var(--violet)); box-shadow: 0 3px 0 #3154a7; }
+
+    @media (min-width: 800px) {
+      .app-shell { width: min(980px, 100vw); }
+      .arena-layout { grid-template-columns: minmax(0, 1fr) 330px; grid-template-rows: minmax(0, 1fr); }
+      .arena-info { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+      canvas { width: min(100%, 68svh); }
+      .skills-layout { grid-template-columns: 310px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+      .shop-layout { grid-template-columns: minmax(0, 1fr) 310px; grid-template-rows: minmax(0, 1fr); }
+    }
+
+    @media (max-height: 650px) {
+      .topbar { padding-top: calc(5px + env(safe-area-inset-top)); padding-bottom: 5px; }
+      .quick-stats { margin-top: 5px; }
+      .hero-status { padding-block: 5px; }
+      main { padding-block: 6px; }
+      .card { padding: 7px; border-radius: 13px; }
+      canvas { width: min(100%, 43svh); }
+      .log { max-height: 48px; }
+      .nav-btn { min-height: 44px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="title-row">
+        <h1>⚔️ El Gladiador de la Arena<br><span class="tip">Arena Idle RPG</span></h1>
+        <div class="rank-chip" id="rankTop">Principiante</div>
+      </div>
+      <div class="quick-stats" aria-label="Resumen del progreso">
+        <div class="quick-card"><small>Oro</small><strong id="goldTop">0</strong></div>
+        <div class="quick-card"><small>Ola</small><strong id="waveTop">1</strong></div>
+        <div class="quick-card"><small>Bajas</small><strong id="killsTop">0</strong></div>
+      </div>
+    </header>
+
+    <section class="hero-status" aria-label="Vida y experiencia del gladiador">
+      <div class="bar"><div id="hpFill" class="fill hp"></div><span id="hpText">Vida</span></div>
+      <div class="bar"><div id="xpFill" class="fill xp"></div><span id="xpText">Experiencia</span></div>
+    </section>
+
+    <main>
+      <section id="arena" class="screen active">
+        <div class="section-title"><h2>🏟️ Arena</h2><span class="pill" id="arenaState">Combate automático</span></div>
+        <div class="arena-layout">
+          <div class="card arena-card"><canvas id="game" width="640" height="640" aria-label="Arena de combate"></canvas></div>
+          <div class="arena-info">
+            <div class="card">
+              <h2>Progreso de la ola</h2>
+              <p class="tip">Los enemigos aparecen poco a poco. El gladiador atacará solo cuando entren en su rango.</p>
+              <div class="status-grid" style="margin-top:10px">
+                <div class="mini-stat"><span>Bajas para avanzar</span><strong id="kills">0 / 0</strong></div>
+                <div class="mini-stat"><span>Oro ganado en ola</span><strong id="waveGold">0</strong></div>
+                <div class="mini-stat"><span>Daño / rango</span><strong id="damageRange">0 / 0</strong></div>
+                <div class="mini-stat"><span>Ataques por segundo</span><strong id="attackSpeed">0/s</strong></div>
+              </div>
+            </div>
+            <div class="card">
+              <h2>Registro</h2>
+              <div id="log" class="log"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="skills" class="screen">
+        <div class="section-title"><h2>🛡️ Equipo y habilidades</h2><span class="pill">Mejora con oro</span></div>
+        <div class="skills-layout">
+        <div class="card equipment-view">
+          <div class="glad-preview"><div class="pixel">🛡️⚔️</div></div>
+          <div class="slots">
+            <div class="slot">Casco <small>Bronce curtido</small></div>
+            <div class="slot">Escudo <small>Roble reforzado</small></div>
+            <div class="slot">Espada <small>Hierro de arena</small></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Habilidades pasivas</h2>
+          <p class="tip">Un menú idle simple: toca comprar, vuelve a la arena y deja que el combate avance.</p>
+          <div id="skillButtons" class="actions-list" style="margin-top:8px"></div>
+        </div>
+        </div>
+      </section>
+
+      <section id="shop" class="screen">
+        <div class="section-title"><h2>🪙 Tienda y ajustes</h2><span class="pill">Opciones</span></div>
+        <div class="shop-layout">
+        <div class="card">
+          <h2>Mejoras generales</h2>
+          <div id="shopButtons" class="actions-list" style="margin-top:8px"></div>
+        </div>
+        <div class="card">
+          <h2>Ajustes</h2>
+          <div class="settings-buttons" style="margin-top:12px">
+            <button id="soundBtn" class="secondary">🔊 Sonido: Activado</button>
+            <button id="resetBtn" class="danger">🧨 Reiniciar Progreso</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Estadísticas</h2>
+          <div id="allStats" class="pill-list" style="margin-top:8px"></div>
+        </div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Menú principal">
+      <button class="nav-btn active" data-tab="arena"><span class="icon">🏟️</span><span class="label">Arena</span></button>
+      <button class="nav-btn" data-tab="skills"><span class="icon">🛡️</span><span class="label">Mejoras</span></button>
+      <button class="nav-btn" data-tab="shop"><span class="icon">🪙</span><span class="label">Tienda</span></button>
+    </nav>
+  </div>
+
+  <script>
+    'use strict';
+
+    const $ = (id) => document.getElementById(id);
+    const uiRefs = {
+      rankTop: $('rankTop'), goldTop: $('goldTop'), waveTop: $('waveTop'), killsTop: $('killsTop'),
+      hpFill: $('hpFill'), hpText: $('hpText'), xpFill: $('xpFill'), xpText: $('xpText'),
+      kills: $('kills'), waveGold: $('waveGold'), damageRange: $('damageRange'), attackSpeed: $('attackSpeed'),
+      log: $('log'), skillButtons: $('skillButtons'), shopButtons: $('shopButtons'), soundBtn: $('soundBtn'),
+      resetBtn: $('resetBtn'), allStats: $('allStats'), arenaState: $('arenaState')
+    };
+
+    const canvas = $('game');
+    const ctx = canvas.getContext('2d');
+    const C = canvas.width / 2;
+    const ARENA_R = 292;
+    const SAVE_KEY = 'gladiadorArenaIdleSaveV2';
+    const base = { hp: 140, damage: 14, range: 118, attackCooldown: 850, regen: .35 };
+    const defaultUpgrades = { damage: 0, hp: 0, speed: 0, regen: 0, goldMult: 0, splash: 0 };
+    const state = {
+      gold: 0, xp: 0, level: 1, wave: 1, kills: 0, waveGold: 0, totalKills: 0,
+      sound: true, hp: base.hp, enemies: [], texts: [], particles: [], lastAttack: 0,
+      upgrades: { ...defaultUpgrades }, log: []
+    };
+    const enemyTypes = [
+      { name: 'Goblin', color: '#7dff9b', hp: 28, speed: 27, damage: 5, gold: 7, xp: 8 },
+      { name: 'Esqueleto', color: '#c9b8ff', hp: 36, speed: 22, damage: 7, gold: 10, xp: 11 },
+      { name: 'Slime', color: '#65e8ff', hp: 44, speed: 18, damage: 4, gold: 12, xp: 10 }
+    ];
+    let audioCtx;
+    let lastTime = performance.now();
+    let spawnTimer = 1.2;
+    let saveTimer = 0;
+    let lastButtonGold = -1;
+
+    function load() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
+        if (saved) Object.assign(state, saved, { upgrades: { ...defaultUpgrades, ...(saved.upgrades || {}) } });
+      } catch (error) {
+        console.warn('No se pudo cargar la partida guardada.', error);
+      }
+      state.enemies = [];
+      state.texts = [];
+      state.particles = [];
+      state.hp = Math.min(stats().maxHp, state.hp || stats().maxHp);
+    }
+
+    function save() {
+      const { enemies, texts, particles, lastAttack, ...data } = state;
+      data.log = state.log.slice(0, 8);
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    }
+
+    function stats() {
+      return {
+        maxHp: Math.round(base.hp + state.upgrades.hp * 48),
+        damage: Math.round(base.damage + state.upgrades.damage * 7 + state.level * 2),
+        range: base.range + state.upgrades.splash * 9,
+        cooldown: Math.max(260, base.attackCooldown - state.upgrades.speed * 72),
+        regen: base.regen + state.upgrades.regen * 1.15,
+        goldMult: 1 + state.upgrades.goldMult * .5,
+        splash: state.upgrades.splash > 0
+      };
+    }
+
+    function xpNeed() { return 90 + state.level * 38; }
+    function killsNeeded() { return 5 + state.wave; }
+    function maxEnemies() { return Math.min(4 + Math.floor(state.wave / 3), 10); }
+    function spawnDelay() { return Math.max(.95, 2.4 - state.wave * .055); }
+
+    function rank() {
+      if (state.wave >= 25) return 'Leyenda';
+      if (state.wave >= 15) return 'Campeón Imperial';
+      if (state.wave >= 8) return 'Veterano';
+      return 'Principiante';
+    }
+
+    function beep(freq, dur, type = 'square', gain = .035) {
+      if (!state.sound) return;
+      audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      g.gain.value = gain;
+      osc.connect(g);
+      g.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur);
+    }
+
+    function log(msg) {
+      state.log.unshift('• ' + msg);
+      state.log = state.log.slice(0, 16);
+    }
+
+    function spawnEnemy() {
+      const t = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+      const a = Math.random() * Math.PI * 2;
+      const scale = 1 + (state.wave - 1) * .1;
+      state.enemies.push({
+        ...t,
+        x: C + Math.cos(a) * ARENA_R,
+        y: C + Math.sin(a) * ARENA_R,
+        maxHp: Math.round(t.hp * scale),
+        hp: Math.round(t.hp * scale),
+        r: 15 + Math.random() * 4,
+        attackCd: .8
+      });
+    }
+
+    function floating(x, y, text, color) {
+      state.texts.push({ x, y, text, color, life: 1 });
+    }
+
+    function gainReward(e) {
+      const gold = Math.round(e.gold * (1 + state.wave * .07) * stats().goldMult);
+      state.gold += gold;
+      state.waveGold += gold;
+      state.kills++;
+      state.totalKills++;
+      state.xp += e.xp;
+      floating(e.x, e.y, '+' + gold + ' oro', '#ffd166');
+      beep(520, .08, 'triangle');
+      while (state.xp >= xpNeed()) {
+        state.xp -= xpNeed();
+        state.level++;
+        state.hp = stats().maxHp;
+        log('¡Subes a nivel ' + state.level + '!');
+      }
+      if (state.kills >= killsNeeded()) {
+        state.wave++;
+        state.kills = 0;
+        state.waveGold = 0;
+        state.enemies.length = 0;
+        spawnTimer = 1.7;
+        log('Comienza la ola ' + state.wave + '.');
+      }
+    }
+
+    function attack(now) {
+      const s = stats();
+      if (now - state.lastAttack < s.cooldown) return;
+      let target = null;
+      let best = Infinity;
+      for (const e of state.enemies) {
+        const d = Math.hypot(e.x - C, e.y - C);
+        if (d < s.range && d < best) {
+          best = d;
+          target = e;
+        }
+      }
+      if (!target) return;
+      state.lastAttack = now;
+      beep(180, .04, 'sawtooth');
+      const dmg = s.damage;
+      target.hp -= dmg;
+      floating(target.x, target.y - 12, '-' + dmg, '#eafcff');
+      state.particles.push({ x1: C, y1: C, x2: target.x, y2: target.y, life: .16 });
+      if (s.splash) {
+        for (const e of state.enemies) {
+          if (e !== target && Math.hypot(e.x - target.x, e.y - target.y) < 58) {
+            e.hp -= Math.round(dmg * .42);
+            floating(e.x, e.y, 'área', '#ff6fb1');
+          }
+        }
+      }
+      state.enemies = state.enemies.filter((e) => {
+        if (e.hp <= 0) {
+          gainReward(e);
+          return false;
+        }
+        return true;
+      });
+    }
+
+    function update(dt, now) {
+      const s = stats();
+      spawnTimer -= dt;
+      if (spawnTimer <= 0 && state.enemies.length < maxEnemies()) {
+        spawnEnemy();
+        spawnTimer = spawnDelay();
+      }
+      state.hp = Math.min(s.maxHp, state.hp + s.regen * dt);
+      for (const e of state.enemies) {
+        const d = Math.hypot(C - e.x, C - e.y);
+        if (d > 30) {
+          e.x += ((C - e.x) / d) * e.speed * dt;
+          e.y += ((C - e.y) / d) * e.speed * dt;
+        } else {
+          e.attackCd -= dt;
+          if (e.attackCd <= 0) {
+            state.hp -= e.damage;
+            e.attackCd = 1.25;
+            floating(C, C - 42, '-' + e.damage + ' vida', '#ff5d73');
+            beep(90, .09, 'square');
+          }
+        }
+      }
+      attack(now);
+      if (state.hp <= 0) {
+        state.hp = s.maxHp;
+        state.kills = 0;
+        state.waveGold = 0;
+        state.enemies.length = 0;
+        spawnTimer = 1.7;
+        log('Has caído. La ola ' + state.wave + ' se reinicia, conservas tu oro.');
+      }
+      state.texts.forEach((t) => { t.y -= 32 * dt; t.life -= dt; });
+      state.texts = state.texts.filter((t) => t.life > 0);
+      state.particles.forEach((p) => { p.life -= dt; });
+      state.particles = state.particles.filter((p) => p.life > 0);
+      saveTimer += dt;
+      if (saveTimer > 4) {
+        save();
+        saveTimer = 0;
+      }
+    }
+
+    function drawGladiator() {
+      ctx.save();
+      ctx.translate(C, C);
+      ctx.fillStyle = 'rgba(0,0,0,.25)';
+      ctx.beginPath();
+      ctx.ellipse(0, 28, 34, 12, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#a987ff';
+      ctx.fillRect(-12, -30, 24, 44);
+      ctx.fillStyle = '#ff6fb1';
+      ctx.fillRect(-18, -24, 36, 20);
+      ctx.fillStyle = '#eef6ff';
+      ctx.beginPath();
+      ctx.arc(0, -42, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#202d50';
+      ctx.fillRect(-18, -56, 36, 10);
+      ctx.fillStyle = '#65e8ff';
+      ctx.fillRect(-46, -12, 22, 32);
+      ctx.strokeStyle = '#ffd166';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(20, -20);
+      ctx.lineTo(48, -52);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, 640, 640);
+      ctx.fillStyle = '#18223d';
+      ctx.beginPath();
+      ctx.arc(C, C, ARENA_R, 0, Math.PI * 2);
+      ctx.fill();
+      for (let r = 70; r < ARENA_R; r += 54) {
+        ctx.strokeStyle = 'rgba(101,232,255,.16)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(C, C, r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      const s = stats();
+      ctx.strokeStyle = 'rgba(169,135,255,.35)';
+      ctx.setLineDash([8, 8]);
+      ctx.beginPath();
+      ctx.arc(C, C, s.range, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      for (const e of state.enemies) {
+        ctx.fillStyle = 'rgba(0,0,0,.22)';
+        ctx.beginPath();
+        ctx.ellipse(e.x, e.y + 12, e.r * 1.2, e.r * .45, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = e.color;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#050814';
+        ctx.fillRect(e.x - e.r, e.y - e.r - 10, e.r * 2, 5);
+        ctx.fillStyle = '#7dff9b';
+        ctx.fillRect(e.x - e.r, e.y - e.r - 10, e.r * 2 * Math.max(0, e.hp / e.maxHp), 5);
+      }
+      drawGladiator();
+      for (const p of state.particles) {
+        ctx.strokeStyle = 'rgba(255,242,176,' + Math.max(0, p.life / .16) + ')';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(p.x1, p.y1);
+        ctx.lineTo(p.x2, p.y2);
+        ctx.stroke();
+      }
+      ctx.font = 'bold 18px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      for (const t of state.texts) {
+        ctx.globalAlpha = Math.max(0, t.life);
+        ctx.fillStyle = t.color;
+        ctx.fillText(t.text, t.x, t.y);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function ui() {
+      const s = stats();
+      uiRefs.goldTop.textContent = Math.floor(state.gold);
+      uiRefs.waveTop.textContent = state.wave;
+      uiRefs.killsTop.textContent = state.totalKills;
+      uiRefs.rankTop.textContent = rank();
+      uiRefs.hpFill.style.width = (state.hp / s.maxHp * 100) + '%';
+      uiRefs.hpText.textContent = Math.ceil(state.hp) + ' / ' + s.maxHp + ' Vida';
+      uiRefs.xpFill.style.width = (state.xp / xpNeed() * 100) + '%';
+      uiRefs.xpText.textContent = 'Nivel ' + state.level + ' · XP ' + Math.floor(state.xp) + '/' + xpNeed();
+      uiRefs.kills.textContent = state.kills + ' / ' + killsNeeded();
+      uiRefs.waveGold.textContent = state.waveGold;
+      uiRefs.damageRange.textContent = s.damage + ' / ' + s.range;
+      uiRefs.attackSpeed.textContent = (1000 / s.cooldown).toFixed(2) + '/s';
+      uiRefs.log.innerHTML = state.log.map((x) => '<div>' + x + '</div>').join('');
+      uiRefs.arenaState.textContent = state.enemies.length ? state.enemies.length + ' enemigos activos' : 'Respirando...';
+      uiRefs.allStats.innerHTML = [
+        'Bajas totales: ' + state.totalKills,
+        'Nivel: ' + state.level,
+        'Regeneración: ' + s.regen.toFixed(1) + '/s',
+        'Multiplicador oro: x' + s.goldMult.toFixed(1),
+        'Splash: ' + (s.splash ? 'Sí' : 'No')
+      ].map((x) => '<span class="pill">' + x + '</span>').join('');
+    }
+
+    function cost(key) {
+      return Math.round(({ damage: 55, hp: 50, speed: 70, regen: 85, goldMult: 180, splash: 260 }[key]) * Math.pow(1.55, state.upgrades[key]));
+    }
+
+    function buy(key) {
+      const c = cost(key);
+      if (state.gold < c) {
+        beep(70, .08);
+        return;
+      }
+      state.gold -= c;
+      state.upgrades[key]++;
+      if (key === 'hp') state.hp = stats().maxHp;
+      log('Mejora comprada: ' + key);
+      beep(760, .1, 'triangle');
+      renderButtons();
+      save();
+    }
+
+    function upgradeCard(d) {
+      const c = cost(d[0]);
+      const disabled = state.gold < c ? ' disabled' : '';
+      return '<div class="upgrade"><div><strong>' + d[1] + '</strong><small>' + d[2] + ' · Nivel ' + state.upgrades[d[0]] + '</small></div><button data-buy="' + d[0] + '"' + disabled + '>🪙 ' + c + '</button></div>';
+    }
+
+    function renderButtons() {
+      const skills = [
+        ['damage', 'Ataque', 'Más daño por golpe'],
+        ['hp', 'Vida máxima', 'Mayor resistencia'],
+        ['speed', 'Velocidad', 'Ataques más frecuentes'],
+        ['regen', 'Regeneración', 'Recupera vida cada segundo']
+      ];
+      const shop = [
+        ['goldMult', 'Multiplicador de oro', '+50% oro por baja'],
+        ['splash', 'Ataque en área', 'Daña enemigos cercanos']
+      ];
+      uiRefs.skillButtons.innerHTML = skills.map(upgradeCard).join('');
+      uiRefs.shopButtons.innerHTML = shop.map(upgradeCard).join('');
+      document.querySelectorAll('[data-buy]').forEach((b) => { b.onclick = () => buy(b.dataset.buy); });
+    }
+
+    function loop(now) {
+      const dt = Math.min(.05, (now - lastTime) / 1000);
+      lastTime = now;
+      update(dt, now);
+      draw();
+      ui();
+      const currentGold = Math.floor(state.gold);
+      if (currentGold !== lastButtonGold) {
+        renderButtons();
+        lastButtonGold = currentGold;
+      }
+      requestAnimationFrame(loop);
+    }
+
+    document.querySelectorAll('.nav-btn').forEach((b) => {
+      b.onclick = () => {
+        document.querySelectorAll('.nav-btn,.screen').forEach((x) => x.classList.remove('active'));
+        b.classList.add('active');
+        $(b.dataset.tab).classList.add('active');
+      };
+    });
+
+    uiRefs.soundBtn.onclick = () => {
+      state.sound = !state.sound;
+      uiRefs.soundBtn.textContent = state.sound ? '🔊 Sonido: Activado' : '🔇 Sonido: Desactivado';
+      if (state.sound) beep(440, .08);
+      save();
+    };
+
+    uiRefs.resetBtn.onclick = () => {
+      if (confirm('¿Reiniciar todo el progreso?')) {
+        localStorage.removeItem(SAVE_KEY);
+        location.reload();
+      }
+    };
+
+    load();
+    renderButtons();
+    lastButtonGold = Math.floor(state.gold);
+    log('Menú listo: entra a la arena, gana oro y compra mejoras.');
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
