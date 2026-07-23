@@ -23,7 +23,7 @@
             width: 393px;
             height: 793px;
             background-color: #000000; /* Fondo negro absoluto solicitado */
-            border: 2px solid #444; /* Borde para delimitar la pantalla */
+            outline: 2px solid #444; /* Borde visual sin restar pixeles al contenido */
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -34,17 +34,39 @@
         .seccion-superior {
             height: 490px;
             width: 100%;
-            border-bottom: 1px solid #555; /* Línea divisoria visible */
             box-sizing: border-box;
             display: flex;
             justify-content: center;
             align-items: center;
+            overflow: hidden;
+        }
+
+        .escenario-recorte {
+            --inicio-x: 7px;
+            --inicio-y: 7px;
+            --fin-x: 399px;
+            --fin-y: 496px;
+            width: calc(var(--fin-x) - var(--inicio-x) + 1px);
+            height: calc(var(--fin-y) - var(--inicio-y) + 1px);
+            position: relative;
+            overflow: hidden;
+            flex: none;
+        }
+
+        .escenario-recorte img {
+            position: absolute;
+            left: calc(-1 * var(--inicio-x));
+            top: calc(-1 * var(--inicio-y));
+            max-width: none;
+            width: auto;
+            height: auto;
         }
 
         /* Segunda división: el restante (793px - 490px = 303px) */
         .seccion-inferior {
             height: 303px;
             width: 100%;
+            border-top: 1px solid #555; /* Línea divisoria visible */
             box-sizing: border-box;
             display: flex;
             justify-content: center;
@@ -63,7 +85,9 @@
     <div class="android-mockup">
         <!-- División hasta los 490px -->
         <div class="seccion-superior">
-            <span class="etiqueta">Sección Superior (490px)</span>
+            <div class="escenario-recorte" aria-label="Recorte del escenario desde X 7, Y 7 hasta X 399, Y 496">
+                <img src="assets/images/escenario/a1.webp" alt="Escenario recortado">
+            </div>
         </div>
         
         <!-- División con el espacio restante -->
