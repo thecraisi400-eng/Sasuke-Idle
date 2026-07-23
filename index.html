@@ -173,37 +173,51 @@
         /* NUEVO: Barra de navegación inferior */
         .navegacion-inferior {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 5px;
-            padding: 16px 8px 12px;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 10px;
+            padding: 14px 12px 10px;
             box-sizing: border-box;
             align-content: center;
         }
 
         .boton-navegacion {
             min-width: 0;
-            min-height: 66px;
-            border: 1px solid rgba(126, 159, 255, 0.28);
-            border-radius: 12px;
-            background: linear-gradient(145deg, #151a25 0%, #0e121b 100%);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 7px 14px rgba(0, 0, 0, 0.32);
-            color: #f4f7ff;
+            min-height: 56px;
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            border-radius: 16px;
+            background: var(--fondo-slot, #edf4ff);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 7px 14px rgba(0, 0, 0, 0.28);
+            color: #243042;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 5px;
-            font-size: 7.5px;
-            font-weight: 800;
-            letter-spacing: 0.25px;
+            gap: 4px;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.35px;
             text-transform: uppercase;
-            text-shadow: 0 1px 3px #000;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
         }
 
+        .boton-navegacion:nth-child(1) { --fondo-slot: linear-gradient(145deg, #ffe0de 0%, #ffc7c1 100%); }
+        .boton-navegacion:nth-child(2) { --fondo-slot: linear-gradient(145deg, #e8dcff 0%, #d5c3ff 100%); }
+        .boton-navegacion:nth-child(3) { --fondo-slot: linear-gradient(145deg, #dcecff 0%, #c3ddff 100%); }
+        .boton-navegacion:nth-child(4) { --fondo-slot: linear-gradient(145deg, #fff1c7 0%, #ffe4a1 100%); }
+        .boton-navegacion:nth-child(5) { --fondo-slot: linear-gradient(145deg, #daf6e5 0%, #bff0d3 100%); }
+        .boton-navegacion:nth-child(6) { --fondo-slot: linear-gradient(145deg, #d9f7ff 0%, #bdf0fb 100%); }
+
         .boton-navegacion .icono-navegacion {
-            font-size: 18px;
+            width: 28px;
+            height: 28px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.62);
+            font-size: 17px;
             line-height: 1;
-            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7));
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.22));
         }
 
         /* NUEVO: Mitad inferior del panel, conservada como área disponible */
