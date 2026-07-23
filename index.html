@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo Vertical Android</title>
+    <style>
+        /* Estilos para centrar el modelo en tu navegador */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #222; /* Fondo gris oscuro fuera del modelo para contrastar */
+            font-family: sans-serif;
+            color: #fff;
+        }
+
+        /* Contenedor principal con las medidas exactas del dispositivo */
+        .android-mockup {
+            width: 393px;
+            height: 793px;
+            background-color: #000000; /* Fondo negro absoluto solicitado */
+            border: 2px solid #444; /* Borde para delimitar la pantalla */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Primera división: exactamente 490px de alto */
+        .seccion-superior {
+            height: 490px;
+            width: 100%;
+            border-bottom: 1px solid #555; /* Línea divisoria visible */
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Segunda división: el restante (793px - 490px = 303px) */
+        .seccion-inferior {
+            height: 303px;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Texto opcional para identificar las áreas */
+        .etiqueta {
+            color: #888;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="android-mockup">
+        <!-- División hasta los 490px -->
+        <div class="seccion-superior">
+            <span class="etiqueta">Sección Superior (490px)</span>
+        </div>
+        
+        <!-- División con el espacio restante -->
+        <div class="seccion-inferior">
+            <span class="etiqueta">Sección Inferior (303px)</span>
+        </div>
+    </div>
+
+</body>
+</html>
