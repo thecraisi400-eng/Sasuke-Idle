@@ -28,7 +28,93 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
         }
+
+        /* INICIO HUD – MODIFICACIÓN SOLICITADA */
+        .hud-superior {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            width: 100%;
+            height: 54px;
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: 1fr 88px 1fr;
+            align-items: stretch;
+            gap: 6px;
+            padding: 6px 8px;
+            background: #000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        .hud-seccion {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            box-sizing: border-box;
+        }
+
+        .hud-hp {
+            justify-content: flex-start;
+            gap: 7px;
+            padding: 0 7px;
+        }
+
+        .hud-hp-barra {
+            flex: 1;
+            height: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            border-radius: 8px;
+            background: #2a0000;
+        }
+
+        .hud-hp-relleno {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #b90000, #ff3030);
+            transition: width 0.2s ease;
+        }
+
+        .hud-hp-texto,
+        .hud-recurso {
+            white-space: nowrap;
+            font-weight: 700;
+            text-shadow: 0 1px 2px #000;
+        }
+
+        .hud-identidad {
+            flex-direction: column;
+            gap: 2px;
+            line-height: 1;
+        }
+
+        .hud-nombre {
+            color: #f5f5f5;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .hud-nivel {
+            color: #d8d8d8;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .hud-recursos {
+            gap: 12px;
+            padding: 0 8px;
+        }
+        /* FIN HUD */
 
         /* Primera división: exactamente 490px de alto */
         .seccion-superior {
@@ -83,6 +169,27 @@
 <body>
 
     <div class="android-mockup">
+        <!-- INICIO HUD – MODIFICACIÓN SOLICITADA -->
+        <div class="hud-superior" aria-label="Estado del personaje">
+            <div class="hud-seccion hud-hp" aria-label="Salud del personaje">
+                <div class="hud-hp-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+                    <div class="hud-hp-relleno"></div>
+                </div>
+                <span class="hud-hp-texto">100 HP</span>
+            </div>
+
+            <div class="hud-seccion hud-identidad" aria-label="Identidad del personaje">
+                <span class="hud-nombre">SASUKE</span>
+                <span class="hud-nivel">Lv. 1</span>
+            </div>
+
+            <div class="hud-seccion hud-recursos" aria-label="Recursos económicos del personaje">
+                <span class="hud-recurso hud-oro">💰 0</span>
+                <span class="hud-recurso hud-diamantes">💎 0</span>
+            </div>
+        </div>
+        <!-- FIN HUD -->
+
         <!-- División hasta los 490px -->
         <div class="seccion-superior">
             <div class="escenario-recorte" aria-label="Recorte del escenario desde X 7, Y 7 hasta X 399, Y 496">
@@ -96,5 +203,57 @@
         </div>
     </div>
 
+    <script>
+        // INICIO HUD – MODIFICACIÓN SOLICITADA
+        const hudElementos = {
+            barraHp: document.querySelector('.hud-hp-relleno'),
+            barraHpAccesible: document.querySelector('.hud-hp-barra'),
+            textoHp: document.querySelector('.hud-hp-texto'),
+            nivel: document.querySelector('.hud-nivel'),
+            oro: document.querySelector('.hud-oro'),
+            diamantes: document.querySelector('.hud-diamantes')
+        };
+
+        function obtenerEstadoPersonajeHUD() {
+            return window.estadoPersonaje || window.personaje || window.sasuke || window.player || {};
+        }
+
+        function obtenerValorHUD(claves, valorPorDefecto) {
+            const estadoPersonajeHUD = obtenerEstadoPersonajeHUD();
+
+            for (const clave of claves) {
+                if (estadoPersonajeHUD[clave] !== undefined) {
+                    return estadoPersonajeHUD[clave];
+                }
+
+                if (window[clave] !== undefined) {
+                    return window[clave];
+                }
+            }
+
+            return valorPorDefecto;
+        }
+
+        function renderizarHUDPersonaje() {
+            const hpActual = Number(obtenerValorHUD(['hp', 'salud', 'vida'], 100));
+            const hpMaximo = Number(obtenerValorHUD(['hpMax', 'saludMaxima', 'vidaMaxima'], 100));
+            const nivel = obtenerValorHUD(['nivel', 'level'], 1);
+            const oro = obtenerValorHUD(['oro', 'gold'], 0);
+            const diamantes = obtenerValorHUD(['diamantes', 'diamonds'], 0);
+            const porcentajeHp = hpMaximo > 0 ? Math.max(0, Math.min(100, (hpActual / hpMaximo) * 100)) : 0;
+
+            hudElementos.barraHp.style.width = `${porcentajeHp}%`;
+            hudElementos.barraHpAccesible.setAttribute('aria-valuenow', String(Math.round(porcentajeHp)));
+            hudElementos.textoHp.textContent = `${hpActual} HP`;
+            hudElementos.nivel.textContent = `Lv. ${nivel}`;
+            hudElementos.oro.textContent = `💰 ${oro}`;
+            hudElementos.diamantes.textContent = `💎 ${diamantes}`;
+
+            requestAnimationFrame(renderizarHUDPersonaje);
+        }
+
+        renderizarHUDPersonaje();
+        // FIN HUD
+    </script>
 </body>
 </html>
