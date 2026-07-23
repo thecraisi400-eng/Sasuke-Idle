@@ -39,6 +39,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            overflow: hidden;
+        }
+
+        /* Escenario centrado dentro del primer cuadro (7,7) a (399,496) */
+        .escenario-superior {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+            display: block;
         }
 
         /* Segunda división: el restante (793px - 490px = 303px) */
@@ -63,7 +73,11 @@
     <div class="android-mockup">
         <!-- División hasta los 490px -->
         <div class="seccion-superior">
-            <span class="etiqueta">Sección Superior (490px)</span>
+            <img
+                class="escenario-superior"
+                src="assets/images/escenario/a1.webp"
+                alt="Escenario principal"
+            >
         </div>
         
         <!-- División con el espacio restante -->
