@@ -176,9 +176,21 @@
             width: calc(var(--personaje-fin-x) - var(--personaje-inicio-x) + 1px);
             height: calc(var(--personaje-fin-y) - var(--personaje-inicio-y) + 1px);
             overflow: hidden;
-            transform: translate(-50%, calc(-50% + 60px));
+            transform: translate(-50%, calc(-50% + 70px));
+            animation: flotar-personaje 4s ease-in-out infinite;
             z-index: 1;
             pointer-events: none;
+        }
+
+
+        @keyframes flotar-personaje {
+            0%, 100% {
+                transform: translate(-50%, calc(-50% + 70px));
+            }
+
+            50% {
+                transform: translate(-50%, calc(-50% + 76px));
+            }
         }
 
         .personaje-recorte img {
@@ -238,12 +250,12 @@
             white-space: nowrap;
         }
 
-        .boton-proximamente {
+        .boton-empezar {
             position: absolute;
             top: 73px;
             left: 50%;
-            width: 56px;
-            height: 56px;
+            width: 64px;
+            height: 64px;
             padding: 0;
             border: 2px solid rgba(255, 255, 255, 0.65);
             border-radius: 50%;
@@ -253,7 +265,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 900;
             letter-spacing: 0.2px;
             line-height: 1;
@@ -341,7 +353,7 @@
                 <span class="hud-nivel">Lv. 1</span>
             </div>
 
-            <button class="boton-proximamente" type="button" aria-label="Función aún no disponible">EMPEZAR</button>
+            <button class="boton-empezar" type="button" aria-label="Función aún no disponible">EMPEZAR</button>
 
             <div class="hud-seccion hud-recursos" aria-label="Recursos económicos del personaje">
                 <span class="hud-recurso hud-oro">💰 0</span>
