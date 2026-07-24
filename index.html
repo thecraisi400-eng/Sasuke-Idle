@@ -176,7 +176,7 @@
             width: calc(var(--personaje-fin-x) - var(--personaje-inicio-x) + 1px);
             height: calc(var(--personaje-fin-y) - var(--personaje-inicio-y) + 1px);
             overflow: hidden;
-            transform: translate(-50%, calc(-50% + 15px));
+            transform: translate(-50%, calc(-50% + 35px));
             z-index: 1;
             pointer-events: none;
         }
@@ -239,18 +239,19 @@
         }
 
         .boton-proximamente {
-            width: 100%;
-            height: 38px;
-            border: 1px solid rgba(255, 255, 255, 0.24);
-            border-radius: 12px;
-            background: linear-gradient(180deg, #2fcb55 0%, #168833 100%);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 5px 12px rgba(0, 0, 0, 0.35);
+            position: absolute;
+            top: 58px;
+            left: 50%;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border: 2px solid rgba(255, 255, 255, 0.65);
+            border-radius: 50%;
+            background: linear-gradient(180deg, #31df61 0%, #148a34 100%);
+            box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.32), 0 5px 12px rgba(0, 0, 0, 0.45);
             color: #f4fff6;
-            font-size: 12px;
-            font-weight: 900;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            font-size: 0;
+            transform: translateX(-50%);
             cursor: default;
         }
 
@@ -333,6 +334,8 @@
                 <span class="hud-nombre">SASUKE</span>
                 <span class="hud-nivel">Lv. 1</span>
             </div>
+
+            <button class="boton-proximamente" type="button" aria-label="Función aún no disponible"></button>
 
             <div class="hud-seccion hud-recursos" aria-label="Recursos económicos del personaje">
                 <span class="hud-recurso hud-oro">💰 0</span>
