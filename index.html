@@ -156,10 +156,35 @@
             flex: none;
         }
 
-        .escenario-recorte img {
+        .escenario-recorte > img {
             position: absolute;
             left: calc(-1 * var(--inicio-x));
             top: calc(-1 * var(--inicio-y));
+            max-width: none;
+            width: auto;
+            height: auto;
+        }
+
+        .personaje-recorte {
+            --personaje-inicio-x: 6px;
+            --personaje-inicio-y: 7px;
+            --personaje-fin-x: 52px;
+            --personaje-fin-y: 116px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: calc(var(--personaje-fin-x) - var(--personaje-inicio-x) + 1px);
+            height: calc(var(--personaje-fin-y) - var(--personaje-inicio-y) + 1px);
+            overflow: hidden;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .personaje-recorte img {
+            position: absolute;
+            left: calc(-1 * var(--personaje-inicio-x));
+            top: calc(-1 * var(--personaje-inicio-y));
             max-width: none;
             width: auto;
             height: auto;
@@ -304,6 +329,9 @@
         <div class="seccion-superior">
             <div class="escenario-recorte" aria-label="Recorte del escenario desde X 7, Y 7 hasta X 399, Y 496">
                 <img src="assets/images/escenario/a1.webp" alt="Escenario recortado">
+                <div class="personaje-recorte" aria-label="Personaje recortado desde X 6, Y 7 hasta X 52, Y 116">
+                    <img src="assets/images/escenario/b1.webp" alt="Personaje recortado">
+                </div>
             </div>
         </div>
         
@@ -320,7 +348,7 @@
             <nav class="navegacion-inferior" aria-label="Navegación principal del juego">
                 <div class="boton-navegacion"><span class="icono-navegacion" aria-hidden="true">⚔️</span><span>Combate</span></div>
                 <div class="boton-navegacion"><span class="icono-navegacion" aria-hidden="true">🥷</span><span>Personaje</span></div>
-                <div class="boton-navegacion"><span class="icono-navegacion" aria-hidden="true">🛡️</span><span>Equipo</span></div>
+                <div class="boton-navegacion"><span class="icono-navegacion" aria-hidden="true">🛡️</span><span>Mazmorras</span></div>
                 <div class="boton-navegacion"><span class="icono-navegacion" aria-hidden="true">✨</span><span>Habilidades</span></div>
                 <div class="boton-navegacion"><span class="icono-navegacion" aria-hidden="true">⛩️</span><span>Clanes</span></div>
                 <div class="boton-navegacion"><span class="icono-navegacion" aria-hidden="true">💎</span><span>Recursos</span></div>
