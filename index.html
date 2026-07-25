@@ -176,7 +176,7 @@
             width: calc(var(--personaje-fin-x) - var(--personaje-inicio-x) + 1px);
             height: calc(var(--personaje-fin-y) - var(--personaje-inicio-y) + 1px);
             overflow: hidden;
-            transform: translate(-50%, calc(-50% + 70px));
+            transform: translate(-50%, calc(-50% + 87px));
             animation: flotar-personaje 4s ease-in-out infinite;
             z-index: 1;
             pointer-events: none;
@@ -185,11 +185,11 @@
 
         @keyframes flotar-personaje {
             0%, 100% {
-                transform: translate(-50%, calc(-50% + 70px));
+                transform: translate(-50%, calc(-50% + 87px));
             }
 
             50% {
-                transform: translate(-50%, calc(-50% + 76px));
+                transform: translate(-50%, calc(-50% + 93px));
             }
         }
 
@@ -254,8 +254,8 @@
             position: absolute;
             top: 73px;
             left: 50%;
-            width: 64px;
-            height: 64px;
+            width: 76px;
+            height: 76px;
             padding: 0;
             border: 2px solid rgba(255, 255, 255, 0.65);
             border-radius: 50%;
@@ -265,7 +265,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 900;
             letter-spacing: 0.2px;
             line-height: 1;
@@ -380,8 +380,6 @@
                 <span class="info-inferior-centro">ENEMIGO: 75 ⚔️</span>
                 <span class="info-inferior-derecha">NIVEL: 1</span>
             </div>
-
-            <button class="boton-proximamente" type="button" aria-label="Función aún no disponible">Próximamente</button>
 
             <!-- NUEVO: Barra de navegación inferior -->
             <nav class="navegacion-inferior" aria-label="Navegación principal del juego">
