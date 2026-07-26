@@ -165,23 +165,52 @@
             height: auto;
         }
 
+        .personaje-recorte,
+        .enemigo-recorte {
+            position: absolute;
+            top: 50%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
         .personaje-recorte {
             --personaje-inicio-x: 2px;
             --personaje-inicio-y: 2px;
             --personaje-fin-x: 65px;
             --personaje-fin-y: 123px;
-            position: absolute;
             left: 50%;
-            top: 50%;
             width: calc(var(--personaje-fin-x) - var(--personaje-inicio-x) + 1px);
             height: calc(var(--personaje-fin-y) - var(--personaje-inicio-y) + 1px);
-            overflow: hidden;
             transform: translate(-50%, calc(-50% + 87px));
             animation: flotar-personaje 4s ease-in-out infinite;
-            z-index: 1;
-            pointer-events: none;
+            transition: left 0.45s ease, transform 0.45s ease;
         }
 
+        .android-mockup.juego-iniciado .personaje-recorte {
+            left: 0;
+            transform: translate(0, calc(-50% + 87px));
+            animation-name: flotar-personaje-iniciado;
+        }
+
+        .enemigo-recorte {
+            --enemigo-inicio-x: 7px;
+            --enemigo-inicio-y: 140px;
+            --enemigo-fin-x: 113px;
+            --enemigo-fin-y: 221px;
+            right: 0;
+            width: calc(var(--enemigo-fin-x) - var(--enemigo-inicio-x) + 1px);
+            height: calc(var(--enemigo-fin-y) - var(--enemigo-inicio-y) + 1px);
+            opacity: 0;
+            visibility: hidden;
+            transform: translate(0, calc(-50% + 87px));
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+
+        .android-mockup.juego-iniciado .enemigo-recorte {
+            opacity: 1;
+            visibility: visible;
+        }
 
         @keyframes flotar-personaje {
             0%, 100% {
@@ -193,13 +222,32 @@
             }
         }
 
-        .personaje-recorte img {
+        @keyframes flotar-personaje-iniciado {
+            0%, 100% {
+                transform: translate(0, calc(-50% + 87px));
+            }
+
+            50% {
+                transform: translate(0, calc(-50% + 93px));
+            }
+        }
+
+        .personaje-recorte img,
+        .enemigo-recorte img {
             position: absolute;
-            left: calc(-1 * var(--personaje-inicio-x));
-            top: calc(-1 * var(--personaje-inicio-y));
             max-width: none;
             width: auto;
             height: auto;
+        }
+
+        .personaje-recorte img {
+            left: calc(-1 * var(--personaje-inicio-x));
+            top: calc(-1 * var(--personaje-inicio-y));
+        }
+
+        .enemigo-recorte img {
+            left: calc(-1 * var(--enemigo-inicio-x));
+            top: calc(-1 * var(--enemigo-inicio-y));
         }
 
         /* MODIFICADO: Panel inferior con barra de info superior y 6 slots */
@@ -270,7 +318,8 @@
             letter-spacing: 0.2px;
             line-height: 1;
             transform: translateX(-50%);
-            cursor: default;
+            cursor: pointer;
+            pointer-events: auto;
         }
 
         /* MODIFICADO: Barra de navegación ocupa el espacio restante del panel inferior */
@@ -353,7 +402,7 @@
                 <span class="hud-nivel">Lv. 1</span>
             </div>
 
-            <button class="boton-empezar" type="button" aria-label="Función aún no disponible">EMPEZAR</button>
+            <button class="boton-empezar" type="button" aria-label="Empezar combate">EMPEZAR</button>
 
             <div class="hud-seccion hud-recursos" aria-label="Recursos económicos del personaje">
                 <span class="hud-recurso hud-oro">💰 0</span>
@@ -368,6 +417,9 @@
                 <img src="assets/images/escenario/a1.webp" alt="Escenario recortado">
                 <div class="personaje-recorte" aria-label="Personaje recortado desde X 2, Y 2 hasta X 65, Y 123">
                     <img src="assets/images/escenario/b1.webp" alt="Personaje recortado">
+                </div>
+                <div class="enemigo-recorte" aria-label="Enemigo recortado desde X 7, Y 140 hasta X 113, Y 221" aria-hidden="true">
+                    <img src="assets/images/escenario/a1.webp" alt="Enemigo recortado">
                 </div>
             </div>
         </div>
@@ -403,6 +455,17 @@
             oro: document.querySelector('.hud-oro'),
             diamantes: document.querySelector('.hud-diamantes')
         };
+        const contenedorJuego = document.querySelector('.android-mockup');
+        const botonEmpezar = document.querySelector('.boton-empezar');
+        const enemigoRecorte = document.querySelector('.enemigo-recorte');
+
+        function iniciarCombate() {
+            contenedorJuego.classList.add('juego-iniciado');
+            botonEmpezar.setAttribute('aria-pressed', 'true');
+            enemigoRecorte.setAttribute('aria-hidden', 'false');
+        }
+
+        botonEmpezar.addEventListener('click', iniciarCombate);
 
         function obtenerEstadoPersonajeHUD() {
             return window.estadoPersonaje || window.personaje || window.sasuke || window.player || {};
