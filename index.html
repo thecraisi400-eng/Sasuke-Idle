@@ -188,7 +188,7 @@
         }
 
         .android-mockup.combate-retroceso .personaje-recorte { /* NUEVO */
-            left: 0; /* NUEVO */
+            left: 18px; /* MODIFICADO: mantiene al personaje visible dentro del mapa */
             transform: translate(0, calc(-50% + 87px)); /* NUEVO */
             animation-name: flotar-personaje-iniciado; /* NUEVO */
         } /* NUEVO */
@@ -232,19 +232,39 @@
             transition: none; /* NUEVO */
         } /* NUEVO */
 
+        .android-mockup.combate-lucha .escenario-recorte { /* NUEVO */
+            animation: sacudida-combate 0.75s ease-in-out infinite; /* NUEVO */
+        } /* NUEVO */
+
+        .android-mockup.combate-lucha .escenario-recorte::before { /* NUEVO */
+            content: ''; /* NUEVO */
+            position: absolute; /* NUEVO */
+            left: 52%; /* NUEVO */
+            top: calc(50% + 106px); /* NUEVO */
+            width: 72px; /* NUEVO */
+            height: 72px; /* NUEVO */
+            background: linear-gradient(45deg, transparent 43%, rgba(255,255,255,0.95) 48%, rgba(255,85,45,0.95) 52%, transparent 58%), linear-gradient(-45deg, transparent 43%, rgba(142,222,255,0.9) 48%, rgba(255,255,255,0.95) 52%, transparent 58%); /* NUEVO */
+            filter: drop-shadow(0 0 8px rgba(255,220,90,0.95)); /* NUEVO */
+            transform: translate(-50%, -50%) rotate(0deg) scale(0.45); /* NUEVO */
+            animation: cortes-impacto 0.75s ease-out infinite; /* NUEVO */
+            pointer-events: none; /* NUEVO */
+            z-index: 3; /* NUEVO */
+        } /* NUEVO */
+
         .android-mockup.combate-lucha .escenario-recorte::after { /* NUEVO */
             content: ''; /* NUEVO */
             position: absolute; /* NUEVO */
-            left: 50%; /* NUEVO */
-            top: calc(50% + 107px); /* NUEVO */
-            width: 42px; /* NUEVO */
-            height: 42px; /* NUEVO */
+            left: 52%; /* NUEVO */
+            top: calc(50% + 106px); /* NUEVO */
+            width: 58px; /* NUEVO */
+            height: 58px; /* NUEVO */
             border-radius: 50%; /* NUEVO */
-            background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,213,74,0.85) 35%, rgba(255,78,48,0) 72%); /* NUEVO */
-            transform: translate(-10%, -50%) scale(0.35); /* NUEVO */
+            background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,230,92,0.95) 24%, rgba(255,88,45,0.78) 48%, rgba(255,78,48,0) 72%); /* MODIFICADO */
+            box-shadow: 0 0 14px rgba(255,220,80,0.85), 14px -10px 0 -9px rgba(255,255,255,0.9), -16px 8px 0 -10px rgba(255,120,35,0.85), 4px 18px 0 -11px rgba(140,220,255,0.85); /* NUEVO */
+            transform: translate(-50%, -50%) scale(0.35); /* MODIFICADO */
             animation: impacto-lucha 0.75s ease-out infinite; /* MODIFICADO */
             pointer-events: none; /* NUEVO */
-            z-index: 3; /* NUEVO */
+            z-index: 4; /* MODIFICADO */
         } /* NUEVO */
 
         @keyframes flotar-personaje {
@@ -277,9 +297,20 @@
             50% { transform: translate(-8px, calc(-50% + 107px)); } /* NUEVO */
         } /* NUEVO */
 
+        @keyframes sacudida-combate { /* NUEVO */
+            0%, 100% { transform: translateX(0); } /* NUEVO */
+            35% { transform: translateX(-2px); } /* NUEVO */
+            65% { transform: translateX(2px); } /* NUEVO */
+        } /* NUEVO */
+
+        @keyframes cortes-impacto { /* NUEVO */
+            0%, 100% { opacity: 0; transform: translate(-50%, -50%) rotate(-10deg) scale(0.35); } /* NUEVO */
+            45% { opacity: 1; transform: translate(-50%, -50%) rotate(12deg) scale(1); } /* NUEVO */
+        } /* NUEVO */
+
         @keyframes impacto-lucha { /* NUEVO */
-            0%, 100% { opacity: 0; transform: translate(-10%, -50%) scale(0.35); } /* NUEVO */
-            45% { opacity: 1; transform: translate(-10%, -50%) scale(1); } /* NUEVO */
+            0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.35); } /* MODIFICADO */
+            45% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); } /* MODIFICADO */
         } /* NUEVO */
 
         .personaje-recorte img,
